@@ -1,11 +1,14 @@
+#!/usr/bin/env python
+
 import psycopg2
 import psycopg2.extras
 import csv
 from ooop import OOOP
-
+from consolemsg import error, step
 
 import sys
 from datetime import datetime,date,timedelta
+
 
 import configdb
 
@@ -13,6 +16,7 @@ import configdb
 lots = ['05/2015','06/2015', '07/2015', '08/2015']
 
 def dump(filename,factures):
+    step("Dumping '{}'...".format(filename))
     with open(filename, 'wb') as csvfile:
         outpwriter = csv.writer(csvfile, delimiter=';',
                             quotechar='|', quoting=csv.QUOTE_MINIMAL)
@@ -31,10 +35,10 @@ def dump(filename,factures):
 def db_query(db,sql):
     try:
         db.execute(sql)
-    except Exception ,ex:
-        print 'Failed executing query'
-        print sql
-        raise ex
+    except:
+        error('Failed executing query')
+        error(sql)
+        raise
 
     return db.fetchall()
 
@@ -102,22 +106,25 @@ def get_factures_rel(O,factura):
         )
     return result
 
+step("Setting up the DB connection")
 dbcur = None
 try:
     dbconn=psycopg2.connect(**configdb.psycopg)
     dbcur = dbconn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-except Exception, ex:
-    print "Unable to connect to database " + configdb.psycopg['database']
-    raise ex
+except:
+    error("Unable to connect to database " + configdb.psycopg['database'])
+    raise
 
+step("Setting up the ERP connection")
 O = None
 try:
     O = OOOP(**configdb.ooop)
-except Exception, ex:
-    print "Unable to connect to ERP"
-    raise ex
+except:
+    error("Unable to connect to ERP")
+    raise
 
 try:
+    step("Looking for invoices with 0 kWh lines...")
     factures = get_factures_0energyLines(dbcur,lots)
 
     rel = []
@@ -127,6 +134,7 @@ try:
 
     dump('factures_0energy_lines.csv',factures)
 
+    step("Looking for invoices with 0 days...")
     factures = None
     factures = get_factures_0days(dbcur,lots)
 
@@ -137,6 +145,7 @@ try:
 
     dump('factures_0days.csv',factures)
 
-except Exception, ex:
-    print "Error llegint les factures dels lots"
-    raise ex
+except:
+    error("Error llegint les factures dels lots")
+    raise
+
