@@ -1,0 +1,16 @@
+ooop = dict(
+    dbname = 'databasename',
+    user = 'MyERPUser',
+    pwd = 'myhiddenerppassword',
+    uri = 'https://myerpserver.net',
+    port = 8069,
+)
+
+psycopg = dict(
+    database = 'databasename',
+    user = 'databaseuser',
+    password = 'myhiddendbpassword',
+    host = 'mydatabaseserver',
+    port = '5433',
+)
+
