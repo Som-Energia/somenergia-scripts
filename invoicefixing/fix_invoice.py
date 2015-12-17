@@ -1,27 +1,16 @@
 # -*- coding: utf-8 -*-
 import sys
 import os
+import signal
 from datetime import datetime, timedelta
 
 import configdb
 
 from ooop import OOOP
 from consolemsg import error, step
-from utils import pay_invoice, get_contract_amount_mean 
-
-
-def dump(polissa_id, lects, header, n):
-    try:
-        print "------------ {header} ------ [{polissa_id}] ---------".format(**locals())
-        for idx in range(n):
-            print '[{idx}] {date} {periode} {lectura} {origen}'.format(**{'idx': idx,
-                                                                  'date': lects[idx]['name'],
-                                                                  'periode': lects[idx]['periode'][1],
-                                                                  'lectura': lects[idx]['lectura'],
-                                                                  'origen': lects[idx]['origen_id'][1] })
-    except Exception, e:
-        pass
-
+from utils import *
+from display import *
+#from debug import debug_dump
 
 def remove_modmeter_lect(meters, lects):
     dates_out = {meter['data_baixa']: meter['id'] for meter in meters if meter['data_baixa']}
@@ -44,17 +33,21 @@ def fix_measure(O, polissa_id, lects, last_idx, _last_idx, _prev_idx, offset, kW
     lects[_prev_idx+offset]['lectura'] = lects[_last_idx+offset]['lectura']+n_days_12*kWh_day
     observacions = 'R. {lect_old}\n{observacions}'.format(**{'lect_old':lect_old,
                                                              'observacions':lects[_prev_idx+offset]['observacions']})
-    O.GiscedataLecturesLectura.write([lects[_prev_idx+offset]['id']],
-                                     {'lectura': lects[_prev_idx+offset]['lectura'],
-                                      'observacions': '{observacions}'.format(**locals())})
+
+    measures_id = [lects[_prev_idx+offset]['id']]
+    measures_value = {'lectura': lects[_prev_idx+offset]['lectura'],
+                      'observacions': '{observacions}'.format(**locals())}
+    update_measures(O, measures_id, measures_value, pool=False)
+
     return quarantine
 
 
 def fix_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
+    out = ''
     fields_to_search = [('polissa', '=', polissa_id)]
-    meters_id = O.GiscedataLecturesComptador.search(fields_to_search, 0, 0, False, {'active_test': False})
     fields_to_read = ['active', 'data_alta', 'data_baixa']
-    meters = O.GiscedataLecturesComptador.read(meters_id, fields_to_read)
+    meters = get_meters(O, fields_to_search, fields_to_read)
+
     if not isinstance(meters, list):
         meters = [meters]
 
@@ -64,11 +57,10 @@ def fix_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
     if end_date:
         fields_to_search.append(('name', '<=', end_date))
 
-    lects_id = O.GiscedataLecturesLectura.search(fields_to_search, 0, 0, False, {'active_test': False})
     fields_to_read = ['name', 'comptador', 'periode', 'lectura', 'origen_id', 'observacions']
-    lects = O.GiscedataLecturesLectura.read(lects_id, fields_to_read)
+    lects = get_measures(O, fields_to_search, fields_to_read, pool=False, active_test=False)
     lects = remove_modmeter_lect(meters, lects)
-    dump(polissa_id, lects, None, 10)
+    out += show_invoice(polissa_id, lects, None, 10)
 
     if len(lects) < 2:
         return
@@ -76,7 +68,7 @@ def fix_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
     offset_ct = {'2.0A (P1)': 1, '2.1A (P1)': 1,
                  '2.0DHA (P1)': 2, '2.1DHA (P1)': 2}
 
-    for back_idx in reversed(range(1, 20)):
+    for back_idx in reversed(range(1, min(len(lects), 15))):
         if not (lects[0]['periode'][1].startswith('2')) or (lects[0]['periode'][1].endswith('DHS')):
             # 3.0 and DHS pending
             continue
@@ -92,8 +84,8 @@ def fix_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
             prev_idx = back_idx*offset
             last_idx = offset + prev_idx
 
-            offset_status = [check_origen(lects, last_idx, "Estimada", offset, offset),
-                             check_origen(lects, last_idx, "Estimada", offset+1, offset)]
+            offset_status = [check_origen(lects, prev_idx, "Estimada", offset, offset),
+                             check_origen(lects, prev_idx, "Estimada", offset+1, offset)]
 
             if ((offset_status[0]) \
                 and (lects[0]['lectura'] >= lects[last_idx]['lectura']) \
@@ -109,7 +101,7 @@ def fix_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
                 for day_idx in range(1, back_idx+1):
                     _prev_idx = offset+(back_idx-day_idx)*offset
                     _last_idx = offset+(back_idx-day_idx+1)*offset
-                    kWh_day_db = O.GiscedataPolissa.consum_diari(polissa_id)
+                    kWh_day_db = get_contract_daily_consumption(O, polissa_id)
 
                     if offset_status[0]:
                         # 2.XA
@@ -122,37 +114,50 @@ def fix_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
                                                          1, kWh_day_db['P2'], n_days_02)
 
 
-                    dump(polissa_id, lects, 'Fixed', 10)
+                    out += show_invoice(polissa_id, lects, 'Fixed', 10)
                     invoice_date_end = lects[_prev_idx]['name']
                     invoice_date_start = lects[_last_idx]['name']
-                    invoice_rectified_id = O.GiscedataFacturacioFactura.search([('polissa_id', '=', polissa_id),
-                                                                                        ('type', '=', 'out_invoice'),
-                                                                                        ('data_final', '=', invoice_date_end),
-                                                                                        ('data_inici', '=', invoice_date_start)])
+                    search_pattern = [('polissa_id', '=', polissa_id),
+                                      ('type', '=', 'out_invoice'),
+                                      ('data_final', '=', invoice_date_end),
+                                      ('data_inici', '=', invoice_date_start)]
+                    invoice_rectified_id = get_invoices(O, search_pattern, None, True)
 
                     if not invoice_rectified_id:
                         invoice_date_start = datetime.strftime(datetime.strptime(lects[_last_idx]['name'],
                                                                                  '%Y-%m-%d') + timedelta(days=1), '%Y-%m-%d')
-                        invoice_rectified_id = O.GiscedataFacturacioFactura.search([('polissa_id', '=', polissa_id),
-                                                                                    ('type', '=', 'out_invoice'),
-                                                                                    ('data_final', '=', invoice_date_end),
-                                                                                    ('data_inici', '=', invoice_date_start)])
+                        search_pattern = [('polissa_id', '=', polissa_id),
+                                          ('type', '=', 'out_invoice'),
+                                          ('data_final', '=', invoice_date_end),
+                                          ('data_inici', '=', invoice_date_start)]
+                        invoice_rectified_id = get_invoices(O, search_pattern, None, True)
 
                     if invoice_rectified_id:
                         invoices_id = pay_invoice(O, invoice_rectified_id[0], True)
                         if invoices_id:
-                            invoices = O.GiscedataFacturacioFactura.read(invoices_id, ['amount_total'])
+                            fields_to_read= ['invoice_id',
+                                             'data_inici',
+                                             'data_final',
+                                             'amount_total']
+                            invoices = read_invoices(O, invoices_id, fields_to_read)
                             invoice_original = invoices[1]['amount_total']
                             invoice_rectified = invoices[0]['amount_total']
                             diff = invoice_original - invoice_rectified
-                            print 'original: {invoice_original} rectified: {invoice_rectified} diff: {diff}'.format(**locals())
 
                             if diff > 2*get_contract_amount_mean(O, polissa_id):
                                 quarantine['euro'].append(polissa_id)
 
+                            out += show_results(invoices, quarantine)
+
         except Exception, e:
             print e
             pass
+    return out
+
+
+def signal_handler(signal, frame):
+        sys.exit(0)
+signal.signal(signal.SIGINT, signal_handler)
 
 
 if __name__ == "__main__":
@@ -164,6 +169,9 @@ if __name__ == "__main__":
         return True
 
     step("Setting up the ERP connection")
+    configdb.ooop['user'] = raw_input('User?')
+    configdb.ooop['pwd']= raw_input('Password?')
+
     O = None
     try:
         O = OOOP(**configdb.ooop)
@@ -171,17 +179,31 @@ if __name__ == "__main__":
         error("Unable to connect to ERP")
         raise
 
-    contract_name = raw_input("Contract name?")
-    if not contract_name:
-        error("Contracte name missing")
-        raise
+    while True:
+        contract_name = raw_input("Contract name?").zfill(5)
+        if not contract_name:
+            error("Contracte name missing")
+            raise
 
-    start_date = raw_input("Start date (YYYY-mm-dd)?").rstrip()
-    start_date = start_date if start_date and valid_date(start_date) else None
+        start_date = raw_input("Start date (YYYY-mm-dd)?").rstrip()
+        start_date = start_date if start_date and valid_date(start_date) else None
 
-    end_date = raw_input("End date (YYYY-mm-dd)?").rstrip()
-    end_date = end_date if end_date and valid_date(end_date) else None
+        end_date = raw_input("End date (YYYY-mm-dd)?").rstrip()
+        end_date = end_date if end_date and valid_date(end_date) else None
 
-    contract_id = O.GiscedataPolissa.search([('name', '=', contract_name)])[0]
-    quarantine = {'kWh': [], 'euro': []}
-    fix_contract(O, contract_id, quarantine, start_date, end_date)
+        contract_id = O.GiscedataPolissa.search([('name', '=', contract_name)])[0]
+        quarantine = {'kWh': [], 'euro': []}
+
+        old_measures = get_measures_by_contract(O, contract_id, range(1,12))
+        new_measures = load_new_measures(O, contract_id)
+        if old_measures[0]['origen_id'][0] not in [7,10,11]:
+            end_date = old_measures[0]['name']
+        else:
+            if new_measures:
+                end_date = new_measures[-1]['name']
+        out += fix_contract(O, contract_id, quarantine, start_date, end_date)
+
+
+        measures = get_measures_by_contract(O, contract_id, mtype, pool=False, start_date=None)
+        load_new_measures(O, contract_id)
+        fix_contract(O, contract_id, quarantine, start_date, end_date)
