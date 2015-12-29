@@ -1,0 +1,43 @@
+digraph {
+/* Products */
+SupplierInvoices,
+SupplierMeassures,
+SupplierInvoicesOnErp,
+ImportErrors,
+ContractMeassuresOnErp,
+ErrorList,
+UnvalidatedInvoices,
+UnvalidatedMeassures,
+ValidatedMeassures,
+DraftClientInvoice,
+ValidatedInvoice,
+UnvalidatedInvoices,
+InvoiceValidationError
+[
+    shape=rect,
+]
+
+SupplierInvoices -> Import
+SupplierMeassures -> Import
+Import -> SupplierInvoicesOnErp
+Import -> ImportErrors
+Import -> ContractMeassuresOnErp
+UserEditsOV -> ContractMeassuresOnErp
+ContractMeassuresOnErp -> MeassureValidation
+MeassureValidation -> ErrorList
+MeassureValidation -> ValidatedMeassures
+MeassureValidation -> UnvalidatedMeassures
+UnvalidatedMeassures -> MeassureFixing
+MeassureFixing -> ValidatedMeassures
+MeassureFixing -> UnvalidatedMeassures
+ValidatedMeassures -> Invoicing
+Invoicing -> DraftClientInvoice
+DraftClientInvoice -> InvoiceValidation
+InvoiceValidation -> ValidatedInvoice
+InvoiceValidation -> InvoiceValidationError
+InvoiceValidation -> UnvalidatedInvoices
+UnvalidatedInvoices -> ManualYaizaProcess
+ManualYaizaProcess -> DraftClientInvoice
+ValidatedInvoice -> InvoiceSending
+
+}
