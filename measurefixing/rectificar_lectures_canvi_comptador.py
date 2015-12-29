@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from ooop import OOOP
 import configdb
-from datetime import datetime,timedelta
+
 from validacio_eines import carregar_lectures_from_pool
 
 O = OOOP(**configdb.ooop)
@@ -37,7 +37,7 @@ lectures_inicials_erronies = []
 
 #constants correu electronic
 template_id = 53 #Explicacio de la facturacio i canvi de comptador
-from_id = 8 # factura@some.coop
+from_id = 8 # factura@somenergia.coop
 src_model = 'giscedata.polissa'
 
 
