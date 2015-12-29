@@ -83,6 +83,7 @@ for pol_read in pol_reads:
     
 #Resum del proces
 print "="*76
+print "AQUESTS CASOS ES PASSEN DIRECTAMENT A LA MARTA. COPIAR Y PEGAR"
 print "\n Polisses 3.0A que hem canviat. TOTAL %s" % len(tarifa_3_canviats)
 print "Polisses: " 
 print tarifa_3_canviats

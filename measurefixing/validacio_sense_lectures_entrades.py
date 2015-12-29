@@ -1,9 +1,9 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 from ooop import OOOP
+from datetime import datetime
 import configdb
-from datetime import datetime,timedelta
-from validacio_eines import buscar_errors_lot_ids, es_cefaco, facturar_manual
+from validacio_eines import buscar_errors_lot_ids, es_cefaco
  
 O = OOOP(**configdb.ooop)
 
@@ -44,14 +44,14 @@ for pol_id in pol_ids:
             print "Ja està detectada com a Reclamacio de Distribuidora" 
             cefaco.append(pol_id)
             continue
-        lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])[0]
         lot_read = O.GiscedataFacturacioLot.read(lot_id,['data_inici'])        
         if polissa_read['data_ultima_lectura']>=lot_read['data_inici']:
             lot_seguent.append(pol_id)
             clot_id = clot_obj.search([('polissa_id','=',pol_id),
                                         ('lot_id','=',lot_id)])
-            clot_obj.unlink(clot_id[0])
+            clot_obj.unlink(clot_id,{})
             pol_obj.write(pol_id, {'lot_facturacio': lot_id +1 })
+            print "el posem al lot seguent"
             continue        
         
         if not(polissa_read['tarifa'][1] in ['2.0A','2.1A']):

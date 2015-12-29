@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 from ooop import OOOP
 import configdb
-from datetime import datetime
-from validacio_eines import fix_contract, es_cefaco
+from validacio_eines import es_cefaco, validar_canvis, buscar_errors_lot_ids, copiar_lectures
 
 O = OOOP(**configdb.ooop)
 
@@ -29,55 +28,89 @@ sense_comptador = []
 errors = []
 cas_union_fenosa = []
 multiples_lectures = []
-volta_comptador = []
+polisses_resoltes_volta_comptador = []
 cefaco = []
 noves_cefaco = []
 lectures_posterior = []
+error_al_comptador_inactiu = []
 
-search_vals = [('status','like',"La lectura actual és inferior a l'anterior")]
-clot_ids = clot_obj.search(search_vals)
-clot_reads = clot_obj.read(clot_ids,['polissa_id'])
-pol_ids = [clot_read['polissa_id'][0] for clot_read in clot_reads]
+pol_ids = buscar_errors_lot_ids("La lectura actual és inferior a l'anterior")
+validar_canvis(pol_ids)
+pol_ids = buscar_errors_lot_ids("La lectura actual és inferior a l'anterior")
 pol_ids = sorted(list(set(pol_ids)))
-pol_reads = pol_obj.read(pol_ids,['name','comptador','tarifa','data_ultima_lectura','distribuidora','lot_facturacio','cups','category_id'])
 
 #Comptadors visuals
-total = len(pol_reads)
+total = len(pol_ids)
 n = 0
 
-quarantine = {'kWh': [], 'euro': []}
-
-for pol_read in pol_reads:
-    fix_contract_ = False
+for pol_id in pol_ids:
     n += 1
-    print "%s/%s  Polissa %s" % (n, total, pol_read['name'])
+    pol_read = pol_obj.read(pol_id,
+        ['name','comptador', 'comptadors','tarifa','data_ultima_lectura','distribuidora','lot_facturacio','cups','category_id'])
+    print "\n %s/%s  Polissa %s" % (n, total, pol_read['name'])
     try:
-        if es_cefaco(pol_read['id']):
+        if es_cefaco(pol_id):
             print "Ja està detectada com a Reclamacio de Distribuidora" 
             cefaco.append(pol_read['name'])
             continue
-        #Cerca de comptador i excepcions
-        comp_id = comp_obj.search([('name','=',pol_read['comptador'])])
-        comp_reads = comp_obj.read(comp_id, ['giro'])
-        if not(comp_reads):
-            print "No trobem comptador"
+        #Cerca de comptadors i excepcions
+        if not(pol_read['comptadors']):
+            print "No trobem comptadors"
             sense_comptador.append(pol_read['name'])
             continue
-        comp_read = comp_reads[0]
-        if not(comp_read['giro']):
-            print "No té gir de comptador"
-            sense_gir.append(pol_read['name'])
-            continue
+        for comp_id in pol_read['comptadors']:
+            comp_read = comp_obj.read(comp_id, ['giro','name'])
+            if not(comp_read['giro']):
+                print "No té gir de comptador"
+                sense_gir.append(pol_read['name'])
+                continue
         
-        #Cerca de lectures problematiques
-        limit_superior_consum = int(comp_read['giro'])* 9/10
-        lect_search_vals = [('comptador','=',pol_read['comptador']),
-                            ('consum','>',limit_superior_consum),
-                            ('name','>',pol_read['data_ultima_lectura'])]
-        lect_ids = lect_fact_obj.search(lect_search_vals)
+            #Cerca de lectures problematiques
+            limit_superior_consum = int(comp_read['giro'])* 9/10
+            lect_search_vals = [('comptador','=',comp_id),
+                                ('consum','>',limit_superior_consum),
+                                ('name','>=',pol_read['data_ultima_lectura'])]
+            lect_ids = lect_fact_obj.search(lect_search_vals)
+            if lect_ids:
+                #Ja tenim identificat el comptador i lectures amb problemes
+                break
         
+            # Pot ser volta de comptador o que el comptador estigui be i l'altre sigui el que te problemes
+            else:
+                #VOLTA DE COMPTADOR:
+                lect_sup_search_vals = [('comptador','=',comp_id),
+                                    ('lectura','>',limit_superior_consum),
+                                    ('name','=',pol_read['data_ultima_lectura'])]
+                lect_sup_ids = lect_fact_obj.search(lect_sup_search_vals)
+                limit_inferior_consum = int(comp_read['giro'])* 1/10
+                lect_inf_search_vals = [('comptador','=',comp_id),
+                                    ('lectura','<',limit_inferior_consum),
+                                    ('name','>',pol_read['data_ultima_lectura'])]
+                lect_inf_ids = lect_fact_obj.search(lect_inf_search_vals)     
+                
+                # Volta de comptador si la lectura ref > 90% i lectura posterior <10%
+                if  lect_sup_ids and lect_inf_ids:
+                    print "Volta de comptador"
+                    clot_id = clot_obj.search([('polissa_id','=',pol_id),
+                                        ('lot_id','=',pol_read['lot_facturacio'][0])])[0]
+                    clot_obj.write(clot_id,{'skip_validation':True})
+                    
+                    #Validem a veure si ja no hi ha el problema
+                    validar_canvis([pol_id])
+                    pol_ids_v1 = buscar_errors_lot_ids("La lectura actual és inferior a l'anterior")
+                    if not(pol_id in pol_ids_v1):
+                        print "Volta de comptador. Solucionada"
+                        polisses_resoltes_volta_comptador.append(pol_read['name'])
+                        break
+        
+
         #Iterem per lectura problematica
         for lect_id in lect_ids:
+            #Si el comptador no és l'actiu, s'ha d'anar amb cuidado perque pot ser que li facturem malament
+            if not(comp_read['name'] == pol_read['comptador']):       
+                print "El comptador no es l'actiu. Analitzar apart"
+                error_al_comptador_inactiu.append(pol_read['name'])
+                break
             lectura = lect_fact_obj.get(lect_id)
             # Problemes amb lectures de Fenosa. Per ara només els filtrem
             # A sota hi ha codi de com solucionar-ho
@@ -112,13 +145,11 @@ for pol_read in pol_reads:
                 lect_post_fact_id = lect_fact_obj.search(search_post_fact)
                 lect_fact_obj.unlink(lect_post_fact_id,{})
                 #Copiar lectura de pool
-                ctx = {'active_id': lect_post_ids[0]}
-                wiz_id = O.WizardCopiarLecturaPoolAFact.create({},ctx)
-                O.WizardCopiarLecturaPoolAFact.action_copia_lectura([wiz_id], ctx)
+                copiar_lectures(lect_post_ids[0])
                 break
                 
 
-            lect_search_vals_mult = [('comptador','=',pol_read['comptador']),
+            lect_search_vals_mult = [('comptador','=',comp_id),
                                 ('tipus','=',lectura.tipus),
                                 ('periode','like', lectura.periode.name),
                                 ('name','>',pol_read['data_ultima_lectura'])]
@@ -130,7 +161,6 @@ for pol_read in pol_reads:
                 # Eliminar la primera que lectura de les dues
                 lect_fact_obj.unlink([lect_mult_ids[1]],{})
                 multiples_lectures.append(pol_read['name'])
-                
                 break
                 
             if not(lect_ref_read['lectura']):
@@ -139,15 +169,6 @@ for pol_read in pol_reads:
                 break
             
             lectures_dif = lect_ref_read['lectura'] - lectura.lectura
-            
-            # Volta de comptador si la lectura ref > 90% i lectura posterior <10%
-            limit_inferior_consum = int(comp_read['giro'])* 1/10
-            if lect_ref_read['lectura']>limit_superior_consum and lectura.lectura < limit_inferior_consum:
-                print "volta de comptador"
-                # clot_id = O.GiscedataFacturacioContracte_lot.search([('polissa_id','=',pol_read['id']),('lot_id','=',pol_read['lot_facturacio'][0])])[0]
-                # write(clot_id,{'skip_validation':True'})
-                volta_comptador.append(pol_read['name'])
-                break
             no_consum_mensual = False
             cups_id = pol_read['cups'][0]
             cups_read = cups_obj.read(cups_id,['conany_kwh'])
@@ -170,7 +191,7 @@ for pol_read in pol_reads:
                     lectures_copiades.append(pol_read['name'])
             elif lectures_dif >= dif_maxima * 5 and not(no_consum_mensual):
                 print "Possible cefaco. Diferencia de %d, superior a 5 cops el consum mensual %d kWh\n" % (lectures_dif,dif_maxima)
-                pol_obj.write(pol_read['id'],{'category_id':[(4,4)]})
+                pol_obj.write(pol_id,{'category_id':[(4,4)]})
                 noves_cefaco.append(pol_read['name']) 
             else:
                 if not lectures_dif:
@@ -179,59 +200,63 @@ for pol_read in pol_reads:
                     print "Diferencia de %d, superior a %d kWh\n" % (lectures_dif,dif_maxima)
                     if not pol_read['name'] in lectures_massa_diferencia:
                         lectures_massa_diferencia.append(pol_read['name'])
-                        fix_contract_ = True
-                        
-        #if fix_contract_ and False:
-         #   fix_contract(pol_read['id'], quarantine)
-        
-                    
+
+   
     except Exception, e:
-        errors.append({pol_read['id']:e})
+        errors.append({pol_id:e})
         print e
         
 #Resum del proces
 print "="*76
-print "\n Polisses que hem copiat lectura. TOTAL %s" % len(lectures_copiades)
+print "POLISSES RESOLTES________________________________________"
+print "\n Polisses que hem copiat lectura. TOTAL: {}".format(len(lectures_copiades))
 print "Polisses: " 
 print lectures_copiades
-print "\n Han arribat noves lectures, ja estan solucionades. TOTAL %s" % len(lectures_posterior)
+print "\n Han arribat noves lectures, ja estan solucionades. TOTAL: {}".format(len(lectures_posterior))
 print "Polisses: " 
 print lectures_posterior
-print "\n No hem copiat lectura per tenir massa diferencia entre lectures. TOTAL %s" % len(lectures_massa_diferencia)
+print "\n Volta de comptador. TOTAL: {}".format(len(polisses_resoltes_volta_comptador))
+print "Polisses: " 
+print polisses_resoltes_volta_comptador
+print "POLISSES NO RESOLTES_____________________________________"
+print "\n PASSAR SCRIPT ABONAR I RECTIFICAR"
+print "No hem copiat lectura per tenir massa diferencia entre lectures. TOTAL: {}".format(len(lectures_massa_diferencia))
 print "Diferencia superior al consum mensual (consum anual /12) i inferior a cinc cops el consum mensual"
 print "Polisses: " 
 print lectures_massa_diferencia
-print "\n Casos unión fenosa de lectura 0. TOTAL: %s" % len(cas_union_fenosa)
+print "\n PER ARA PASSAR A LA MARTA --> A LA LLARGA automatitzar!!"
+print "Casos unión fenosa de lectura 0. TOTAL: {}".format(len(cas_union_fenosa))
 print "Polisses: "
 print cas_union_fenosa
-print "\n Polisses que han tingut error en el proces. TOTAL: %s" % len(errors)
+print "\n PASSAR SCRIPT ABONAR I RECTIFICAR. MOLT EN COMPTE PERQUE MAI S'HA PASSAT EN AQUESTS CASOS"
+print " L'error esta en el comptador inactiu. TOTAL: {}".format(len(error_al_comptador_inactiu))
 print "Polisses: "
-print errors
-print "\n No hem trobat lectura de refencia. TOTAL %s" % len(sense_lectura_ref)
-print "Polisses: " 
-print sense_lectura_ref
-print "\n No té gir. TOTAL %s" % len(sense_gir)
-print "Polisses: " 
-print sense_gir
-print "\n No hem trobat comptador. TOTAL %s" % len(sense_comptador)
-print "Polisses: " 
-print sense_comptador
-print "\n Lectures multiples. TOTAL %s" % len(multiples_lectures)
-print "Polisses: " 
-print multiples_lectures
-print "\n Volta de comptador. TOTAL %s" % len(volta_comptador)
-print "Polisses: " 
-print volta_comptador
-print "\n Reclamacio a distribuidora CEFACO. TOTAL %s" % len(cefaco)
+print error_al_comptador_inactiu
+print "\n Analitzar molts casos que segurament podrem PASSAR SCRIPT ABONAR I RECTIFICAR. Eliminar etiqueta Reclamacions de lectures"
+print "Reclamacio a distribuidora CEFACO. TOTAL: {}".format(len(cefaco))
 print "Polisses: " 
 print cefaco
-print "\n NOVES CEFACO. TOTAL %s" % len(noves_cefaco)
+print "NOVES CEFACO. TOTAL: {}".format(len(noves_cefaco))
 print "Polisses: " 
 print noves_cefaco
+print "\n Polisses que han tingut error en el proces. TOTAL: {}".format(len(errors))
+print "Polisses: "
+print errors
+print "No hem trobat lectura de referencia. TOTAL: {}".format(len(sense_lectura_ref))
+print "Polisses: " 
+print sense_lectura_ref
+print "No té gir. TOTAL: {}".format(len(sense_gir))
+print "Polisses: " 
+print sense_gir
+print "No hem trobat comptador. TOTAL: {}".format(len(sense_comptador))
+print "Polisses: " 
+print sense_comptador
+print "Lectures multiples. TOTAL: {}".format(len(multiples_lectures))
+print multiples_lectures
 print "\n" + "="*76
 
 ###### CAS FENOSA
-#                fact_id = fact_obj.search([('polissa_id','=',pol_read['id']),
+#                fact_id = fact_obj.search([('polissa_id','=',pol_id),
 #                                        ('data_final','=',lectura.name),
 #                                        ('origin','not like','/comp')])
 #                if fact_id:
@@ -243,12 +268,3 @@ print "\n" + "="*76
 #                                    ('name','<',lectura.name)]
 #                    lect_ids = lect_fact_obj.search(search_vals)     
 
-
-#search_vals = [('status','like',"incompleta")]
-#clot_ids = clot_obj.search(search_vals)
-
-#tarifa 3.1A skip validation
-#Estabanell amb dh, dos comptadors
-
-#search_vals = [('status','like',"tancament")]
-#clot_ids = clot_obj.search(search_vals)

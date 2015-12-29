@@ -4,7 +4,9 @@ from ooop import OOOP
 import configdb
 
 from validacio_eines import carregar_lectures_from_pool
-
+import psycopg2
+import psycopg2.extras
+ 
 O = OOOP(**configdb.ooop)
 
 comp_obj = O.GiscedataLecturesComptador
@@ -34,6 +36,7 @@ lectures_negatives_control = []
 errors = []
 diferencia_0 = []
 lectures_inicials_erronies = []
+sense_lectura_pool = []
 
 #constants correu electronic
 template_id = 53 #Explicacio de la facturacio i canvi de comptador
@@ -50,11 +53,59 @@ def enviar_correu(pol_id, template_id, from_id, src_model):
     wz_id = O.PoweremailSendWizard.create(params, ctx)
     O.PoweremailSendWizard.send_mail([wz_id], ctx)
 
+def getPolisses(db):
+    sql_query = """
+SELECT comptador.name AS comptador_name,
+	       polissa.name AS polissa_name,
+	       polissa.id AS polissa_id,
+	       polissa.data_ultima_lectura AS data_ultima_lectura,
+	       lectura.name AS data_lectura,
+	       (polissa.data_ultima_lectura -lectura.name) AS dies_dif_lectures,
+	       distribuidora.name,
+	       polissa.tarifa,
+	       lectura.periode
 
-#Aquestes polisses venen del scrips SQL: canvis_de_comptadors_erronis.sql
-pol_ids = [1,2,3,4]
+        FROM giscedata_lectures_comptador AS comptador
+        LEFT JOIN giscedata_lectures_lectura AS lectura ON lectura.comptador = comptador.id
+        LEFT JOIN giscedata_polissa AS polissa ON polissa.id = comptador.polissa
+        LEFT JOIN res_partner AS distribuidora ON distribuidora.id = polissa.distribuidora
+    
+        WHERE comptador.data_baixa < lectura.name
+	       AND polissa.active
+	       AND (polissa.data_ultima_lectura -lectura.name)<36
 
+        GROUP BY comptador.name, 
+		polissa.name, 
+		polissa.data_ultima_lectura, 
+		lectura.name,
+		polissa.id,
+		polissa.distribuidora,
+		distribuidora.name,
+		lectura.periode
 
+	ORDER BY distribuidora.name, polissa.id
+        """
+
+    try:
+        db.execute(sql_query)
+    except Exception ,ex:
+        print 'Failed executing query'
+        raise ex
+
+    extra_data = []
+    for record in db.fetchall():
+        extra_data.append (record['polissa_id'])
+
+    return (extra_data)
+
+try:
+    dbconn=psycopg2.connect(**configdb.psycopg)
+except Exception, ex:
+    print "Unable to connect to database " + configdb.psycopg['host']
+    raise ex
+
+dbcur = dbconn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+pol_ids = getPolisses(dbcur)
 pol_ids = sorted(list(set(pol_ids)))
 
 #Comptadors visuals
@@ -134,6 +185,11 @@ for pol_id in pol_ids:
                                                 ('tipus','=',lectura_tall.tipus),
                                                 ('periode','like', lectura_tall.periode.name),
                                                 ('name','<',lectura_estimada_read['name'])])            
+            if not(lect_alta_pool_ids):
+                print "No té lectura de Pool al comptador actiu"
+                sense_lectura_pool.append(pol_id)
+                saltar_seguent_polissa = True
+                continue
             lect_alta_pool_read = lectP_obj.read(lect_alta_pool_ids[-1],['lectura'])
             if lect_alta_pool_read['lectura']:
                 print "El comptador d'alta s'inicialitza amb %s" % lect_alta_pool_read['lectura']
@@ -217,7 +273,7 @@ for pol_id in pol_ids:
     
 #Resum
 print "="*76
-print "POLISSES RESOLTES"
+print "POLISSES RESOLTES___________________________________________"
 print "\n Polisses arreglades.PASSAR FUNCIO adelantar_polissa_endarerida. TOTAL %s" % len(pol_a_facturades)
 print "Polisses: " 
 print pol_a_facturades
@@ -233,27 +289,32 @@ print comptador_inicialitzat
 print "\n CONTROLAR. Lectures en el comptador de alta inicials anteriors a les noves creades. Han d'estar eliminades.TOTAL %s" % len(lectures_inicials_erronies)
 print "Polisses: " 
 print lectures_inicials_erronies
-print "\n A REVISAR. Polisses cefaco. TOTAL %s" % len(cefaco)
-print "Polisses: " 
-print cefaco
 
-print "POLISSES NO RESOLTES"
-print "\n Polisses que han tingut error en el proces. TOTAL: %s" % len(errors)
-print "Polisses: "
-print errors
 print "\n CONTROLAR (No hem fet res). Diferencia 0. No hi ha diferencia entre lectura estimada i de tallNo fem res. TOTAL %s" % len(diferencia_0)
 print "Polisses: " 
 print diferencia_0
+
+print "POLISSES NO RESOLTES_______________________________________________"
+print "\n Polisses que han tingut error en el proces. TOTAL: %s" % len(errors)
+print "Polisses: "
+print errors
+print "\n Sense lectura de pool al comptador de pool. TOTAL %s" % len(sense_lectura_pool)
+print "Polisses: " 
+print sense_lectura_pool
+print "\n A REVISAR. Polisses cefaco. TOTAL %s" % len(cefaco)
+print "Polisses: " 
+print cefaco
 print "\n Polisses amb tarifa 3.0A, 3.1A o DHS. Arreglar manualment. TOTAL %s" % len(tarifa_no2)
 print "Polisses: " 
 print tarifa_no2
 print "\n Polisses amb mes dun comptador actiu. TOTAL %s" % len(comptadors_actius_multiples)
 print "Polisses: " 
 print comptadors_actius_multiples
-print "\n Polisses amb comptador actiu sense lectures de tall. TOTAL %s" % len(sense_lectura_tall)
+print "\n PASSAR A JOAN"
+print "Polisses amb comptador actiu sense lectures de tall. TOTAL %s" % len(sense_lectura_tall)
 print "Polisses: " 
 print sense_lectura_tall
-print "\n Polisses amb data de baixa inferior a la data de baixa del comptador. TOTAL %s" % len(data_baixa_logica)
+print "\n Polisses amb data de baixa inferior a la data de baixa del comptador (eliminar lectures que son de mes de la data de canvi i copair la lectura de tall). TOTAL %s" % len(data_baixa_logica)
 print "Polisses: " 
 print data_baixa_logica
 print "="*76
