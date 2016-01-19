@@ -18,7 +18,7 @@ def remove_modmeter_lect(meters, lects):
             and not(dates_out[lect['name']] == lect['comptador'][0]))]
 
 
-def fix_measure(O, polissa_id, lects, last_idx, _last_idx, _prev_idx, offset, kWh_day_db, n_days_02):
+def patch_measure(O, polissa_id, lects, last_idx, _last_idx, _prev_idx, offset, kWh_day_db, n_days_02):
     quarantine = []
     kWh_day = (lects[offset]['lectura']-lects[last_idx+offset]['lectura'])/float(n_days_02)
 
@@ -42,7 +42,7 @@ def fix_measure(O, polissa_id, lects, last_idx, _last_idx, _prev_idx, offset, kW
     return quarantine
 
 
-def fix_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
+def patch_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
     out = ''
     fields_to_search = [('polissa', '=', polissa_id)]
     fields_to_read = ['active', 'data_alta', 'data_baixa']
@@ -156,6 +156,20 @@ def fix_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
     return out
 
 
+def fix_contract(O, contract_id):
+    quarantine = {'kWh': [], 'euro': []}
+    old_measures = get_measures_by_contract(O, contract_id, range(1,12))
+    new_measures = load_new_measures(O, contract_id)
+    if old_measures[0]['origen_id'][0] not in [7,10,11]:
+        end_date = old_measures[0]['name']
+    else:
+        if new_measures:
+            end_date = new_measures[-1]['name']
+    out += patch_contract(O, contract_id, quarantine, start_date, end_date)
+    adelantar_polissa_endarerida(O, [contract_id])
+    return (quarantine, out)
+
+
 def signal_handler(signal, frame):
         sys.exit(0)
 signal.signal(signal.SIGINT, signal_handler)
@@ -195,16 +209,4 @@ if __name__ == "__main__":
         contract_id = O.GiscedataPolissa.search([('name', '=', contract_name)])[0]
         quarantine = {'kWh': [], 'euro': []}
 
-        old_measures = get_measures_by_contract(O, contract_id, range(1,12))
-        new_measures = load_new_measures(O, contract_id)
-        if old_measures[0]['origen_id'][0] not in [7,10,11]:
-            end_date = old_measures[0]['name']
-        else:
-            if new_measures:
-                end_date = new_measures[-1]['name']
-        out += fix_contract(O, contract_id, quarantine, start_date, end_date)
-
-
-        measures = get_measures_by_contract(O, contract_id, mtype, pool=False, start_date=None)
-        load_new_measures(O, contract_id)
-        fix_contract(O, contract_id, quarantine, start_date, end_date)
+        fix_contract(O, contract_id)
