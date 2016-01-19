@@ -1,10 +1,9 @@
-﻿        SELECT comptador.name AS comptador_name,
+        SELECT comptador.name AS comptador_name,
 	       polissa.name AS polissa_name,
 	       polissa.id AS polissa_id,
 	       polissa.data_ultima_lectura AS data_ultima_lectura,
 	       lectura.name AS data_lectura,
 	       (polissa.data_ultima_lectura -lectura.name) AS dies_dif_lectures,
-	       polissa.distribuidora AS distribuidora,
 	       distribuidora.name,
 	       polissa.tarifa,
 	       lectura.periode

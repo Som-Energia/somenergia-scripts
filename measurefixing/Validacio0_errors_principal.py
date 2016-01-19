@@ -37,7 +37,7 @@ def arreglar_baixes(pol_ids):
             control.append(pol_id)
     return control
                 
-#script baixes del lot
+
 
 pol_ids = buscar_errors_lot_ids("incompleta. Falta P4,P5,P6")
 arreglar_31A(pol_ids)
@@ -45,15 +45,13 @@ validar_canvis(pol_ids)
 
 
 pol_ids = buscar_errors_lot_ids("cap comptador actiu")
-print arreglar_baixes(pol_ids)
+#script arreglar_baixes(pol_ids)
+#script baixes del lot__ANTIC__BO
 validar_canvis(pol_ids)
 
 
-#script Sense lectures entrades
-
-
 pol_ids = buscar_errors_lot_ids("La lectura actual és inferior a l'anterior")
-#arreglar_sobreestimacions(pol_ids)
+#script Sobre_estimacions.py
 validar_canvis(pol_ids)
 
 #Falta script de Sense lectura de maxímetre
@@ -65,17 +63,21 @@ validar_canvis(pol_ids)
 
 pol_ids = buscar_errors_lot_ids('Falta Lectura de tancament amb data')
 #arreglar_sense_lectura_tancament(pol_ids)
+#tancament_millorat
 validar_canvis(pol_ids)
 
-pol_ids = clot_obj.search([('status','like',u'No t\xe9 lectura anterior'),
-                        ('status','not like',u'No t\xe9 lectures entrades'),
-                        ('status','not like',u'incompleta'),
-                        ('status','not like',u'volta de comptador'),
-                        ('status','not like',u'Falta Lectura de tancament'),
-                        ('status','not like',u'maxímetre'),('lot_id','=',lot_id)])
-
+clot_ids = clot_obj.search([('status','like',u'No t\xe9 lectura anterior'),
+                            ('status','not like',u'No t\xe9 lectures entrades'),
+                            ('status','not like',u'incompleta'),
+                            ('status','not like',u'volta de comptador'),
+                            ('status','not like',u'Falta Lectura de tancament'),
+                            ('status','not like',u'maxímetre'),
+                            ('lot_id','=',lot_id)])
+clot_reads = clot_obj.read(clot_ids,['polissa_id'])
+pol_ids = sorted(list(set([clot_read['polissa_id'][0] for clot_read in clot_reads])))
 #arreglar_sense_lectures_anteriors(pol_ids)
 validar_canvis(pol_ids)
 
-# facturar des del lot aquest polisses en concret (les que han canviat missatge de validar o totes
+#script Sense lectures entrades (nomes al final de lot)
+#facturar des del lot aquest polisses en concret (les que han canviat missatge de validar o totes)
 

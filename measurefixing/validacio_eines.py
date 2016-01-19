@@ -29,6 +29,10 @@ def validar_canvis(pol_ids):
     clot_ids = clot_obj.search(search_vals)
     clot_obj.wkf_obert(clot_ids,{})
 
+def endarrerides(clot_ids):
+    pol_ids = [a['polissa_id'][0] for a in clot_obj.read(clot_ids,['polissa_id'])]
+    endarrerides = pol_obj.search([('facturacio_endarrerida','=',True),('id','in',pol_ids)])
+    return endarrerides
 
 def facturar_manual(pol_ids):
     #Objectes
@@ -160,3 +164,22 @@ def activar_modcon(pol_id, data_final):
     wk_workitem_id = O.WorkflowWorkitem.search(search_wkitem)
     O.WorkflowWorkitem.write(wk_workitem_id, {'act_id': wkf_activities[0]})
     return True    
+        
+                
+def reimportar_F1(cups_id):
+    imp_obj = O.GiscedataFacturacioImportacioLinia
+    wiz_obj = O.GiscedataFacturacioSwitchingWizard
+    
+    vals_search = [('state','=','erroni'),('cups_id','=',cups_id)]
+    imp_ids = imp_obj.search(vals_search)
+    for imp_id in imp_ids:
+        imp_read = O.GiscedataFacturacioImportacioLinia.read(imp_id,['info'])
+        ctx = {'active_id':imp_id, 'fitxer_xml': True}
+        wz_id = wiz_obj.create({}, ctx)
+        wiz = wiz_obj.get(wz_id)
+        wiz.action_importar_f1(ctx)
+        imp_new_id = O.GiscedataFacturacioImportacioLinia.read(imp_id,['info'])
+        if imp_read['info'] == imp_new_id['info']:
+            return False
+        else:
+            return True
