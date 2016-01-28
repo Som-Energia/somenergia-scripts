@@ -1,6 +1,8 @@
 from ooop import OOOP
 from datetime import datetime,timedelta
 import sys
+import configdb
+from consolemsg import *
 
 def get_invoice_id(O,number):
     if not number:
@@ -8,7 +10,7 @@ def get_invoice_id(O,number):
 
     ids = O.GiscedataFacturacioFactura.search([('invoice_id.number','=',number)])
     if not len(ids) == 1:
-        raise
+        fail("Invoice {} not found ".format(number))
     return ids[0]
 
 
@@ -64,7 +66,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Fix refunded invoice')
     parser.add_argument('-a', '--hostname')
-    parser.add_argument('-p', '--port')
+    parser.add_argument('-p', '--port', type=int)
     parser.add_argument('-u', '--username')
     parser.add_argument('-w', '--password')
     parser.add_argument('-i', '--invoice')
@@ -72,18 +74,20 @@ if __name__ == '__main__':
     if not args['invoice']:
         raise Exception('Refunded invoice missing')
 
-    cfg = dict(
-        dbname='somenergia',
-        user=args['username'],
-        pwd=args['password'],
-        uri=args['hostname'],
-        port=args['port']
-    )
+    configdb.ooop.update((
+        (key,args[arg])
+        for key,arg in [
+            ('user', 'username'),
+            ('pwd', 'password'),
+            ('uri', 'hostname'),
+            ('port', 'port'),
+        ] if args[arg] is not None
+    ))
 
     invoice = args['invoice']
     O = None
     try:
-        O = OOOP(**cfg)
+        O = OOOP(**configdb.ooop)
     except:
         error("Unable to connect to ERP")
         raise
