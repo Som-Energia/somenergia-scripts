@@ -1,3 +1,4 @@
+#! /usr/bin/env python2.7
 from ooop import OOOP
 from datetime import datetime,timedelta
 import sys
