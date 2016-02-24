@@ -6,21 +6,23 @@ import configdb
 
 O = OOOP(**configdb.ooop)
 
+pol_obj = O.GiscedataPolissa
+
 data = str(input("Escriu la data fins que volem tenir la informació (inclosa) amb format (amb les cometes!) 'aaaa-mm-dd' :  "))
 if not(data):
     data = datetime.today().strftime('%Y-%m-%d')
 
-solicituts_erronies = len(O.GiscedataPolissa.search([('data_firma_contracte','=',False)]))
+solicituts_erronies = len(pol_obj.search([('data_firma_contracte','=',False)]))
 
-solicituts = len(O.GiscedataPolissa.search([('data_firma_contracte','<=',data)]))
+solicituts = len(pol_obj.search([('data_firma_contracte','<=',data)]))
 
-solicituts_30A = len(O.GiscedataPolissa.search([('tarifa','=','3.0A'),('data_firma_contracte','<=',data)]))
-activats_30A = len(O.GiscedataPolissa.search([('tarifa','=','3.0A'),('data_firma_contracte','<=',data),('state','=','activa')]))
+solicituts_30A = len(pol_obj.search([('tarifa','=','3.0A'),('data_firma_contracte','<=',data)]))
+activats_30A = len(pol_obj.search([('tarifa','=','3.0A'),('data_firma_contracte','<=',data),('state','=','activa')]))
 
-factures_endarrerides = len(O.GiscedataPolissa.search([('facturacio_endarrerida','=',True),]))
-baixes = len(O.GiscedataPolissa.search([('active','=',0),('data_baixa','<=',data)]))
+factures_endarrerides = len(pol_obj.search([('facturacio_endarrerida','=',True),]))
+baixes = len(pol_obj.search([('active','=',0),('data_baixa','<=',data)]))
 
-activats = len(O.GiscedataPolissa.search([('data_alta','<=',data),('state','=','activa')]))
+activats = len(pol_obj.search([('data_alta','<=',data),('state','=','activa')]))
 
 
 acceptats = len(O.GiscedataSwitching.search([('proces_id.name','in',['C1','C2']),('state','=','open'),('rebuig','=',False),('step_id.name','=','02')]))
