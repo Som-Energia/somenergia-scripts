@@ -30,6 +30,7 @@ def resum_canvis_titular(total, realitats, sense_dul, ab_error, sense_lectura_di
     print "CANVIS DE TITULARS REALITZATS: {}".format(len(realitats))
     print "  --> PER REVISAR: No tenien data ultima lectura, li hem posat la data d'alta: {}".format(sense_dul) 
     print "CANVIS NO REALITZATS"
+    print "   ---> PERQUE NO HI HA HAGUT CANVI DE PAGADOR: {}".format(sense_canvi_pagador)
     print "   ---> PERQUE HI HA UNA FACTURA ABONADORA EN ESBORRANY: {}".format(ab_error)
     print "   ---> CANVIS REALITZATS EN EL CONTRACTE VELL. eN EL NOU NO HEM FET RE, ja que..."
     print "   ---> NO TROBEM UNA LECTURA DE DISTRIBUIDORA ANTERIOR A LA DATA DE ULTIMA LECTURA: {}".format(sense_lectura_distri)
