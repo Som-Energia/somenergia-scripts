@@ -3,7 +3,8 @@ from datetime import datetime, timedelta
 import psycopg2
 import psycopg2.extras
 import configdb
- 
+
+error=False
 O = OOOP(**configdb.ooop)
 
 #Objectes
@@ -36,6 +37,7 @@ def getFact_1ct(db):
         db.execute(sql_query)
     except Exception ,ex:
         print 'Failed executing query'
+        error=True
         raise ex
 
     extra_data = []
@@ -68,6 +70,7 @@ def getFact_neg(db):
         db.execute(sql_query)
     except Exception ,ex:
         print 'Failed executing query'
+        error=True
         raise ex
 
     extra_data = []
@@ -85,6 +88,7 @@ try:
     dbconn=psycopg2.connect(pg_con)
 except Exception, ex:
     print "Unable to connect to database " + configdb.pg['DB_NAME']
+    error=True
     raise ex
 
 dbcur = dbconn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -93,12 +97,14 @@ factura_neg_ids = getFact_neg(dbcur)
 factura_ids = sorted(list(set(factura_1ct_ids + factura_neg_ids)))
 
 
-factura_reads = fact_obj.read(factura_ids,['check_total','amount_total'])
 
 
-n = 0
-for factura_read in factura_reads:
-    fact_obj.write(factura_read['id'],{'check_total':factura_read['amount_total']})
-    n+=1
-    print "%d/%d" % (n,len(factura_reads))
-
+for factura_id in factura_ids:
+    try:
+        factura_read = fact_obj.read(factura_id,['check_total','amount_total'])
+        fact_obj.write(factura_read['id'],{'check_total':factura_read['amount_total']})
+    except Exception, ex:
+        print "Error al escribir en la factura "+str(factura_read['id'])
+        error=True    
+if error:
+    exit(1)

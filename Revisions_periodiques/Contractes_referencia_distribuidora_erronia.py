@@ -4,7 +4,6 @@ import xml.dom.minidom
 import base64
 import configdb
 
-
 O = OOOP(**configdb.ooop)
 
 ref_erronies = O.GiscedataPolissa.search([('state','=', 'activa'),('ref_dist','in',[('0021'),('0031'),False])])
@@ -13,6 +12,7 @@ print 'hi ha %d contractes amb número de contracte erroni o buit' %len(casos)
 print casos
 llista_amb_ref = []
 llista_sense_ref = []
+error = False
 for cas_id in casos:
     #Busquem els fitxers dajunts del cas
     #Agafem el segon
@@ -36,6 +36,7 @@ for cas_id in casos:
         print 'la polissa número %d no se li ha actualitzat el número de Contracte, es de la distribuidora%s' % (int(pol.name),pol.distribuidora)
         llista_sense_ref.append(cas.cups_polissa_id.name)
         print 'Casos sense actualitzar: %d' % len(llista_sense_ref)
+        error=True
 
 mod_ids = O.GiscedataPolissaModcontractual.search([('ref_dist','=',False)])
 
@@ -47,4 +48,6 @@ for mod_id in mod_ids:
 
 print 'hem actualitzat %d referencies de contracte' % len(llista_amb_ref)
 print "no s'han actualitzat %d referencies de contracte" % len(llista_sense_ref)
-
+if error:
+    exit(1)
+    

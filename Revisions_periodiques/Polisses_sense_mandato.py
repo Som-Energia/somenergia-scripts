@@ -23,6 +23,7 @@ contractes_sense_mandato_ids = pol_obj.search([
 
 print "Hi ha %d contractes sense mandatos" % len(contractes_sense_mandato_ids)
 
+error = False
  #Aprofitem per crear el "mandato"
 for pol_id in contractes_sense_mandato_ids:
     try:
@@ -30,3 +31,6 @@ for pol_id in contractes_sense_mandato_ids:
         mandate_obj.create({'reference': 'giscedata.polissa,%s' % polissa.id, 'date': polissa.data_firma_contracte})
     except:
         print "Hi ha una polissa (id: %d) que no s'ha pogut posar el mandato" % pol_id
+        error=True
+if error:
+    exit(1)
