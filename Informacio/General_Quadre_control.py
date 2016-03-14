@@ -3,14 +3,19 @@
 from ooop import OOOP
 from datetime import datetime
 import configdb
-from sys import argv
+import argparse
 
 O = OOOP(**configdb.ooop)
 
 pol_obj = O.GiscedataPolissa
 sw_obj = O.GiscedataSwitching
 
-data = str(input("Escriu la data fins que volem tenir la informació (inclosa) amb format (amb les cometes!) 'aaaa-mm-dd' :  "))
+parser = argparse.ArgumentParser(description='Quadre control general')
+parser.add_argument('-d','--date')
+args = vars(parser.parse_args()) 
+data = args['date']
+#data = input("Escriu la data fins que volem tenir la informació (inclosa) amb format (amb les cometes!) 'aaaa-mm-dd' :  ")
+print data
 if not(data):
     data = datetime.today().strftime('%Y-%m-%d')
 
