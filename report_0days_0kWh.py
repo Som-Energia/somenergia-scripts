@@ -1,51 +1,36 @@
-#!/usr/bin/env python
-
+#! /usr/bin/env python2
 import psycopg2
 import psycopg2.extras
 import csv
 from ooop import OOOP
-from consolemsg import error, step
+
 
 import sys
 from datetime import datetime,date,timedelta
 
-
 import configdb
 
 
-lots = ['05/2015','06/2015', '07/2015', '08/2015']
+def dump(title,factures):
+    print "==== {title} ====".format(**locals())
+    for factura in factures:
+        print '{}  {}' % (factura['polissa'], factura['factura'])
 
-def dump(filename,factures):
-    step("Dumping '{}'...".format(filename))
-    with open(filename, 'wb') as csvfile:
-        outpwriter = csv.writer(csvfile, delimiter=';',
-                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
-        outpwriter.writerow(['polissa','factura', 'factura_id','data_inici','data_final','energia_kwh','state'])
-        for factura in factures:
-            outpwriter.writerow([
-                factura['polissa'],
-                factura['factura'],
-                factura['factura_id'],
-                factura['data_inici'],
-                factura['data_final'],
-                factura['energia_kwh'],
-                factura['state']
-            ])
 
 def db_query(db,sql):
     try:
         db.execute(sql)
-    except:
-        error('Failed executing query')
-        error(sql)
-        raise
+    except Exception ,ex:
+        print 'Failed executing query'
+        print sql
+        raise ex
 
     return db.fetchall()
 
 
 def get_factures_0days(db,lots):
     sql_query = '''
-        SELECT polissa.name AS polissa,invoice.number AS factura,factura.id AS factura_id,factura.data_inici,factura.data_final,factura.energia_kwh,invoice.state
+        SELECT polissa.name AS polissa,invoice.number AS factura,invoice.id AS invoice_id, factura.id AS factura_id,factura.data_inici,factura.data_final,factura.energia_kwh,invoice.state
         FROM giscedata_facturacio_factura AS factura
         LEFT JOIN giscedata_facturacio_factura_linia AS factura_linia ON factura.id = factura_linia.factura_id
         LEFT JOIN giscedata_polissa AS polissa ON polissa.id = factura.polissa_id
@@ -57,13 +42,13 @@ def get_factures_0days(db,lots):
         AND (invoice.type IN ('out_invoice','out_refund'))
         AND invoice.state = 'draft'
         AND (factura.data_final-factura.data_inici) = 0
-        GROUP BY polissa.name,factura.id,invoice.number,invoice.state
+        GROUP BY polissa.name,factura.id,invoice.id,invoice.number,invoice.state
     ''' %  '\',\''.join(map(str,lots))
     return db_query(db,sql_query)
 
 def get_factures_0energyLines(db,lots):
     sql_query = '''
-        SELECT polissa.name AS polissa,invoice.number AS factura,factura.id AS factura_id,factura.data_inici,factura.data_final,factura.energia_kwh,invoice.state
+        SELECT polissa.name AS polissa,invoice.number AS factura,invoice.id AS invoice_id, factura.id AS factura_id,factura.data_inici,factura.data_final,factura.energia_kwh,invoice.state
         FROM giscedata_facturacio_factura AS factura
         LEFT JOIN giscedata_facturacio_lectures_energia AS linia_energia ON factura.id = linia_energia.factura_id
         LEFT JOIN giscedata_polissa AS polissa ON polissa.id = factura.polissa_id
@@ -74,9 +59,43 @@ def get_factures_0energyLines(db,lots):
         WHERE lot.name IN (\'%s\')
         AND (invoice.type IN ('out_invoice','out_refund'))
         AND invoice.state = 'draft'
-        GROUP BY polissa.name,factura.id,invoice.number,invoice.state
+        GROUP BY polissa.name,factura.id,invoice.id,invoice.number,invoice.state
         HAVING SUM(CASE WHEN linia_energia.tipus='activa' THEN 1 ELSE 0 END) = 0
     ''' %  '\',\''.join(map(str,lots))
+    return db_query(db,sql_query)
+
+
+
+def get_factures_0days_today(db,lots):
+    today = datetime.strftime(datetime.today(),'%Y-%m-%d')
+    sql_query = '''
+        SELECT polissa.name AS polissa,invoice.number AS factura,invoice.id AS invoice_id, factura.id AS factura_id,factura.data_inici,factura.data_final,factura.energia_kwh,invoice.state
+        FROM giscedata_facturacio_factura AS factura
+        LEFT JOIN giscedata_facturacio_factura_linia AS factura_linia ON factura.id = factura_linia.factura_id
+        LEFT JOIN giscedata_polissa AS polissa ON polissa.id = factura.polissa_id
+        LEFT JOIN account_invoice AS invoice ON invoice.id = factura.invoice_id
+        WHERE (invoice.type IN ('out_invoice','out_refund'))
+        AND invoice.state = 'draft'
+        AND invoice.date_invoice = '{today}'
+        AND (factura.data_final-factura.data_inici) = 0
+        GROUP BY polissa.name,factura.id,invoice.id,invoice.number,invoice.state
+    '''.format(**locals())
+    return db_query(db,sql_query)
+
+def get_factures_0energyLines_today(db,lots):
+    today = datetime.strftime(datetime.today(),'%Y-%m-%d')
+    sql_query = '''
+        SELECT polissa.name AS polissa,invoice.number AS factura,invoice.id AS invoice_id, factura.id AS factura_id,factura.data_inici,factura.data_final,factura.energia_kwh,invoice.state
+        FROM giscedata_facturacio_factura AS factura
+        LEFT JOIN giscedata_facturacio_lectures_energia AS linia_energia ON factura.id = linia_energia.factura_id
+        LEFT JOIN giscedata_polissa AS polissa ON polissa.id = factura.polissa_id
+        LEFT JOIN account_invoice AS invoice ON invoice.id = factura.invoice_id
+        WHERE (invoice.type IN ('out_invoice','out_refund'))
+        AND invoice.state = 'draft'
+        AND invoice.date_invoice = '{today}'
+        GROUP BY polissa.name,factura.id,invoice.id,invoice.number,invoice.state
+        HAVING SUM(CASE WHEN linia_energia.tipus='activa' THEN 1 ELSE 0 END) = 0
+    '''.format(**locals())
     return db_query(db,sql_query)
 
 def get_factures_rel(O,factura):
@@ -97,6 +116,7 @@ def get_factures_rel(O,factura):
                 'polissa':factura['polissa'],
                 'factura':factura_['name'],
                 'factura_id':factura_['id'],
+                'invoice_id':factura_['invoice_id'],
                 'data_inici':factura_['data_inici'],
                 'data_final':factura_['data_final'],
                 'energia_kwh':factura_['energia_kwh'],
@@ -106,46 +126,43 @@ def get_factures_rel(O,factura):
         )
     return result
 
-step("Setting up the DB connection")
+def eliminar_factura(O, factura):
+    try:
+        O.GiscedataFacturacioFactura.unlink([factura['factura_id']])
+    except Exception, ex:
+        print ex
+
+lots = [sys.argv[1]]
 dbcur = None
 try:
-    dbconn=psycopg2.connect(**configdb.psycopg)
+    pg_con = " host=" + configdb.pg['DB_HOSTNAME'] + \
+             " port=" + str(configdb.pg['DB_PORT']) + \
+             " dbname=" + configdb.pg['DB_NAME'] + \
+             " user=" + configdb.pg['DB_USER'] + \
+             " password=" + configdb.pg['DB_PASSWORD']
+    dbconn=psycopg2.connect(pg_con)
     dbcur = dbconn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-except:
-    error("Unable to connect to database " + configdb.psycopg['database'])
-    raise
+except Exception, ex:
+    print "Unable to connect to database " + configdb['DB_NAME']
+    raise ex
 
-step("Setting up the ERP connection")
 O = None
 try:
-    O = OOOP(**configdb.ooop)
-except:
-    error("Unable to connect to ERP")
-    raise
+    O = OOOP(dbname=configdb.ooop['dbname'], user=configdb.ooop['user'], pwd=configdb.ooop['pwd'], port=configdb.ooop['port'], uri=configdb.ooop['uri'])
+except Exception, ex:
+    raise ex
 
 try:
-    step("Looking for invoices with 0 kWh lines...")
-    factures = get_factures_0energyLines(dbcur,lots)
-
-    rel = []
+    factures = get_factures_0energyLines(dbcur, lots)
     for factura in factures:
-        rel += get_factures_rel(O,factura)
-    factures += rel
+        if not factura['energia_kwh']:
+            eliminar_factura(O, factura)
+    dump('Energy 0 lines', factures)
 
-    dump('factures_0energy_lines.csv',factures)
-
-    step("Looking for invoices with 0 days...")
-    factures = None
-    factures = get_factures_0days(dbcur,lots)
-
-    rel = []
+    factures = get_factures_0days(dbcur, lots)
     for factura in factures:
-        rel += get_factures_rel(O,factura)
-    factures += rel
-
-    dump('factures_0days.csv',factures)
-
-except:
-    error("Error llegint les factures dels lots")
-    raise
-
+        eliminar_factura(O, factura)
+    dump('Energy 0 days', factures)
+except Exception, ex:
+    print "Error llegint les factures dels lots"
+    raise ex
