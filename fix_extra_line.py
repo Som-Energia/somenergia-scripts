@@ -1,3 +1,4 @@
+#! /usr/bin/env python2
 from ooop import OOOP
 from datetime import datetime,timedelta
 import sys
@@ -11,7 +12,7 @@ from collections import defaultdict
 from tabulate import tabulate
 import csv
 
-import dbconfig
+import configdb
 
 # CONSTANTS
 # Quantity threshold
