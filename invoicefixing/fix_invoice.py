@@ -7,10 +7,10 @@ from datetime import datetime, timedelta
 import configdb
 
 from ooop import OOOP
-from consolemsg import error, step
-from utils import *
-from display import *
-#from debug import debug_dump
+from consolemsg import error
+from utils import load_new_measures, get_measures_by_contract, get_contract_status
+from validation_utils import adelantar_polissa_endarerida
+
 
 def remove_modmeter_lect(meters, lects):
     dates_out = {meter['data_baixa']: meter['id'] for meter in meters if meter['data_baixa']}
@@ -18,7 +18,7 @@ def remove_modmeter_lect(meters, lects):
             and not(dates_out[lect['name']] == lect['comptador'][0]))]
 
 
-def patch_measure(O, polissa_id, lects, last_idx, _last_idx, _prev_idx, offset, kWh_day_db, n_days_02):
+def fix_measure(O, polissa_id, lects, last_idx, _last_idx, _prev_idx, offset, kWh_day_db, n_days_02):
     quarantine = []
     kWh_day = (lects[offset]['lectura']-lects[last_idx+offset]['lectura'])/float(n_days_02)
 
@@ -42,7 +42,7 @@ def patch_measure(O, polissa_id, lects, last_idx, _last_idx, _prev_idx, offset, 
     return quarantine
 
 
-def patch_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
+def fix_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
     out = ''
     fields_to_search = [('polissa', '=', polissa_id)]
     fields_to_read = ['active', 'data_alta', 'data_baixa']
@@ -156,26 +156,21 @@ def patch_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
     return out
 
 
-def fix_contract(O, contract_id):
-    quarantine = {'kWh': [], 'euro': []}
-    old_measures = get_measures_by_contract(O, contract_id, range(1,12))
-    new_measures = load_new_measures(O, contract_id)
-    if old_measures[0]['origen_id'][0] not in [7,10,11]:
-        end_date = old_measures[0]['name']
-    else:
-        if new_measures:
-            end_date = new_measures[-1]['name']
-    out += patch_contract(O, contract_id, quarantine, start_date, end_date)
-    adelantar_polissa_endarerida(O, [contract_id])
-    return (quarantine, out)
-
-
 def signal_handler(signal, frame):
         sys.exit(0)
 signal.signal(signal.SIGINT, signal_handler)
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description='Refund and rectify invoice')
+    parser.add_argument('-s', '--startdate')
+    parser.add_argument('-e', '--enddate')
+    parser.add_argument('-c','--contractname',required=True)
+    args = vars(parser.parse_args())
+    start_date = args['startdate']
+    end_date = args['enddate']
+    contract_name = args['contractname']
     def valid_date(date_text):
         try:
             datetime.strptime(date_text, '%Y-%m-%d')
@@ -183,9 +178,6 @@ if __name__ == "__main__":
             raise ValueError("Incorrect data format, should be YYYY-MM-DD")
         return True
 
-    step("Setting up the ERP connection")
-    configdb.ooop['user'] = raw_input('User?')
-    configdb.ooop['pwd']= raw_input('Password?')
 
     O = None
     try:
@@ -194,19 +186,24 @@ if __name__ == "__main__":
         error("Unable to connect to ERP")
         raise
 
-    while True:
-        contract_name = raw_input("Contract name?").zfill(5)
-        if not contract_name:
-            error("Contracte name missing")
-            raise
+    if not contract_name:
+        error("Contracte name missing")
+        raise
 
-        start_date = raw_input("Start date (YYYY-mm-dd)?").rstrip()
-        start_date = start_date if start_date and valid_date(start_date) else None
+    start_date = start_date if start_date and valid_date(start_date) else None
 
-        end_date = raw_input("End date (YYYY-mm-dd)?").rstrip()
-        end_date = end_date if end_date and valid_date(end_date) else None
+    end_date = end_date if end_date and valid_date(end_date) else None
 
-        contract_id = O.GiscedataPolissa.search([('name', '=', contract_name)])[0]
-        quarantine = {'kWh': [], 'euro': []}
+    contract_id = O.GiscedataPolissa.search([('name', '=', contract_name)])[0]
+    quarantine = {'kWh': [], 'euro': []}
 
-        fix_contract(O, contract_id)
+    old_measures = get_measures_by_contract(O, contract_id, range(1,12))
+    new_measures = load_new_measures(O, contract_id)
+    if old_measures[0]['origen_id'][0] not in [7,10,11]:
+        end_date = old_measures[0]['name']
+    else:
+        if new_measures:
+            end_date = new_measures[-1]['name']
+    out += fix_contract(O, contract_id, quarantine, start_date, end_date)
+    adelantar_polissa_endarerida(O, [contract_id])
+    print out
