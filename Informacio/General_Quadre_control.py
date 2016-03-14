@@ -11,11 +11,10 @@ pol_obj = O.GiscedataPolissa
 sw_obj = O.GiscedataSwitching
 
 parser = argparse.ArgumentParser(description='Quadre control general')
-parser.add_argument('-d','--date')
+parser.add_argument('-d','--date',required=True)
 args = vars(parser.parse_args()) 
 data = args['date']
-#data = input("Escriu la data fins que volem tenir la informació (inclosa) amb format (amb les cometes!) 'aaaa-mm-dd' :  ")
-print data
+
 if not(data):
     data = datetime.today().strftime('%Y-%m-%d')
 
