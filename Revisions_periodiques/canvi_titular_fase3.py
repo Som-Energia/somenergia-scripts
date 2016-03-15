@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from erppeek import Client
 from datetime import datetime,timedelta
