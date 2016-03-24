@@ -49,6 +49,57 @@ def resum(text_draft_pol ,text_cx, text_a3, text_b1, text_m1):
     print text_m1
     print "="*45
 
+def dades_casos(cas_obj, cas, delay_01, delay_02):
+    sw_obj = O.GiscedataSwitching
+    pas01_obj_ = 'giscedata.switching.{cas_obj}.01'.format(**locals())
+    pas02_obj_ = 'giscedata.switching.{cas_obj}.02'.format(**locals())
+    pas01_obj = O.model(pas01_obj_ )
+    pas02_obj = O.model(pas02_obj_ )
+
+    avui = datetime.today()
+    data_limit_01 = datetime.strftime(
+                    avui - timedelta(delay_01),'%Y-%m-%d')
+    data_limit_02=  datetime.strftime(
+                    avui - timedelta(delay_02),'%Y-%m-%d')
+    ### 01
+    c01_ids = sw_obj.search([('state','=','open'),
+                               ('proces_id.name','=',cas),
+                               ('step_id.name','=','01')])
+    c01_endarrerits = sw_obj.search([('id','in',c01_ids),
+                                ('create_date','<',data_limit_01)])
+    delayed_01 = len(c01_endarrerits)
+    c01_pendents_ids = sw_obj.search([('id','in',c01_ids),
+                                ('enviament_pendent','=',True)])
+    to_send_01 = len(c01_pendents_ids)
+
+    ### 02
+    c02_ids = sw_obj.search([('state','=','open'),
+                               ('proces_id.name','=',cas),
+                               ('step_id.name','=','02')])
+    opened_02 = len(c02_ids)                           
+    accepted_02 = sw_obj.search([('id','in',c02_ids),
+                                    ('rebuig','=',False)])
+    accepted_02_ = len(accepted_02)
+    accepted_02_delayed =  pas02_obj.search([
+                                ('sw_id','in',accepted_02),
+                                ('date_created','<',data_limit_02)])
+    accepted_02_delayed_ = len(accepted_02_delayed)
+    accepted_to_send = pas02_obj.search([
+                                ('sw_id','in',accepted_02),
+                                ('enviament_pendent','=',True)])
+    accepted_to_send_ = len(accepted_to_send)
+    declean_02 = sw_obj.search([('id','in',c02_ids),
+                                    ('rebuig','=',True)])
+    declean_02_ = len(declean_02)
+    text = "\n{cas}"
+    text += "\n   ==> 01 amb mes de {delay_01} dies: {delayed_01}"
+    text += "\n   ==> 01 amb enviament pendent: {to_send_01}"
+    text += "\n   ==> 02 oberts: {opened_02}. Acceptats ({accepted_02_}) i Rebutjats ({declean_02_})"
+    text += "\n   ==> 02 ACCEPTATS amb mes de {delay_02} dies: {accepted_02_delayed_}"
+    text += "\n   ==> 02 ACCEPTATS sense enviar correu (No funciona)	: {accepted_to_send_}"
+    text = text.format(**locals())
+    return text
+
 #Polisses en esborrany
 pol_draft = pol_obj.search([('state','=','esborrany')])
 total_draft_pol = len(pol_draft)
@@ -64,129 +115,21 @@ text_draft_pol += "\n   ==> Endarrides (entre {delay_pol} i {delay_max} des de l
 text_draft_pol += "\n   ==> Per eliminar (mes de {delay_max}): {draft_to_clean}"
 text_draft_pol = text_draft_pol.format(**locals())
 
-#Casos de switching CX (c06 tambe eh borrar)
+
+#Casos de switching CX (c06 tambe eh borrar), A3, B1, M1
 sw_ids = sw_obj.search([('state','=','open'),
-                        ('proces_id.name','like','C')])
+                       ('proces_id.name','like','C')])
 total_open = len(sw_ids)
-text_cx = "Cx. Canvis de comercializadora: {total_open}"
-### C101
-c101_ids = sw_obj.search([('state','=','open'),
-                           ('proces_id.name','=','C1'),
-                           ('step_id.name','=','01')])
-c101_endarrerits = sw_obj.search([('id','in',c101_ids),
-                            ('create_date','<',data_limit_sw)])
-delayed_c101 = len(c101_endarrerits)
-c101_pendents_ids = sw_obj.search([('id','in',c101_ids),
-                            ('enviament_pendent','=',True)])
-to_send_c101 = len(c101_pendents_ids)
+text_c0 = "CX: {total_open}"
+text_c1 = dades_casos('c1','C1',delay_sw,delay_pol)
+text_c2 = dades_casos('c2','C2',delay_sw,delay_pol)
+text_cx = (text_c0 + text_c1 + text_c2).format(**locals())
 
-### C102
-c102_ids = sw_obj.search([('state','=','open'),
-                           ('proces_id.name','=','C1'),
-                           ('step_id.name','=','02')])
-opened_02 = len(c102_ids)                           
-accepted_c102 = sw_obj.search([('id','in',c102_ids),
-                                ('rebuig','=',False)])
-accepted_c102_ = len(accepted_c102)
-accepted_c102_delayed =  c102_obj.search([
-                            ('sw_id','in',accepted_c102),
-                            ('date_created','<',data_max_pol)])
-accepted_c102_delayed_ = len(accepted_c102_delayed)
-accepted_to_send = c102_obj.search([
-                            ('sw_id','in',accepted_c102),
-                            ('enviament_pendent','=',True)])
-accepted_to_send_ = len(accepted_to_send)
-declean_c102 = sw_obj.search([('id','in',c102_ids),
-                                ('rebuig','=',True)])
-declean_c102_ = len(declean_c102)
-text_c1 = "\nC1"
-text_c1 += "\n   ==> 01 amb mes de {delay_sw} dies: {delayed_c101}"
-text_c1 += "\n   ==> 01 amb enviament pendent: {to_send_c101}"
-text_c1 += "\n   ==> 02 oberts: {opened_02}. Acceptats ({accepted_c102_}) i Rebutjats ({declean_c102_})"
-text_c1 += "\n   ==> 02 ACCEPTATS amb mes de {delay_pol} dies: {accepted_c102_delayed_}"
-text_c1 += "\n   ==> 02 ACCEPTATS sense enviar correu (No funciona)	: {accepted_to_send_}"
+text_a3 = dades_casos('a3','A3',delay_sw,delay_pol)
+text_b1 = dades_casos('b1','B1',delay_sw,delay_pol)
+text_m1 = dades_casos('m1','M1',delay_sw,delay_pol)
 
-### C201
-c201_ids = sw_obj.search([('state','=','open'),
-                           ('proces_id.name','=','C2'),
-                           ('step_id.name','=','01')])
-c201_endarrerits = sw_obj.search([('id','in',c201_ids),
-                            ('create_date','<',data_limit_sw)])
-delayed_c201 = len(c201_endarrerits)
-c201_pendents_ids = sw_obj.search([('id','in',c201_ids),
-                            ('enviament_pendent','=',True)])
-to_send_c201 = len(c201_pendents_ids)
-
-### c202
-c202_ids = sw_obj.search([('state','=','open'),
-                           ('proces_id.name','=','C2'),
-                           ('step_id.name','=','02')])
-opened_02 = len(c202_ids)                           
-accepted_c202 = sw_obj.search([('id','in',c202_ids),
-                                ('rebuig','=',False)])
-accepted_c202_ = len(accepted_c202)
-accepted_c202_delayed =  c202_obj.search([
-                            ('sw_id','in',accepted_c202),
-                            ('date_created','<',data_max_pol)])
-accepted_c202_delayed_ = len(accepted_c202_delayed)
-accepted_to_send = c202_obj.search([
-                            ('sw_id','in',accepted_c202),
-                            ('enviament_pendent','=',True)])
-accepted_to_send_ = len(accepted_to_send)
-declean_c202 = sw_obj.search([('id','in',c202_ids),
-                                ('rebuig','=',True)])
-declean_c202_ = len(declean_c202)
-text_c2 = "\nC2"
-text_c2 += "\n   ==> 01 amb mes de {delay_sw} dies: {delayed_c201}"
-text_c2 += "\n   ==> 01 amb enviament pendent: {to_send_c201}"
-text_c2 += "\n   ==> 02 oberts: {opened_02}. Acceptats ({accepted_c202_}) i Rebutjats ({declean_c202_})"
-text_c2 += "\n   ==> 02 ACCEPTATS amb mes de {delay_pol} dies: {accepted_c202_delayed_}"
-text_c2 += "\n   ==> 02 ACCEPTATS sense enviar correu (No funciona)	: {accepted_to_send_}"
-
-text_cx = text_c1 + text_c2
-text_cx = text_cx.format(**locals())
-#Casos de A3
-### A301
-a301_ids = sw_obj.search([('state','=','open'),
-                           ('proces_id.name','=','A3'),
-                           ('step_id.name','=','01')])
-a301_endarrerits = sw_obj.search([('id','in',a301_ids),
-                            ('create_date','<',data_limit_sw)])
-delayed_a301 = len(a301_endarrerits)
-a301_pendents_ids = sw_obj.search([('id','in',a301_ids),
-                            ('enviament_pendent','=',True)])
-to_send_a301 = len(a301_pendents_ids)
-
-### A302
-a302_ids = sw_obj.search([('state','=','open'),
-                           ('proces_id.name','=','A3'),
-                           ('step_id.name','=','02')])
-opened_02 = len(a302_ids)                           
-accepted_a302 = sw_obj.search([('id','in',a302_ids),
-                                ('rebuig','=',False)])
-accepted_a302_ = len(accepted_a302)
-accepted_a302_delayed =  a302_obj.search([
-                            ('sw_id','in',accepted_a302),
-                            ('date_created','<',data_max_pol)])
-accepted_a302_delayed_ = len(accepted_a302_delayed)
-accepted_to_send = a302_obj.search([
-                            ('sw_id','in',accepted_a302),
-                            ('enviament_pendent','=',True)])
-accepted_to_send_ = len(accepted_to_send)
-declean_a302 = sw_obj.search([('id','in',a302_ids),
-                                ('rebuig','=',True)])
-declean_a302_ = len(declean_a302)
-text_a3 = "\n   ==> 01 amb mes de {delay_sw} dies: {delayed_a301}"
-text_a3 += "\n   ==> 01 amb enviament pendent: {to_send_a301}"
-text_a3 += "\n   ==> 02 oberts: {opened_02}. Acceptats ({accepted_a302_}) i Rebutjats ({declean_a302_})"
-text_a3 += "\n   ==> 02 ACCEPTATS amb mes de {delay_pol} dies: {accepted_a302_delayed_}"
-text_a3 += "\n   ==> 02 ACCEPTATS sense enviar correu (No funciona)	: {accepted_to_send_}"
-text_a3 = text_a3.format(**locals())
-
-#Casos de B1
-text_b1 = "text de baixes"
-#Casos de M1
-text_m1 = "Aqui anira el text de modificacions"
+#Falten casos: D1, R1, W1
 
 resum(text_draft_pol ,text_cx, text_a3, text_b1, text_m1)
 
