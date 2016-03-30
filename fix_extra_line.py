@@ -61,7 +61,6 @@ def getOverQuantityExtra(db,quantity):
 
 def updateQuantity(extra_id,quantity):
     vals_extra = {'quantity':quantity}
-    print 'Actualitzacio: %d %0.2f' % (extra_id,quantity)
     O.GiscedataFacturacioExtra.write([extra_id],vals_extra);
 
 
@@ -74,18 +73,9 @@ except Exception, ex:
 dbcur = dbconn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 (extra_data)= getOverQuantityExtra(dbcur,QUANTITY_MAX)
 
-table = []
-headers_ = ['id','polissa_id','polissa_name','price_unit','quantity','new_quantity','description']
+print 'Polissa ExtraLine_id OldQuantity NewQuantity Description'
 for extra in extra_data:
     new_quantity = float(extra['quantity'])/1000
     updateQuantity(extra['id'],new_quantity)
-    table.append([
-        extra['id'],
-        extra['polissa_id'],
-        extra['polissa_name'],
-        extra['price_unit'],
-        extra['quantity'],
-        new_quantity,
-        unicode(extra['description'],"utf-8")
-    ])
-print tabulate(table,headers=headers_)
+   
+    print "{extra[polissa_name]} {extra[id]} {extra[quantity]} {new_quantity} {extra[description]".format(**locals())
