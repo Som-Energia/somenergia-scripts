@@ -6,20 +6,16 @@ O = Client(**configdb.erppeek)
 
 pol_obj = O.GiscedataPolissa
 sw_obj = O.GiscedataSwitching
-c101_obj = O.model('giscedata.switching.c1.01')
-c102_obj = O.model('giscedata.switching.c1.02')
-c201_obj = O.model('giscedata.switching.c1.01')
-c202_obj = O.model('giscedata.switching.c1.02')
-a301_obj = O.model('giscedata.switching.a3.01')
-a302_obj = O.model('giscedata.switching.a3.02')
-a301_obj = O.model('giscedata.switching.b1.01')
-a302_obj = O.model('giscedata.switching.b1.02')
-m101_obj = O.model('giscedata.switching.m1.01')
-m102_obj = O.model('giscedata.switching.m1.02')
 
 delay_sw = 21
-delay_pol = 90
+delay_pol = 70
 delay_max = 150
+delay_01 = 16
+delay_02 = 70
+delay_a3_01 = 5
+delay_a3_02 = 15
+
+
 
 avui = datetime.today()
 data_limit_sw = datetime.strftime(
@@ -55,6 +51,7 @@ def dades_casos(cas_obj, cas, delay_01, delay_02):
     pas02_obj_ = 'giscedata.switching.{cas_obj}.02'.format(**locals())
     pas01_obj = O.model(pas01_obj_ )
     pas02_obj = O.model(pas02_obj_ )
+    #if cas in ['C1','C2']:
 
     avui = datetime.today()
     data_limit_01 = datetime.strftime(
@@ -67,6 +64,12 @@ def dades_casos(cas_obj, cas, delay_01, delay_02):
                                ('step_id.name','=','01')])
     c01_endarrerits = sw_obj.search([('id','in',c01_ids),
                                 ('create_date','<',data_limit_01)])
+    if c01_endarrerits:
+        delayed_reads_01 = sw_obj.read(c01_endarrerits,['cups_id'])
+    else:    
+        delayed_reads_01 = []
+    delayed_cups_01 = [a['cups_id'][1] for a in delayed_reads_01]
+
     delayed_01 = len(c01_endarrerits)
     c01_pendents_ids = sw_obj.search([('id','in',c01_ids),
                                 ('enviament_pendent','=',True)])
@@ -84,18 +87,25 @@ def dades_casos(cas_obj, cas, delay_01, delay_02):
                                 ('sw_id','in',accepted_02),
                                 ('date_created','<',data_limit_02)])
     accepted_02_delayed_ = len(accepted_02_delayed)
+    if accepted_02_delayed: 
+        delayed_reads_02 = sw_obj.read(accepted_02_delayed,['cups_id'])
+    else:    
+        delayed_reads_02 = []    
+    delayed_cups_02 = [a['cups_id'][1] for a in delayed_reads_02]
     accepted_to_send = pas02_obj.search([
                                 ('sw_id','in',accepted_02),
                                 ('enviament_pendent','=',True)])
     accepted_to_send_ = len(accepted_to_send)
     declean_02 = sw_obj.search([('id','in',c02_ids),
-                                    ('rebuig','=',True)])
+                                ('rebuig','=',True)])
     declean_02_ = len(declean_02)
     text = "\n{cas}"
     text += "\n   ==> 01 amb mes de {delay_01} dies: {delayed_01}"
+    text += "\n      ==> CUPS: {delayed_cups_01}"
     text += "\n   ==> 01 amb enviament pendent: {to_send_01}"
     text += "\n   ==> 02 oberts: {opened_02}. Acceptats ({accepted_02_}) i Rebutjats ({declean_02_})"
     text += "\n   ==> 02 ACCEPTATS amb mes de {delay_02} dies: {accepted_02_delayed_}"
+    text += "\n      ==> CUPS: {delayed_cups_02}"
     text += "\n   ==> 02 ACCEPTATS sense enviar correu (No funciona)	: {accepted_to_send_}"
     text = text.format(**locals())
     return text
@@ -121,13 +131,13 @@ sw_ids = sw_obj.search([('state','=','open'),
                        ('proces_id.name','like','C')])
 total_open = len(sw_ids)
 text_c0 = "CX: {total_open}"
-text_c1 = dades_casos('c1','C1',delay_sw,delay_pol)
-text_c2 = dades_casos('c2','C2',delay_sw,delay_pol)
+text_c1 = dades_casos('c1','C1',delay_01, delay_02)
+text_c2 = dades_casos('c2','C2',delay_01, delay_02)
 text_cx = (text_c0 + text_c1 + text_c2).format(**locals())
 
-text_a3 = dades_casos('a3','A3',delay_sw,delay_pol)
-text_b1 = dades_casos('b1','B1',delay_sw,delay_pol)
-text_m1 = dades_casos('m1','M1',delay_sw,delay_pol)
+text_a3 = dades_casos('a3','A3',delay_a3_01, delay_a3_02)
+text_b1 = dades_casos('b1','B1',delay_01, delay_02)
+text_m1 = dades_casos('m1','M1',delay_01, delay_02)
 
 #Falten casos: D1, R1, W1
 
