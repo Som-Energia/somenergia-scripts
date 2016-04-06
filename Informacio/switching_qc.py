@@ -1,6 +1,11 @@
 from erppeek import Client
 from datetime import datetime,timedelta
 import configdb
+
+#Millores:
+### Posar l'activacio: 05 i 07
+### Posar els canvis de comercialitzadora sortint
+### Casos de canvi de comercilzadora sortint i tornem a demanar el 01: mirar el cas de 01 (més de 15 dies obert) i 06 obert
  
 O = Client(**configdb.erppeek)
 
