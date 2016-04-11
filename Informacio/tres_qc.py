@@ -1,6 +1,8 @@
 from erppeek import Client
 from datetime import datetime,timedelta
 import configdb
+import psycopg2
+import psycopg2.extras
 
 O = Client(**configdb.erppeek)
 
@@ -52,6 +54,7 @@ def contractesTarifa(tarifa,data):
     ccvv = contractesCIF('ESH',tarifa,data)
     coop = contractesCIF('ESF',tarifa,data)
     ass = contractesCIF('ESG',tarifa,data)
+    admin = contractesCIF('ESP',tarifa,data)
     
     #Modificacions de potencia
     sw_ids = sw_obj.search([('cups_id','in',pol_cups_ids),
@@ -74,22 +77,13 @@ def contractesTarifa(tarifa,data):
     text_pol += "\n --> CCVV: {ccvv}"
     text_pol += "\n --> Cooperatives: {coop}"
     text_pol += "\n --> Associacions: {ass}"
+    text_pol += "\n --> Ajuntaments: {admin}"
     text_pol += "\nContractes en esborrany: {pol_draft} quan n'hi ha d'endearrerits?"
     text_pol += "\nContractes de baixa : {pol_inac} ({per_b}%)"
     text_pol += "\nModificacions de contractes: {m101} ({per_m}%)"
     text_pol += "\nPolisses amb facturacio endarerides: {endarrerides}"
     text_pol = text_pol.format(**locals())
     print text_pol
-
-def resum_qc(text_evol):
-    contractesTarifa('3.0A','2016-06-01')
-    #contractesTarifa('3.1A')
-    contractesNous('3.0A','2016-03-20')
-    print "\nEvolucio de contractes mensual"
-    print 40*"="
-    print text_evol
-
-
 
 #Contractes nous a la setmana
 def contractesNous(tarifa, data):
@@ -117,12 +111,64 @@ def contractesNous(tarifa, data):
 
 text_evol = "No implementat"
 
+#contractes amb tres periodes igual
+
 
 #Contractes que els hi hem fet modificacio
+def getPolissesM1():
+    try:
+        pg_con = " host=" + configdb.pg['DB_HOSTNAME'] + \
+                 " port=" + str(configdb.pg['DB_PORT']) + \
+                 " dbname=" + configdb.pg['DB_NAME'] + \
+                 " user=" + configdb.pg['DB_USER'] + \
+                 " password=" + configdb.pg['DB_PASSWORD']
+        dbconn=psycopg2.connect(pg_con)
+    except Exception, ex:
+        print "Unable to connect to database " + configdb.pg['DB_NAME']
+        raise ex
+
+    dbcur = dbconn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    sql_query = """
+    select polissa.id as polissa_ids
+    from giscedata_polissa as polissa
+    left join giscedata_cups_ps as cups on polissa.cups = cups.id
+    left join giscedata_switching as sw on sw.cups_id = cups.id
+    left join giscedata_switching_step_header as swheader on swheader.sw_id = sw.id
+    left join giscedata_switching_m1_01 as m101 on m101.header_id = swheader.id
+    where polissa.tarifa = 7 AND
+	    polissa.active =  True AND
+	    polissa.state = 'activa' AND
+	    m101.sollicitudadm = 'N'
+    group by polissa.id
+    order by polissa.id
+        """
+    try:
+        dbcur.execute(sql_query)
+    except Exception ,ex:
+        print 'Failed executing query'
+        raise ex
+
+    pol_ids = []
+    for record in dbcur.fetchall():
+        pol_ids.append(record['polissa_ids'])
+
+
+    print pol_ids
+
 
 #Analisis de porta d'entrada. Formulari?
 
 #Contractes en 3.1A
+
+def resum_qc(text_evol):
+    #contractesTarifa('3.0A','2016-06-01')
+    #contractesTarifa('3.1A')
+    #contractesNous('3.0A','2016-03-20')
+    #print "\nEvolucio de contractes mensual"
+    #print 40*"="
+    #print text_evol
+    getPolissesM1()
+
 
 resum_qc(text_evol)
 
