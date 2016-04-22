@@ -35,12 +35,14 @@ def titol(txt):
     txt_rt = linia +"\n"+ txt + "\n" + linia
     return txt_rt
 
-def resum(text_draft_pol ,text_cx, text_a3, text_b1, text_m1):
+def resum(text_draft_pol, text_validate ,text_cx, text_a3, text_b1, text_m1):
     print "="*45
     print "           Resum Gestio de Contractes"
     print "="*45
     print titol("Polisses en esborrany")
     print text_draft_pol
+    print titol("Polisses en Validar")
+    print text_validate
     print titol("SWITCHING CX")
     print text_cx
     print titol("ALTES A3")
@@ -94,10 +96,13 @@ def dades_casos(cas_obj, cas, delay_01, delay_02):
                                 ('date_created','<',data_limit_02)])
     accepted_02_delayed_ = len(accepted_02_delayed)
     if accepted_02_delayed: 
-        delayed_reads_02 = sw_obj.read(accepted_02_delayed,['cups_id'])
+        delayed_reads_02 = pas02_obj.read(accepted_02_delayed,['sw_id'])
+        delayed_reads_02_sw = [a['sw_id'][0] for a in delayed_reads_02]
+        delayed_reads_sw = sw_obj.read(delayed_reads_02_sw,['cups_id'])
+        delayed_cups_02 = [a['cups_id'][1] for a in delayed_reads_sw]
     else:    
-        delayed_reads_02 = []    
-    delayed_cups_02 = [a['cups_id'][1] for a in delayed_reads_02]
+        delayed_cups_02 = []
+    
     accepted_to_send = pas02_obj.search([
                                 ('sw_id','in',accepted_02),
                                 ('enviament_pendent','=',True)])
@@ -115,6 +120,12 @@ def dades_casos(cas_obj, cas, delay_01, delay_02):
     text += "\n   ==> 02 ACCEPTATS sense enviar correu (No funciona)	: {accepted_to_send_}"
     text = text.format(**locals())
     return text
+
+#Polisses en estat validar
+pol_validate = len(pol_obj.search([('state','=','validar')]))
+text_validate = "Contractes en estat Validar: {pol_validate}"
+text_validate = text_validate.format(**locals())
+
 
 #Polisses en esborrany
 pol_draft = pol_obj.search([('state','=','esborrany')])
@@ -147,7 +158,7 @@ text_m1 = dades_casos('m1','M1',delay_01, delay_02)
 
 #Falten casos: D1, R1, W1
 
-resum(text_draft_pol ,text_cx, text_a3, text_b1, text_m1)
+resum(text_draft_pol,text_validate ,text_cx, text_a3, text_b1, text_m1)
 
 
 

@@ -22,6 +22,7 @@ def contractesTarifa(tarifa,data):
     pol_obj = O.GiscedataPolissa
     sw_obj = O.GiscedataSwitching
     m101_obj = O.model('giscedata.switching.m1.01')
+    days_draft_delayed = 45
     
     #Polisses actived
     pol_ids = pol_obj.search([('tarifa.name','=',tarifa),
@@ -45,7 +46,19 @@ def contractesTarifa(tarifa,data):
                                     ('state','=','esborrany')])    
     pol_draft = len(pol_draft_ids)
     
-    #Quan n'hi ha d'endarreits
+    mails = ['tarifa3.0@somenergia.coop']
+    mails.append('ccvv@somenergia.coop')
+    pol_not_ids = pol_obj.search([('id','in',pol_draft_ids),
+                            ('notificacio_email','not in',mails)])
+    pol_not = len(pol_not_ids)
+    per_not = 1 - round(float(pol_not)/float(pol_draft)*100,2)
+    ## Esborranys endarrerits
+    date_delayed_dt = datetime.today() - timedelta(days_draft_delayed)
+    date_dealyed = datetime.strftime(date_delayed_dt,'%Y-%m-%d')
+    pol_draft_delayed_ids = pol_obj.search([('id','in',pol_draft_ids),
+                                    ('data_firma_contracte','<',date_dealyed)])
+    pol_reads = pol_obj.read(pol_draft_delayed_ids, ['cups'])
+    cups_draft_delayed = [a['cups'][1] for a in pol_reads if a['cups']]
     ## quants tenen el mail 3.0A al notificador
     ### Podem mirar quants n'hi ha mab C2
 
@@ -78,8 +91,10 @@ def contractesTarifa(tarifa,data):
     text_pol += "\n --> Cooperatives: {coop}"
     text_pol += "\n --> Associacions: {ass}"
     text_pol += "\n --> Ajuntaments: {admin}"
-    text_pol += "\nContractes en esborrany: {pol_draft} quan n'hi ha d'endearrerits?"
     text_pol += "\nContractes de baixa : {pol_inac} ({per_b}%)"
+    text_pol += "\n" + 40*"=" 
+    text_pol += "\nContractes en esborrany: {pol_draft}. Endarrerits de {days_draft_delayed} dies: {cups_draft_delayed}."
+    text_pol += "\n --> Contractes que han demanat un M1 (mail notificador): {pol_not}({per_not})" 
     text_pol += "\nModificacions de contractes: {m101} ({per_m}%)"
     text_pol += "\nPolisses amb facturacio endarerides: {endarrerides}"
     text_pol = text_pol.format(**locals())
@@ -88,17 +103,20 @@ def contractesTarifa(tarifa,data):
 #Contractes nous a la setmana
 def contractesNous(tarifa, data):
     sense_not = []
+    mails = ['tarifa3.0@somenergia.coop']
+    mails.append('ccvv@somenergia.coop')
     pol_ids = pol_obj.search([('tarifa.name','=',tarifa),
                        ('data_firma_contracte','>=',data)])
     sol_pol = len(pol_ids)
     pol_reads = pol_obj.read(pol_ids,
                         ['notificacio_email','cups'])
     for pol_read in pol_reads:
-        if pol_read['notificacio_email'] != 'tarifa3.0@somenergia.coop':
+        if not(pol_read['notificacio_email']  in mails):
             if pol_read['cups']:
                 sense_not.append(pol_read['cups'][1])
     sense_not_ = len(sense_not)
-    text_pnews = "Contractes Nous des de {data}: {sol_pol}"
+    text_pnews = "\n" + 40*"=" 
+    text_pnews += "\nContractes Nous des de {data}: {sol_pol}"
     text_pnews += "\n Dels quals no ens han dit quina potencia volen: {sense_not_}"
     text_pnews += "\n   --> {sense_not}"
     text_pnews = text_pnews.format(**locals())
@@ -161,13 +179,13 @@ def getPolissesM1():
 #Contractes en 3.1A
 
 def resum_qc(text_evol):
-    #contractesTarifa('3.0A','2016-06-01')
+    contractesTarifa('3.0A','2016-06-01')
     #contractesTarifa('3.1A')
-    #contractesNous('3.0A','2016-03-20')
+    contractesNous('3.0A','2016-03-15')
     #print "\nEvolucio de contractes mensual"
     #print 40*"="
     #print text_evol
-    getPolissesM1()
+    #getPolissesM1()
 
 
 resum_qc(text_evol)
