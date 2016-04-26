@@ -78,4 +78,4 @@ for extra in extra_data:
     new_quantity = float(extra['quantity'])/1000
     updateQuantity(extra['id'],new_quantity)
    
-    print "{extra[polissa_name]} {extra[id]} {extra[quantity]} {new_quantity} {extra[description]".format(**locals())
+    print "{extra[polissa_name]} {extra[id]} {extra[quantity]} {new_quantity} {extra[description]}".format(**locals())
