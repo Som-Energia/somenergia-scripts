@@ -26,6 +26,7 @@ MIN_DIES_FACT = 20
 cefaco = []
 tarifa_no2 = []
 pol_a_facturades = []
+sense_comptador_actiu = []
 comptadors_actius_multiples = []
 sense_lectura_tall = []
 comptador_inicialitzat = []
@@ -37,6 +38,7 @@ errors = []
 diferencia_0 = []
 lectures_inicials_erronies = []
 sense_lectura_pool = []
+sense_lectures_estimades = []
 
 #constants correu electronic
 template_id = 53 #Explicacio de la facturacio i canvi de comptador
