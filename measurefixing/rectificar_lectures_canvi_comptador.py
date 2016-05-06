@@ -288,7 +288,7 @@ for pol_id in pol_ids:
 #Resum
 print "="*76
 print "POLISSES RESOLTES___________________________________________"
-print "\n Polisses arreglades.PASSAR FUNCIO adelantar_polissa_endarerida. TOTAL %s" % len(pol_a_facturades)
+print "\n Polisses arreglades. Ja haurien d'haver estat arreglades, altres scrips s'ocupen d'adelantar-les. TOTAL %s" % len(pol_a_facturades)
 print "Polisses: " 
 print pol_a_facturades
 print "\n Polisses arreglades i preprades per facturar. TOTAL %s" % len(preparades_per_facturar)
@@ -304,14 +304,13 @@ print "\n CONTROLAR. Lectures en el comptador de alta inicials anteriors a les n
 print "Polisses: " 
 print lectures_inicials_erronies
 
-print "\n CONTROLAR (No hem fet res). Diferencia 0. No hi ha diferencia entre lectura estimada i de tallNo fem res. TOTAL %s" % len(diferencia_0)
-print "Polisses: " 
-print diferencia_0
-
 print "POLISSES NO RESOLTES_______________________________________________"
 print "\n Polisses que han tingut error en el proces. TOTAL: %s" % len(errors)
 print "Polisses: "
 print errors
+print "\n CONTROLAR (No hem fet res). Diferencia 0. No hi ha diferencia entre lectura estimada i de tallNo fem res. TOTAL %s" % len(diferencia_0)
+print "Polisses: " 
+print diferencia_0
 print "\n Polisses sense comptador de baixa. Perque els hem detectat com a canviar de comptador?? %s" % len(sense_comptador_actiu)
 print "Polisses:"
 print sense_comptador_actiu
@@ -327,7 +326,6 @@ print tarifa_no2
 print "\n Polisses amb mes dun comptador actiu. TOTAL %s" % len(comptadors_actius_multiples)
 print "Polisses: " 
 print comptadors_actius_multiples
-print "\n PASSAR A JOAN"
 print "Polisses amb comptador actiu sense lectures de tall. TOTAL %s" % len(sense_lectura_tall)
 print "Polisses: " 
 print sense_lectura_tall
