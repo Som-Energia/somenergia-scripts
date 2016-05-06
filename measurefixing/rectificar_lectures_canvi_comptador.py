@@ -126,6 +126,10 @@ for pol_id in pol_ids:
             continue
         comptador_baixa_id = comp_obj.search([('polissa','=',pol_id),
                                             ('active','=',False)])
+        if not comptador_baixa_id:
+            print "NO HI HA COMPTADOR DE BAIXA. No fem res"
+            sense_comptador_actiu.append(pol_id)
+            continue
         if len(comptador_baixa_id)>1:
             comptador_baixa_id = [comptador_baixa_id[0]]
             print "Hi ha més d'un comptador de baixa"
@@ -145,6 +149,9 @@ for pol_id in pol_ids:
             saltar_seguent_polissa =  True
             continue
         comp_alta_read = comp_obj.read(comptador_alta_id[0],['giro'])
+        if comp_alta_read['giro'] < 10000:
+            comp_obj.write(comptador_alta_id,{'giro':100000})
+            print "Hem canviat el gir de comptador per 100000"
 
         dades_correu = {}
 
@@ -157,6 +164,11 @@ for pol_id in pol_ids:
                                                 ('name','>',data_tall),
                                                 ('tipus','=',lectura_tall.tipus),
                                                 ('periode','like', lectura_tall.periode.name)])
+            if not(lectura_estimada_id):
+                sense_lectures_estimades.append(pol_id)
+                saltar_seguent_polissa = True
+                continue
+            
             #Agafem la ultima lectura estimada
             lectura_estimada_read = lectF_obj.read(lectura_estimada_id[0],
                                                 ['name','lectura','origen_id'])
@@ -298,6 +310,9 @@ print "POLISSES NO RESOLTES_______________________________________________"
 print "\n Polisses que han tingut error en el proces. TOTAL: %s" % len(errors)
 print "Polisses: "
 print errors
+print "\n Polisses sense comptador de baixa. Perque els hem detectat com a canviar de comptador?? %s" % len(sense_comptador_actiu)
+print "Polisses:"
+print sense_comptador_actiu
 print "\n Sense lectura de pool al comptador de pool. TOTAL %s" % len(sense_lectura_pool)
 print "Polisses: " 
 print sense_lectura_pool
@@ -314,9 +329,12 @@ print "\n PASSAR A JOAN"
 print "Polisses amb comptador actiu sense lectures de tall. TOTAL %s" % len(sense_lectura_tall)
 print "Polisses: " 
 print sense_lectura_tall
-print "\n Polisses amb data de baixa inferior a la data de baixa del comptador (eliminar lectures que son de mes de la data de canvi i copair la lectura de tall). TOTAL %s" % len(data_baixa_logica)
+print "\n Polisses amb la data de ultima lectura es més petita que la data de baixa del comptador. No fem re (eliminar lectures que son de mes de la data de canvi i copair la lectura de tall). TOTAL %s" % len(data_baixa_logica)
 print "Polisses: " 
 print data_baixa_logica
+print "Sense lectures estimades superior a la data de tall. TOTAL %s" % len(sense_lectures_estimades)
+print " Polisses: "
+print sense_lectures_estimades
 print "="*76
 
 # volta de comptador: int(comptador_baixa_read['giro']) + lectura_inicial == lectura_tall_read['lectura'] - lectura_estimada_read['lectura']
