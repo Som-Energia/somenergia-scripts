@@ -11,7 +11,7 @@ id_lot_dest = id_lot_orig + 1
 
 id_clot = O.GiscedataFacturacioContracte_lot.search([
     ('lot_id', '=', id_lot_orig),
-    ('state', 'in', ('esborrany', 'obert'))
+    ('state', 'in', ('esborrany', 'obert','facturat'))
 ])
 ids_poli = O.GiscedataFacturacioContracte_lot.read(id_clot, ['polissa_id', 'state'])
 
@@ -27,11 +27,13 @@ for clot in ids_poli:
     print "                       %d/%d" % (n,total)
     
 # Posar lot a les polisses que no tinguin lot
-posar_lot_a_polisses_sense_lot = False
-if posar_lot_a_polisses_sense_lot:
-    for pol_id in O.GiscedataPolissa.search([('lot_facturacio','=',0),('state','=','activa')]):
-        pol = O.GiscedataPolissa.get(pol_id)
-        pol.write({'lot_facturacio': id_lot_dest})
-    print 'Pòlissa id %s' % pol_id
+pol_ids = O.GiscedataPolissa.search([('lot_facturacio','=',0),
+                                     ('state','=','activa')])
+pol_ids += O.GiscedataPolissa.search([('lot_facturacio','<',id_lot_dest),
+                                       ('state','=','activa')])
+for pol_id in pol_ids:
+    pol = O.GiscedataPolissa.get(pol_id)
+    pol.write({'lot_facturacio': id_lot_dest})
+print 'Pòlissa id %s' % pol_id
 
 O.GiscedataFacturacioLot.update_progress([id_lot_dest] + [id_lot_orig])
