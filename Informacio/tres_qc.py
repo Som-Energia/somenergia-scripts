@@ -101,12 +101,14 @@ def contractesTarifa(tarifa,data):
     print text_pol
 
 #Contractes nous a la setmana
-def contractesNous(tarifa, data):
+def contractesNous(tarifa, data_inici):
     sense_not = []
     mails = ['tarifa3.0@somenergia.coop']
     mails.append('ccvv@somenergia.coop')
+    data_fi = datetime.strftime(datetime.today(),'%Y-%m-%d')
     pol_ids = pol_obj.search([('tarifa.name','=',tarifa),
-                       ('data_firma_contracte','>=',data)])
+                       ('data_firma_contracte','>=',data_inici),
+                       ('data_firma_contracte','<',data_fi)])
     sol_pol = len(pol_ids)
     pol_reads = pol_obj.read(pol_ids,
                         ['notificacio_email','cups'])
@@ -116,9 +118,10 @@ def contractesNous(tarifa, data):
                 sense_not.append(pol_read['cups'][1])
     sense_not_ = len(sense_not)
     text_pnews = "\n" + 40*"=" 
-    text_pnews += "\nContractes Nous des de {data}: {sol_pol}"
+    text_pnews += "\nContractes Nous des de {data_inici} (inclosa) fins a {data_fi} (no inclosa): {sol_pol}"
     text_pnews += "\n Dels quals no ens han dit quina potencia volen: {sense_not_}"
-    text_pnews += "\n   --> {sense_not}"
+    for a in sense_not:
+        text_pnews += "\n {a}".format(**locals())
     text_pnews = text_pnews.format(**locals())
     print text_pnews
     
@@ -181,7 +184,7 @@ def getPolissesM1():
 def resum_qc(text_evol):
     contractesTarifa('3.0A','2016-06-01')
     #contractesTarifa('3.1A')
-    contractesNous('3.0A','2016-04-21')
+    contractesNous('3.0A','2016-04-29')
     #print "\nEvolucio de contractes mensual"
     #print 40*"="
     #print text_evol
