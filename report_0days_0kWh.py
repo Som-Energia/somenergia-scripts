@@ -132,7 +132,6 @@ def eliminar_factura(O, factura):
     except Exception, ex:
         print ex
 
-lots = [sys.argv[1]]
 dbcur = None
 try:
     pg_con = " host=" + configdb.pg['DB_HOSTNAME'] + \
@@ -151,6 +150,10 @@ try:
     O = OOOP(dbname=configdb.ooop['dbname'], user=configdb.ooop['user'], pwd=configdb.ooop['pwd'], port=configdb.ooop['port'], uri=configdb.ooop['uri'])
 except Exception, ex:
     raise ex
+
+lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])[0]
+lot_name = O.GiscedataFacturacioLot.read(lot_id,['name'])['name']
+lots = [lot_name]
 
 try:
     factures = get_factures_0energyLines(dbcur, lots)
