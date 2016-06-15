@@ -204,6 +204,6 @@ if __name__ == "__main__":
     else:
         if new_measures:
             end_date = new_measures[-1]['name']
-    out += fix_contract(O, contract_id, quarantine, start_date, end_date)
-    adelantar_polissa_endarerida(O, [contract_id])
+    out = fix_contract(O, contract_id, quarantine, start_date, end_date)
+    adelantar_polissa_endarerida([contract_id])
     print out
