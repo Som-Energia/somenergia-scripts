@@ -8,9 +8,9 @@ import configdb
 
 from ooop import OOOP
 from consolemsg import error
-from utils import load_new_measures, get_measures_by_contract, get_contract_status
+from utils import *
 from validation_utils import adelantar_polissa_endarerida
-
+from display import *
 
 def remove_modmeter_lect(meters, lects):
     dates_out = {meter['data_baixa']: meter['id'] for meter in meters if meter['data_baixa']}
