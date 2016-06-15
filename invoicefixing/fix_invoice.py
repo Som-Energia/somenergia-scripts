@@ -32,7 +32,7 @@ def fix_measure(O, polissa_id, lects, last_idx, _last_idx, _prev_idx, offset, kW
     lect_old = lects[_prev_idx+offset]['lectura']
     lects[_prev_idx+offset]['lectura'] = lects[_last_idx+offset]['lectura']+n_days_12*kWh_day
     observacions = 'R. {lect_old}\n{observacions}'.format(**{'lect_old':lect_old,
-                                                             'observacions':lects[_prev_idx+offset]['observacions']})
+                                                             'observacions':lects[_prev_idx+offset]['observacions'].encode('utf-8')})
 
     measures_id = [lects[_prev_idx+offset]['id']]
     measures_value = {'lectura': lects[_prev_idx+offset]['lectura'],
