@@ -93,6 +93,7 @@ def dump_bills(contracts, start, end, filename, lang):
         
         for contract in contracts:
             search_params = [('polissa_id','=', contract['id']),
+                    ('invoice_id.type','in', ['out_invoice','out_refund']),
                     ('invoice_id.date_invoice','>=', start),
                     ('invoice_id.date_invoice','<', end)]
             bills_id = bill_obj.search(search_params)
