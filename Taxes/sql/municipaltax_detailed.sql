@@ -1,23 +1,32 @@
-SELECT invoice.id,
-       factura.id AS factura_id,
-       titular.vat,
-       cups.name,
-       cups.direccio,
+SELECT titular.vat as NIF,
+       cups.name as cups,
+       cups.direccio as dirección,
        cups.ref_catastral,
-       invoice.number,
-       invoice.date_invoice,
-       factura.data_inici,
-       factura.data_final,
-       invoice.type,
-       invoice_details.provider_amount,
-       invoice_details.provider_amount_lloguer,       
-       invoice_details.client_amount_energia,
-       invoice_details.client_amount_potencia,
-       invoice_details.client_amount_lloguer,
-       invoice_details.client_atr,
-       invoice_tax.electricity_tax,
-       invoice_tax.vat,
-       invoice.amount_total
+       invoice.number as número_factura,
+       invoice.date_invoice as fecha_factura,
+       factura.data_inici as fecha_inicio,
+       factura.data_final as fecha_final,
+       CASE invoice.type
+		WHEN 'in_invoice' THEN 'distribuidora'
+		WHEN 'in_refund' THEN 'distribuidora'
+		WHEN 'out_invoice' THEN 'comercializadora'
+		WHEN 'out_refund' THEN 'comercializadora'
+       END AS emisor,
+       CASE invoice.type
+		WHEN 'in_invoice' THEN 'pago'
+		WHEN 'in_refund' THEN 'abono'
+		WHEN 'out_invoice' THEN 'pago'
+		WHEN 'out_refund' THEN 'abono'	
+       END AS tipo,
+       invoice_details.provider_amount as cantidad_total_distribuidora,
+       invoice_details.provider_amount_lloguer as cantidad_alquiler_distribuidora,       
+       invoice_details.client_amount_energia as cantidad_cliente_energía,
+       invoice_details.client_amount_potencia as cantidad_cliente_potencia,
+       invoice_details.client_amount_lloguer as cantidad_cliente_alquiler,
+       invoice_details.client_atr as cantidad_cliente_atr,
+       invoice_tax.electricity_tax as tasas_eléctricas,
+       invoice_tax.vat as iva,
+       invoice.amount_total as Total
               
 	      
 FROM account_invoice AS invoice
