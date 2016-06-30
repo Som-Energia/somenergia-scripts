@@ -1,23 +1,23 @@
 SELECT 
-	invoice.number AS numero,
+	invoice.number AS número,
 	CASE invoice.type
 		WHEN 'in_invoice' THEN 'distribuidora'
 		WHEN 'in_refund' THEN 'distribuidora'
-		WHEN 'out_invoice' THEN 'comercialitzadora'
-		WHEN 'out_refund' THEN 'comercialitzadora'
+		WHEN 'out_invoice' THEN 'comercializadora'
+		WHEN 'out_refund' THEN 'comercializadora'
 	END AS emisor,
 	CASE invoice.type
-		WHEN 'in_invoice' THEN 'pagament'
-		WHEN 'in_refund' THEN 'abonament'
-		WHEN 'out_invoice' THEN 'pagament'
-		WHEN 'out_refund' THEN 'abonament'	
+		WHEN 'in_invoice' THEN 'pago'
+		WHEN 'in_refund' THEN 'abono'
+		WHEN 'out_invoice' THEN 'pago'
+		WHEN 'out_refund' THEN 'abono'	
 	END AS tipus,
 	distribuidora.name AS distribuidora,
 	invoice.origin AS origen,
 	cups.name AS cups,
-	tax_code.name AS taxa,	
-	invoice.date_invoice AS data,
-	invoice_tax.base_amount AS base,
+	tax_code.name AS impuesto,	
+	invoice.date_invoice AS fecha_factura,
+	invoice_tax.base_amount AS base_imponible,
 	invoice_tax.tax_amount AS iva
 FROM account_invoice_tax AS invoice_tax
 LEFT JOIN account_tax_code AS tax_code ON invoice_tax.tax_code_id=tax_code.id
