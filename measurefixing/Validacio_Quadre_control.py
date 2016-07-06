@@ -32,43 +32,54 @@ esborranys = clot_obj.search([('state','like','facturat'),
 
 
 
-sobreestimacions = clot_obj.search([('status','like','volta de comptador'),
+sobreestimacions = clot_obj.search([('state','=','obert'),
+                                    ('status','like','volta de comptador'),
                                     ('status','not like','incompleta'),
                                     ('lot_id','=',lot_id)])
-maximetre= clot_obj.search([('status','like','maxímetre '),
-                            ('lot_id','=',lot_id)])
-superior_limit = clot_obj.search([('status','not like','volta de comptador'),
+maximetre= clot_obj.search([('state','=','obert'),
+                                    ('status','like','maxímetre '),
+                                    ('lot_id','=',lot_id)])
+superior_limit = clot_obj.search([('state','=','obert'),
+                                    ('status','not like','volta de comptador'),
                                     ('status','like','superior al lími'),
                                     ('status','not like','incompleta'),
                                     ('lot_id','=',lot_id)])
-incompleta = clot_obj.search([('status','like','incompleta'),
+incompleta = clot_obj.search([('state','=','obert'),
+                                ('status','like','incompleta'),
                                 ('lot_id','=',lot_id)])
 no_lectures = clot_obj.search([('status','like',u'No t\xe9 lectures entrades'),
                                 ('lot_id','=',lot_id)])
-no_lectura_anterior = clot_obj.search([('status','like',u'No t\xe9 lectura anterior'),
+no_lectura_anterior = clot_obj.search([('state','=','obert'),
+                            ('status','like',u'No t\xe9 lectura anterior'),
                             ('status','not like',u'No t\xe9 lectures entrades'),
                             ('status','not like',u'incompleta'),
                             ('status','not like',u'volta de comptador'),
                             ('status','not like',u'Falta Lectura de tancament'),
                             ('status','not like',u'maxímetre'),
                             ('lot_id','=',lot_id)])
-comptador_inactiu = clot_obj.search([('status','like','cap comptador actiu'),
+comptador_inactiu = clot_obj.search([('state','=','obert'),
+                                    ('status','like','cap comptador actiu'),
                                     ('lot_id','=',lot_id)])
-baixa = clot_obj.search([('status','like','Falta Lectura de tancament amb data'),
+baixa = clot_obj.search([('state','=','obert'),
+                        ('status','like','Falta Lectura de tancament amb data'),
                         ('lot_id','=',lot_id)])
-no_lect_max = clot_obj.search([('status','like',u'No t\xe9 lectura de max\xedmetre'),
+no_lect_max = clot_obj.search([('state','=','obert'),
+                                ('status','like',u'No t\xe9 lectura de max\xedmetre'),
                                 ('status','not like',u'No t\xe9 lectures entrades'),
                                 ('status','not like',u'No t\xe9 lectura anterior'),
                                 ('lot_id','=',lot_id)])
-no_interval = clot_obj.search([('status','like',u'No t\xe9 cap interval a facturar'),
+no_interval = clot_obj.search([('state','=','obert'),
+                            ('status','like',u'No t\xe9 cap interval a facturar'),
                             ('status','not like',u'No t\xe9 lectures entrades'),
                             ('status','not like',u'No t\xe9 lectura anterior'),
                             ('lot_id','=',lot_id)])
-nou_comptador_una_lectura = clot_obj.search([('status','like','Possible primera lecutura'),
+nou_comptador_una_lectura = clot_obj.search([('state','=','obert'),
+                                        ('status','like','Possible primera lecutura'),
                                         ('status','not like','volta de comptador'),
                                         ('status','not like','incompleta'),
                                         ('lot_id','=',lot_id)])
-contractes_31 = clot_obj.search([('status','like','Falta P4,P5,P6'),
+contractes_31 = clot_obj.search([('state','=','obert'),
+                                 ('status','like','Falta P4,P5,P6'),
                                 ('lot_id','=',lot_id)])
 
 
