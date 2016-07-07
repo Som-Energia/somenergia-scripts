@@ -1,3 +1,5 @@
+*~
+.*.sw?
 # config files
 configdb.py
 
