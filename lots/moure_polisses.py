@@ -26,10 +26,17 @@ for clot in ids_poli:
     n += 1
     print "                       %d/%d" % (n,total)
     
-# Posar lot a les polisses que no tinguin lot
-pol_ids = O.GiscedataPolissa.search([('lot_facturacio','=',0),
+
+# Posar lot a les polisses que no tinguin lot pero no tingui R1 obert
+sw_ids = O.GiscedataSwitching.search([('proces_id.name','=','R1'),
+                                        ('state','=','open')])
+sw_reads = O.GiscedataSwitching.read(sw_ids,['cups_polissa_id'])
+pol_sw_ids = [a['cups_polissa_id'][0] for a in sw_reads if a['cups_polissa_id']]
+
+pol_ids = O.GiscedataPolissa.search([('id','not in',pol_sw_ids),
+                                     ('lot_facturacio','=',0),
                                      ('state','=','activa')])
-pol_ids += O.GiscedataPolissa.search([('lot_facturacio','<',id_lot_dest),
+pol_ids += O.GiscedataPolissa.search([('lot_facturacio','<',id_lot_orig),
                                        ('state','=','activa')])
 for pol_id in pol_ids:
     pol = O.GiscedataPolissa.get(pol_id)
