@@ -9,8 +9,14 @@ general:
           date:
             userdescription: Introdueix la data (inclosa) fins a la que vols fer l'estudi amb el format 'YYYY-mm-dd'
 measurefixing:
+
   description: Facturació. Validació de lectures
   scripts:
+    quadrecontrolesborrany:
+      script: SOME_SRC/invoice-janitor/invoicefixing/qc_facturesesborrany.py -C  SOME_SRC/invoice-janitor/configdb.py 
+      title: Quadre de control Factures en esborrany
+      description: Serveix per quantificar els errors que podem detectar a les factures en esborrany
+
     quadrecontrolvalidacio:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio_Quadre_control.py
       title: Quadre de control Validació
