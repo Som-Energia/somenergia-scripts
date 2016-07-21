@@ -23,7 +23,16 @@ Validació de Factures en Esborrany del lot
 
 """
 
+templateIds="""\
+- Factures en esborrany (ids): {draft}
+- Amb imports de més de 5000 (ids): {bigger_than_5000}
+- Amb imports de més de 15000 (ids): {bigger_than_15000}
+- Amb consums més grans que el que permet la potència (ids): {sobre_consum}
+- Amb R1 oberts (ids): {r1_obert}
+- Factures de zero dies (ids): {zero_days}
+- Factures sense linies de energia (ids): {zero_lines}
 
+"""
 def main():
     options = ns()
     optarg = None
@@ -53,10 +62,14 @@ def main():
     """
 
     sqlfilename = os.path.join(os.path.dirname(__file__), "draftinvoices.sql")
+    sqlfilename_ids = os.path.join(os.path.dirname(__file__), "draftinvoices_ids.sql")
 
     step("Loading {}...".format(sqlfilename))
     with open(sqlfilename) as sqlfile:
         query = sqlfile.read()
+    
+    with open(sqlfilename_ids) as sqlfile:
+        query_ids = sqlfile.read()
 
     if 'C' in options:
         import imp
@@ -75,6 +88,12 @@ def main():
                 .format(key=e.args[0]))
         print template.format(**dbutils.nsList(cursor)[0])
 
+        try:
+            cursor.execute(query_ids)
+        except KeyError as e:
+            fail("Missing variable '{key}'. Specify it in the YAML file or by using the --{key} option"
+                .format(key=e.args[0]))
+        print templateIds.format(**dbutils.nsList(cursor)[0])
 
 main()
 
