@@ -1,0 +1,223 @@
+general:
+    description: Informació General
+    scripts:
+      quadrecontrolgeneral:
+        script: python SOME_SRC/patchscripts/Informacio/General_Quadre_control.py -d {date}
+        title: Quadre de control de comercializació
+        description: Aquest quadre de control et permet veure la stiaució molt genèrica de com està la comercialitació i ens serveix per omplir el Quadre de Control del drive. Si teniu peticions de noves coses a controlar podeu escriure a en Pere
+        parameters:
+          date:
+            userdescription: Introdueix la data (inclosa) fins a la que vols fer l'estudi amb el format 'YYYY-mm-dd'
+measurefixing:
+  description: Facturació. Validació de lectures
+  scripts:
+    quadrecontrolvalidacio:
+      script: SOME_SRC/invoice-janitor/measurefixing/Validacio_Quadre_control.py
+      title: Quadre de control Validació
+      description: Serveix per quantificar els errors que actualment tenim en el validació de les lectures  
+
+    canvicomptadors:
+      script: SOME_SRC/invoice-janitor/measurefixing/rectificar_lectures_canvi_comptador.py
+      title: Canvi de comptadors
+      description: Gestiona els canvi de comptadors que no han estat informant i hem seguit facturant-los amb estimades fetes per Som Energia. Informa per pantalla els errors que hi han en el rpocés pe rtla de que es puguin solucionar per temàtica i anar veient quines es poden automatitzar.
+
+    errorsprincipals:
+      script: SOME_SRC/invoice-janitor/measurefixing/Validacio0_errors_principal.py
+      title: Script principal
+      description: Ha d'acabar sent l'script on s'excutint tots els altres scripts de correcció de lectures en el procés de validació. Per ara fa una validació de tots els errors de lectura i soluciona els problemes de lectures amb les 3.1A. 
+    
+    validacionbajas:
+      script: SOME_SRC/invoice-janitor/measurefixing/Validacio1_baixes_2.py
+      title: Corretgir errors en baixes
+      description: 
+    
+    polizasbajas:  
+      script: SOME_SRC/invoice-janitor/measurefixing/Validacio2_eliminar_polisses_baixa.py
+      title: Eliminar pòlisses de baixa
+      description: 
+    
+    sobreestimaciones:
+      script: SOME_SRC/invoice-janitor/measurefixing/Validacio3_sobre_estimacions.py
+      title: Corretgir Sobreestimaciones
+      description:     
+    
+    sinlecturamaximetro:
+      script: SOME_SRC/invoice-janitor/measurefixing/Validacio4_sense_lectura_maximetre.py
+      title: Corretgir errors en lectures de maximetre
+      description: 
+    
+    validacionincompleta:
+      script: SOME_SRC/invoice-janitor/measurefixing/Validacio5_incompleta.py
+      title: Corretgir lectures que estan incompletes
+      description: 
+    
+    lecturacierre:
+      script: SOME_SRC/invoice-janitor/measurefixing/Validacio6_lectura_tancament.py
+      title: Corretgir lectures de tancament de comptadors (passar-lo fins que no l'ajuntem amb l'altre)
+      description: 
+    
+    cierremejorado:
+      script: SOME_SRC/invoice-janitor/measurefixing/Validacio7_tancament_millorat.py
+      title: Corretgir lectures de tancament de comptadors (millorat)
+      description: 
+    
+    senselectureanterior:
+      script: SOME_SRC/invoice-janitor/measurefixing/Validacio8_sense_lectura_anterior.py
+      title: Corretgir pòlisses que no es troba la lectura anterior.
+      description: 
+
+invoicefixing:
+  description: Facturació. Eines per lots, F1 i factures
+  scripts:
+
+    contractmove:
+      script: python SOME_SRC/patchscripts/lots/moure_polisses.py
+      title: Moure polisses al lot següent 
+      description: ATENCIÓ! Aquest script només s'ha d'utiltizar quan es vol fer canvi de lot i lot actual el volem tancar. Aquest scripts et permet moure les polisses que falten per facturar al següent lot
+
+    fixmoddate:  
+      script: python SOME_SRC/invoice-janitor/Fact_impF1_data_modificacio_contractual.py 
+      title: Corregir errors data de modificació contractual 
+      description:
+
+    fixextraline:  
+      script: SOME_SRC/invoice-janitor/fix_extra_line.py
+      title: Corregir errors extra line
+      description: 
+
+    report0lines0days:
+      script: SOME_SRC/invoice-janitor/report_0days_0kWh.py
+      title: Factures 0days 0lines
+      description: 
+
+    fixrefundinvoice:
+      script:
+        - SOME_SRC/invoice-janitor/invoicefixing/fix_refund_invoice.py
+        - -i
+        - "{invoice}"
+      title: Corretgir factura rectificativa
+      description: 
+      parameters:
+        invoice:
+          userdescription: Invoice number
+
+    fixinvoice:
+      script: python SOME_SRC/invoice-janitor/invoicefixing/fix_invoice.py -c {contract_name} -s {start_date} -e {end_date}
+      title: Abonar i rectificar
+      description: 
+      parameters:
+        contract_name:
+          userdescription: Número de contracte
+        start_date:
+          userdescription: data inici
+        end_date:
+          userdescription: data final
+
+    killalreadyexist:
+      script: SOME_SRC/patchscripts/Importacions_F1_Q1/Fact_impF1_eliminar_Ja_existeix.py
+      title: Eliminar importacions de F1 repetides o invàlides
+      description: Elimina les importacions de F1 amb el text d'error "Ja existeix una factura...", "XML erroni", "XML no correspon al tipus F1" i "Document invàlid"
+
+    reqadq:
+        script: python SOME_SRC/patchscripts/Peticions/peticio_lectures.py {nmsgs} 
+        title: Petició d'autolectures
+        description: Petició d'autolectures (5 mesos sense lectures reals) 
+        parameters:
+          nmsgs:
+            userdescription: Número de missatges a enviar 
+
+gestiocontractes:
+    description: Gestió de contractes
+    scripts:
+      canvistitular:
+        script: execute_send_email.py -C ~/config.py -s canvi_titular -t modifica@somenergia.coop -- python SOME_SRC/patchscripts/Revisions_periodiques/canvi_titular_fase3.py
+        title: Canvi de titular. Última fase
+        description: Un cop ens arriben els M102 d'accpetació de canvi de titular, fem totes les accions per donar de baixa el contracte vell i crear el nou amb el nou titular.
+      quadrecontrolsw:
+        script: python SOME_SRC/patchscripts/Informacio/switching_qc.py
+        title: Quadre de control Gestió de contractes
+        description: Aquest quadre de control permet veure la situació dels processos. Veiem si tenim endarreriments en alguns dels passos del cas
+      quadrecontrol3:
+        script: python SOME_SRC/patchscripts/Informacio/tres_qc.py {date}
+        title: Quadre de control de tarifa 3.0A
+        description: Aquest quadre de control està en construcció. Potser hi ha funcionalitats que s'haurien de tractar a fora d'aquest quadre. S'hi ha de treballar una mica més.
+        parameters:
+          date:
+            userdescription: Introdueix la data dels des dels quals vols veure els nous contractes amb el format 'YYYY-mm-dd'
+      cupstoemailb:
+        script: SOME_SRC/cups2email/cups2email_lang_b.py {file}
+        title: Email validació de instalació a partir dels CUPS facilitats per la distribuidora
+        description: 
+        parameters:
+          file:
+            type: FILE
+            userdescription: Excel con los cups
+      cupstoemaila:
+        script: SOME_SRC/cups2email/cups2email_lang_a.py {file}
+        title: Email petició documentació a partir dels CUPS facilitats per la distribuidora
+        description: 
+        parameters:
+          file:
+            type: FILE
+            userdescription: Excel con los cups
+
+admin:
+  description: Administració
+  scripts:
+    municipaltax:
+      script: python SOME_SRC/patchscripts/Taxes/municipaltax.py {file} {start_date} {end_date} {filetype}
+      title: Generació fitxers agrupats impost municipal 1.5%
+      description:
+      parameters:
+        file:
+          type: FILE
+          userdescription: CSV dades municipi
+        start_date:
+          userdescription: data inici (ex. 2015-01-01)
+        end_date:
+          userdescription: data final (ex. 2015-03-31)
+        filetype:
+          userdescription: format sortida (xml|csv)
+
+generation:
+  description: Generació
+  scripts:
+    formatejaprevisions:
+      title: Formateja arxius de previsió
+      script:
+      - python
+      - -c
+      - celles='{celles}'; print ';'.join(x.replace(',', '.') for x in celles.split())
+      description: Formateja arxius de previsió
+      parameters:
+        celles:
+          userdescription: Enganxa les celles de l'Excel >
+
+validation:
+  description: Validació de codis
+  scripts:
+    checkiban:
+      title: Check IBAN
+      script: python SOME_SRC/somenergia-api-validators/check_iban.py {iban}
+      parameters:
+        iban:
+          userdescription: IBAN code
+    checkvat:
+      title: Check DNI/NIF
+      script: python SOME_SRC/somenergia-api-validators/check_vat.py {vat}
+      parameters:
+        vat:
+          userdescription: DNI/NIF
+    checkcups:
+      title: Check CUPS
+      script: python SOME_SRC/somenergia-api-validators/check_cups.py {cups}
+      parameters:
+        cups:
+          userdescription: CUPS
+    checkcnae:
+      title: Check CNAE
+      script: python SOME_SRC/somenergia-api-validators/check_cnae.py {cups}
+      parameters:
+        cnae:
+          userdescription: CNAE
+

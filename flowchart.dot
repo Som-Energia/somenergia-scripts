@@ -16,13 +16,13 @@ InvoiceValidationError
 [
     shape=rect,
 ]
-
 SupplierInvoices -> Import
 SupplierMeassures -> Import
 Import -> SupplierInvoicesOnErp
 Import -> ImportErrors
 Import -> ContractMeassuresOnErp
-UserEditsOV -> ContractMeassuresOnErp
+UserAddsMeassureByOV -> ContractMeassuresOnErp
+UserAddsMeassureByPhone -> ContractMeassuresOnErp
 ContractMeassuresOnErp -> MeassureValidation
 MeassureValidation -> ErrorList
 MeassureValidation -> ValidatedMeassures
