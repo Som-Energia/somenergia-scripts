@@ -23,7 +23,7 @@ Validació de Factures en Esborrany del lot
 - Amb R1 oberts: {r1_obert} 
 - Factures de zero dies: {zero_days} 
 - Factures sense linies de energia: {zero_lines}
-- Factures a fora de mitjana±100€ {outside_range}
+- Factures a fora de mitjana±100€: {outside_range}
 
 Detall (ids de factures):
 
@@ -34,7 +34,7 @@ Detall (ids de factures):
 - Amb R1 oberts: {r1_obert_ids} 
 - Factures de zero dies: {zero_days_ids} 
 - Factures sense linies de energia: {zero_lines_ids} 
-- Factures a fora de mitjana±100€ {outside_range_ids}
+- Factures a fora de mitjana±100€: {outside_range_ids}
 
 """
 
