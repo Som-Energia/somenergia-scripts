@@ -7,6 +7,9 @@ SELECT
     COALESCE(SUM(CASE WHEN r1.polissa_id IS NOT NULL THEN 1 ELSE 0 END),0) AS r1_obert,
     COALESCE(SUM(CASE WHEN factura.data_final<=factura.data_inici THEN 1 ELSE 0 END),0) AS zero_days,
     COALESCE(SUM(CASE WHEN linia_energia.factura_id IS NULL THEN 1 ELSE 0 END),0) AS zero_lines,
+    COALESCE(SUM(CASE WHEN (invoice.amount_total > past_invoices.avg+100 or
+			    invoice.amount_total < past_invoices.avg-100
+			   ) THEN 1 ELSE 0 END),0) AS outside_range,
     STRING_AGG(factura.id::text,',') AS draft_ids,
     COALESCE(string_agg(CASE WHEN invoice.amount_total >= 5000 THEN factura.id::text ELSE NULL END, ','),'') AS bigger_than_5000_ids,
     COALESCE(STRING_AGG(CASE WHEN invoice.amount_total >= 15000 THEN factura.id::text ELSE NULL END,','),'') AS bigger_than_15000_ids,
@@ -14,6 +17,9 @@ SELECT
     COALESCE(STRING_AGG(CASE WHEN r1.polissa_id IS NOT NULL THEN factura.id::text ELSE NULL END, ','),'') AS r1_obert_ids,
     COALESCE(STRING_AGG(CASE WHEN factura.data_final<=factura.data_inici THEN factura.id::text ELSE NULL END, ','),'') AS zero_days_ids,
     COALESCE(STRING_AGG(CASE WHEN linia_energia.factura_id IS NULL THEN factura.id::text ELSE NULL END, ','),'') AS zero_lines_ids,
+    COALESCE(string_agg(CASE WHEN (invoice.amount_total > past_invoices.avg+100 or
+				   invoice.amount_total < past_invoices.avg-100
+			  ) THEN factura.id::text ELSE NULL END, ','),'') AS outside_range_ids,
     TRUE
 FROM
     giscedata_facturacio_factura AS factura
@@ -58,6 +64,19 @@ LEFT JOIN (
         factura_id
     ) AS  linia_energia
     ON factura.id = linia_energia.factura_id
+left join (
+    select avg(ai.amount_total),polissa_id
+    from giscedata_facturacio_factura gff
+	inner join account_invoice ai
+	on ai.id = invoice_id
+    where type='out_invoice'
+    group by polissa_id
+) past_invoices on past_invoices.polissa_id = factura.polissa_id
+inner join (
+    select bool_or(origen_id in (7,9,10,11)) as ultima_estimada, factura_id
+    from giscedata_facturacio_lectures_energia
+    group by factura_id
+) lecturas on lecturas.factura_id=factura.id and ultima_estimada
 WHERE
     lot.state = 'obert' AND
     invoice.state = 'draft' AND

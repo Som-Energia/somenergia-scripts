@@ -12,6 +12,9 @@ template="""\
 Validació de Factures en Esborrany del lot
 ==========================================
 
+(Las facturas cuya última lectura facturada es real son dadas por válidas
+ y no aparecen en este listado)
+
 - Factures en esborrany: {draft} 
 - Import de les factures en esborrany: {draft_amount:.2f}€
 - Amb imports de més de 5000: {bigger_than_5000} 
@@ -19,7 +22,8 @@ Validació de Factures en Esborrany del lot
 - Amb consums més grans que el que permet la potència: {sobre_consum} 
 - Amb R1 oberts: {r1_obert} 
 - Factures de zero dies: {zero_days} 
-- Factures sense linies de energia: {zero_lines} 
+- Factures sense linies de energia: {zero_lines}
+- Factures a fora de mitjana±100€ {outside_range}
 
 Detall (ids de factures):
 
@@ -30,6 +34,7 @@ Detall (ids de factures):
 - Amb R1 oberts: {r1_obert_ids} 
 - Factures de zero dies: {zero_days_ids} 
 - Factures sense linies de energia: {zero_lines_ids} 
+- Factures a fora de mitjana±100€ {outside_range_ids}
 
 """
 
