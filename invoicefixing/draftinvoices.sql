@@ -10,6 +10,7 @@ SELECT
     COALESCE(SUM(CASE WHEN (invoice.amount_total > past_invoices.avg+100 or
 			    invoice.amount_total < past_invoices.avg-100
 			   ) THEN 1 ELSE 0 END),0) AS outside_range,
+    COALESCE(SUM(CASE WHEN lecturas.ultima_estimada THEN 1 ELSE 0 END),0) AS ultima_estimada,
     COALESCE(STRING_AGG(factura.id::text,','),'') AS draft_ids,
     COALESCE(string_agg(CASE WHEN invoice.amount_total >= 5000 THEN factura.id::text ELSE NULL END, ','),'') AS bigger_than_5000_ids,
     COALESCE(STRING_AGG(CASE WHEN invoice.amount_total >= 15000 THEN factura.id::text ELSE NULL END,','),'') AS bigger_than_15000_ids,
@@ -20,6 +21,7 @@ SELECT
     COALESCE(string_agg(CASE WHEN (invoice.amount_total > past_invoices.avg+100 or
 				   invoice.amount_total < past_invoices.avg-100
 			  ) THEN factura.id::text ELSE NULL END, ','),'') AS outside_range_ids,
+    COALESCE(string_agg(case WHEN lecturas.ultima_estimada THEN factura.id::text ELSE null END,','),'') AS ultima_estimada_ids,
     TRUE
 FROM
     giscedata_facturacio_factura AS factura
@@ -72,7 +74,7 @@ left join (
     where type='out_invoice'
     group by polissa_id
 ) past_invoices on past_invoices.polissa_id = factura.polissa_id
-inner join (
+left join (
     select bool_or(origen_id in (7,9,10,11)) as ultima_estimada, factura_id
     from giscedata_facturacio_lectures_energia
     group by factura_id

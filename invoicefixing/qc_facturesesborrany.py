@@ -24,6 +24,7 @@ Validació de Factures en Esborrany del lot
 - Factures de zero dies: {zero_days} 
 - Factures sense linies de energia: {zero_lines}
 - Factures a fora de mitjana±100€: {outside_range}
+- Factures amb darrera lecture estimada: {ultima_estimada}
 
 Detall (ids de factures):
 
@@ -35,6 +36,7 @@ Detall (ids de factures):
 - Factures de zero dies: {zero_days_ids} 
 - Factures sense linies de energia: {zero_lines_ids} 
 - Factures a fora de mitjana±100€: {outside_range_ids}
+- Factures amb darrera lecture estimada: {ultima_estimada_ids}
 
 """
 
