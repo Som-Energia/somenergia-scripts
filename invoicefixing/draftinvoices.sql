@@ -36,7 +36,7 @@ LEFT JOIN
     ON polissa.id = factura.polissa_id
 LEFT JOIN (
     SELECT
-        sw.cups_polissa_id as polissa_id
+        sw.cups_polissa_id AS polissa_id
     FROM
         giscedata_switching AS sw
         LEFT JOIN
@@ -66,19 +66,28 @@ LEFT JOIN (
         factura_id
     ) AS  linia_energia
     ON factura.id = linia_energia.factura_id
-left join (
-    select avg(ai.amount_total),polissa_id
-    from giscedata_facturacio_factura gff
-	inner join account_invoice ai
-	on ai.id = invoice_id
-    where type='out_invoice'
-    group by polissa_id
-) past_invoices on past_invoices.polissa_id = factura.polissa_id
-left join (
-    select bool_or(origen_id in (7,9,10,11)) as ultima_estimada, factura_id
-    from giscedata_facturacio_lectures_energia
-    group by factura_id
-) lecturas on lecturas.factura_id=factura.id and ultima_estimada
+LEFT JOIN (
+    SELECT
+        avg(ai.amount_total),
+        polissa_id
+    FROM
+        giscedata_facturacio_factura gff
+    INNER JOIN
+        account_invoice AS ai
+        ON ai.id = invoice_id
+    WHERE
+        type='out_invoice'
+    GROUP BY polissa_id
+) past_invoices ON past_invoices.polissa_id = factura.polissa_id
+LEFT JOIN (
+    SELECT
+        bool_or(origen_id IN (7,9,10,11)) AS ultima_estimada,
+        factura_id
+    FROM
+        giscedata_facturacio_lectures_energia
+    GROUP BY
+		factura_id
+) lecturas ON lecturas.factura_id=factura.id AND ultima_estimada
 WHERE
     lot.state = 'obert' AND
     invoice.state = 'draft' AND
