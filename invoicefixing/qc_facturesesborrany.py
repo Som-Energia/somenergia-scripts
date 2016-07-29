@@ -17,26 +17,22 @@ Validació de Factures en Esborrany del lot
 
 - Factures en esborrany: {draft} 
 - Import de les factures en esborrany: {draft_amount:.2f}€
-- Amb imports de més de 5000: {bigger_than_5000} 
-- Amb imports de més de 15000: {bigger_than_15000} 
+- Amb imports de més de 5000  & a fora de mitjana±100€ & factures amb darrera lecture estimada: {bigger_than_5000} 
+- Amb imports de més de 15000 & a fora de mitjana±100€ & factures amb darrera lecture estimada: {bigger_than_15000} 
 - Amb consums més grans que el que permet la potència: {sobre_consum} 
 - Amb R1 oberts: {r1_obert} 
 - Factures de zero dies: {zero_days} 
 - Factures sense linies de energia: {zero_lines}
-- Factures a fora de mitjana±100€: {outside_range}
-- Factures amb darrera lecture estimada: {ultima_estimada}
 
 Detall (ids de factures):
 
 - Factures en esborrany: {draft_ids} 
-- Amb imports de més de 5000: {bigger_than_5000_ids} 
-- Amb imports de més de 15000: {bigger_than_15000_ids} 
+- Amb imports de més de 5000  & a fora de mitjana±100€ & factures amb darrera lecture estimada: {bigger_than_5000_ids} 
+- Amb imports de més de 15000 & a fora de mitjana±100€ & factures amb darrera lecture estimada: {bigger_than_15000_ids} 
 - Amb consums més grans que el que permet la potència: {sobre_consum_ids} 
 - Amb R1 oberts: {r1_obert_ids} 
 - Factures de zero dies: {zero_days_ids} 
 - Factures sense linies de energia: {zero_lines_ids} 
-- Factures a fora de mitjana±100€: {outside_range_ids}
-- Factures amb darrera lecture estimada: {ultima_estimada_ids}
 
 """
 
