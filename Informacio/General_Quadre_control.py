@@ -11,7 +11,7 @@ pol_obj = O.GiscedataPolissa
 sw_obj = O.GiscedataSwitching
 
 parser = argparse.ArgumentParser(description='Quadre control general')
-parser.add_argument('-d','--date',required=True)
+parser.add_argument('-d','--date',required=False)
 args = vars(parser.parse_args()) 
 data = args['date']
 

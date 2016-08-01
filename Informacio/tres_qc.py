@@ -182,9 +182,9 @@ def getPolissesM1():
 #Contractes en 3.1A
 
 def resum_qc(text_evol):
-    contractesTarifa('3.0A','2016-06-01')
+    contractesTarifa('3.0A','2016-07-01')
     #contractesTarifa('3.1A')
-    contractesNous('3.0A','2016-04-29')
+    #contractesNous('3.0A','2016-04-29')
     #print "\nEvolucio de contractes mensual"
     #print 40*"="
     #print text_evol

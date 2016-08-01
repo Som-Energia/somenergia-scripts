@@ -3,15 +3,22 @@ from datetime import datetime,timedelta
 import configdb
 import psycopg2
 import psycopg2.extras
+import argparse
 
 O = Client(**configdb.erppeek)
 
 pol_obj = O.GiscedataPolissa
 sw_obj = O.GiscedataSwitching
 
+parser = argparse.ArgumentParser(description='Seguiment de casos de contractes amb 3.0A')
+parser.add_argument('-d','--date',required=False)
+args = vars(parser.parse_args()) 
+data_inici = args['date']
+
 tarifa = '3.0A'
-data_inici = '2016-04-29'
 data = '2016-03-15'
+if not(data_inici):
+    data_inici = datetime.today().strftime('%Y-%m-%d')
 
 def contractesNous(tarifa, data_inici):
     sense_not = []
@@ -44,7 +51,7 @@ def endarrerits(tarifa,data):
     days_draft_delayed = 45
     
     pol_ids = pol_obj.search([('tarifa.name','=',tarifa),
-                       ('data_firma_contracte','<',data),
+                       ('data_firma_contracte','>=',data),
                             ('state','=','esborrany')]) 
     pol_draft = len(pol_ids)   
 
@@ -61,7 +68,6 @@ def endarrerits(tarifa,data):
         text += "\n {a}".format(**locals())
     text = text.format(**locals())
     print text
-    
 
 contractesNous(tarifa, data_inici)
 endarrerits(tarifa,data)
