@@ -151,7 +151,7 @@ gestiocontractes:
           date:
             userdescription: Introdueix la data dels des dels quals vols veure els nous contractes amb el format 'YYYY-mm-dd'
       seguiment3:
-        script: python SOME_SRC/patchscripts/Informacio/seguiment_30A.py {date}
+        script: python SOME_SRC/patchscripts/Informacio/seguiment_30A.py --date {date}
         title: Seguiment de contractes nous 3.0A i contractes endarrerits en esborrany
         description: 
         parameters:
