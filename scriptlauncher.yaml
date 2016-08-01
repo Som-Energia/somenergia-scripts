@@ -150,6 +150,13 @@ gestiocontractes:
         parameters:
           date:
             userdescription: Introdueix la data dels des dels quals vols veure els nous contractes amb el format 'YYYY-mm-dd'
+      seguiment3:
+        script: python SOME_SRC/patchscripts/Informacio/seguiment_30A.py {date}
+        title: Seguiment de contractes nous 3.0A i contractes endarrerits en esborrany
+        description: 
+        parameters:
+          date:
+            userdescription: Introdueix la data amb el format 'YYYY-mm-dd', l'última no inclosa
       cupstoemailb:
         script: SOME_SRC/cups2email/cups2email_lang_b.py {file}
         title: Email validació de instalació a partir dels CUPS facilitats per la distribuidora
