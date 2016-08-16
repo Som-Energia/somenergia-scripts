@@ -18,19 +18,23 @@ contract_header = {
         }
 
 billc_header = {
-        'ca_ES': ['CIF' ,'Titular', 'Adreça', 'CUPS'],
-        'es_ES': ['CIF' ,'Titular', 'Dirección', 'CUPS'],
+        'ca_ES': ['CIF' ,'Titular', 'Adreça', 'CUPS', 'Contracte'],
+        'es_ES': ['CIF' ,'Titular', 'Dirección', 'CUPS', 'Contrato'],
         }
 
 bill_header = {
         'ca_ES': ['Número','Data inici','Data final','Tipus','Total Potència (€)','Total Energia (€)',
             'Total Reactiva (€)','Total Lloguer (€)','Total sense IVA (€)','Total (€)',
             'Total Energia P1 (€)', 'Total Energia P2 (€)','Total Energia P3 (€)',
-            'Total Potència P1 (€)', 'Total Potència P2 (€)','Total Potència P3 (€)'],
+            'Total Potència P1 (€)', 'Total Potència P2 (€)','Total Potència P3 (€)',
+            'Preu Energia P1 (€/kWh)', 'Preu Energia P2 (€/kWh)','Preu Energia P3 (€/kWh)',
+            'Preu Potència P1 (€/kW)', 'Preu Potència P2 (€/kW)','Preu Potència P3 (€/kW)'],
         'es_ES': ['Número','Fecha inicio','Fecha final','Tipo','Total Potencia (€)','Total Energia (€)',
             'Total Reactiva (€)','Total Alquiler (€)','Total sin IVA (€)','Total (€)',
             'Total Energia P1 (€)', 'Total Energia P2 (€)','Total Energia P3 (€)',
-            'Total Potencia P1 (€)', 'Total Potencia P2 (€)','Total Potencia P3 (€)'],
+            'Total Potencia P1 (€)', 'Total Potencia P2 (€)','Total Potencia P3 (€)',
+            'Preu Energia P1 (€/kWh)', 'Preu Energia P2 (€/kWh)','Preu Energia P3 (€/kWh)',
+            'Preu Potencia P1 (€/kW)', 'Preu Potencia P2 (€/kW)','Preu Potencia P3 (€/kW)']
         }
 
 bill_prefix = {
@@ -69,12 +73,14 @@ def dump_contracts(contracts, filename, lang):
             writer.writerow(row)
 
 def dump_bills(contracts, start, end, filename, lang):
-    contract_fields = ['vat','titular','adreca','cups']
+    contract_fields = ['vat','titular','adreca','cups','name']
     bill_fields = ['number','data_inici','data_final','type',
             'total_potencia','total_energia','total_reactiva','total_lloguers',
             'amount_untaxed','amount_total',
             'P1 energia price','P2 energia price','P3 energia price',
-            'P1 potencia price','P2 potencia price','P3 potencia price']
+            'P1 potencia price','P2 potencia price','P3 potencia price',
+            'P1 energia price unit','P2 energia price unit','P3 energia price unit',
+            'P1 potencia price unit','P2 potencia price unit','P3 potencia price unit']
 
 
     period_fields = ['P1','P2','P3','P4','P5','P6']
@@ -188,11 +194,15 @@ def get_bill(bill_id):
         'type': invoice['type']})
 
     bill_lines_id = bill_line_obj.search([('factura_id','=',bill_id)])
-    fields = ['tipus','name','price_subtotal','quantity']
+    fields = ['tipus','name','price_subtotal','quantity', 'price_unit_multi']
     bill_lines = bill_line_obj.read(bill_lines_id, fields)
 
     bill.update({
         '%s %s price' % (line['name'],line['tipus']): line['price_subtotal']
+        for line in bill_lines
+        })
+    bill.update({
+        '%s %s price unit' % (line['name'],line['tipus']): line['price_unit_multi']
         for line in bill_lines
         })
 
