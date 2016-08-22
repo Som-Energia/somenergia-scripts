@@ -36,7 +36,8 @@ pol_sw_ids = [a['cups_polissa_id'][0] for a in sw_reads if a['cups_polissa_id']]
 pol_ids = O.GiscedataPolissa.search([('id','not in',pol_sw_ids),
                                      ('lot_facturacio','=',0),
                                      ('state','=','activa')])
-pol_ids += O.GiscedataPolissa.search([('lot_facturacio','<',id_lot_orig),
+pol_ids += O.GiscedataPolissa.search([('id','not in',pol_sw_ids),
+                                        ('lot_facturacio','<',id_lot_orig),
                                        ('state','=','activa')])
 for pol_id in pol_ids:
     pol = O.GiscedataPolissa.get(pol_id)
