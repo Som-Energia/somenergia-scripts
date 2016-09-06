@@ -22,7 +22,7 @@ class MunicipalTaxesInvoicingReport:
         self.end_date = end_date
 
     def by_city(self, ine):
-        sql = 'sql/municipaltax_detailed.sql'
+        sql = '../patchscripts/Taxes/sql/municipaltax_detailed.sql'
         with open(sql) as f:
             query = f.read()
             self.cursor.execute(query,{ 
