@@ -82,8 +82,8 @@ RIGHT JOIN
 	LEFT JOIN giscedata_polissa AS polissa ON polissa.id = factura.polissa_id
 	LEFT JOIN giscedata_cups_ps AS cups ON cups.id = polissa.cups
 	LEFT JOIN res_municipi as municipi on municipi.id = cups.id_municipi	
-	WHERE municipi.id = MUNICIPI_ID -- res_municipi.id
-	AND ((invoice.date_invoice >= 'DATA_INICI') AND (invoice.date_invoice < 'DATA_FINAL')) -- YYYY-mm-dd
+	WHERE municipi.ine = %(ine)s -- res_municipi.id
+	AND ((invoice.date_invoice >= %(start_date)s) AND (invoice.date_invoice < %(end_date)s)) -- YYYY-mm-dd
 	AND (((invoice.type LIKE 'out_%%')
 	AND ((invoice.state = 'open') OR (invoice.state = 'paid')))
 	OR (invoice.type LIKE 'in_%%'))
@@ -94,13 +94,13 @@ LEFT JOIN
 	invoice.id,
 	COALESCE(SUM(invoice_tax.tax_amount::float*(
 	CASE 
-	WHEN invoice_tax.name LIKE '%Impuesto especial sobre la electricidad%' THEN 1
+	WHEN invoice_tax.name LIKE '%%Impuesto especial sobre la electricidad%%' THEN 1
 	ELSE 0
 	END
 	)),0.0) AS electricity_tax,
 	COALESCE(SUM(invoice_tax.tax_amount::float*(
 	CASE 
-	WHEN invoice_tax.name LIKE '%IVA%' THEN 1
+	WHEN invoice_tax.name LIKE '%%IVA%%' THEN 1
 	ELSE 0
 	END
 	)),0.0) AS vat
@@ -109,9 +109,9 @@ LEFT JOIN
 	LEFT JOIN giscedata_facturacio_factura AS factura ON invoice.id = factura.invoice_id
 	LEFT JOIN giscedata_polissa AS polissa ON polissa.id = factura.polissa_id
 	LEFT JOIN giscedata_cups_ps AS cups ON cups.id = polissa.cups
-	LEFT JOIN res_municipi as municipi on municipi.id = cups.id_municipi	
-	WHERE municipi.id = MUNICIPI_ID -- res_municipi.id 
-	AND ((invoice.date_invoice >= 'DATA_INICI') AND (invoice.date_invoice < 'DATA_FINAL')) -- YYYY-mm-dd
+	LEFT JOIN res_municipi as municipi on municipi.id = cups.id_municipi
+	WHERE municipi.ine = %(ine)s -- res_municipi.id
+	AND ((invoice.date_invoice >= %(start_date)s) AND (invoice.date_invoice < %(end_date)s)) -- YYYY-mm-dd
 	AND (((invoice.type LIKE 'out_%%')
 	AND ((invoice.state = 'open') OR (invoice.state = 'paid')))
 	OR (invoice.type LIKE 'in_%%'))
