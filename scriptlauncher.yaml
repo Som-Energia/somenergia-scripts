@@ -195,6 +195,17 @@ admin:
           userdescription: data final (ex. 2015-03-31)
         filetype:
           userdescription: format sortida (xml|csv)
+    municipaltaxdetail:
+      script: python SOME_SRC/patchscripts/Taxes/municipaltax_detailed.py {ine} {start_date} {end_date}
+      title: Generació detall impost municipal 1.5%
+      description:
+      parameters:
+        ine:
+          userdescription: INE municipi
+        start_date:
+          userdescription: data inici (ex. 2015-01-01)
+        end_date:
+          userdescription: data final (ex. 2015-03-31)
 
 generation:
   description: Generació
