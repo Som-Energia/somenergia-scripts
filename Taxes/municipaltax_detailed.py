@@ -17,15 +17,15 @@ def dump_results(results):
             'CUPS',
             'dirección',
             'ref_catastral',
-            'número_factura'
-            'fecha_factura'
-            'fecha_inicio'
-            'fecha_final'
-            'emisor'
-            'tipo'
-            'cantidad_total_distribuidora'
+            'número_factura',
+            'fecha_factura',
+            'fecha_inicio',
+            'fecha_final',
+            'emisor',
+            'tipo',
+            'cantidad_total_distribuidora',
             'cantidad_alquiler_distribuidora',
-            'cantidad_cliente_energía'
+            'cantidad_cliente_energía',
             'cantidad_cliente_potencia',
             'cantidad_cliente_alquiler',
             'cantidad_cliente_atr',
