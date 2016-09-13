@@ -12,9 +12,10 @@ import configdb
 
 
 def dump(title,factures):
-    print "==== {title} ====".format(**locals())
-    for factura in factures:
-        print '{}  {}' % (factura['polissa'], factura['factura'])
+     print "==== %s ====" % title
+     for factura in factures:
+         if ('polissa' in factura) and ('factura' in factura):
+             print factura['polissa'], factura['factura']
 
 
 def db_query(db,sql):
