@@ -26,9 +26,10 @@ per_facturar = clot_obj.search([('state','like','facturar'),
                                 ('lot_id','=',lot_id)])
 oberts = clot_obj.search([('state','like','obert'),
                         ('lot_id','=',lot_id)])
-esborranys = clot_obj.search([('state','like','facturat'),
+esborranys = clot_obj.search([('state','like','esborrany'),
                             ('lot_id','=',lot_id)])
-
+apunt = clot_obj.search([('state','like','facturar'),
+                            ('lot_id','=',lot_id)])
 
 
 
@@ -94,6 +95,7 @@ print "    Facturats {}".format(len(facturat))
 print "    Per facturar {}".format(len(per_facturar))
 print "    Oberts {}".format(len(oberts))
 print "    Esborranys {}".format(len(esborranys))
+print "    A punt per facturar {}".format(len(apunt))
 
 print "\nERRORS {}. Endarrerits {}".format(len(total_errors), len(endarrerides(list(total_errors))))
 print "    Sobreestimacions {}. Endarrerits {}".format(len(set(sobreestimacions)), len(endarrerides(sobreestimacions)))
