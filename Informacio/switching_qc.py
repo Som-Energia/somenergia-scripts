@@ -20,6 +20,7 @@ delay_01 = 16
 delay_02 = 70
 delay_a3_01 = 5
 delay_a3_02 = 15
+delay_m1_02 = 25
 
 
 
@@ -156,7 +157,7 @@ text_cx = (text_c0 + text_c1 + text_c2).format(**locals())
 
 text_a3 = dades_casos('a3','A3',delay_a3_01, delay_a3_02)
 text_b1 = dades_casos('b1','B1',delay_01, delay_02)
-text_m1 = dades_casos('m1','M1',delay_01, delay_02)
+text_m1 = dades_casos('m1','M1',delay_01, delay_m1_02)
 text_r1 = dades_casos('r1','R1',delay_01, delay_02)
 
 #Falten casos: D1, W1
