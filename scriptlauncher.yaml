@@ -82,7 +82,7 @@ invoicefixing:
       description: ATENCIÓ! Aquest script només s'ha d'utiltizar quan es vol fer canvi de lot i lot actual el volem tancar. Aquest scripts et permet moure les polisses que falten per facturar al següent lot
 
     fixmoddate:  
-      script: python SOME_SRC/invoice-janitor/Fact_impF1_data_modificacio_contractual.py 
+      script: python SOME_SRC/invoice-janitor/fix_modcontractual_orig.py
       title: Corregir errors data de modificació contractual 
       description:
 
