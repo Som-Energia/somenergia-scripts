@@ -2,7 +2,7 @@
 .*.sw?
 # config files
 configdb.py
-
+config.py
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
