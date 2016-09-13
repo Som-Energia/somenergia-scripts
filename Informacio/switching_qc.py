@@ -35,7 +35,7 @@ def titol(txt):
     txt_rt = linia +"\n"+ txt + "\n" + linia
     return txt_rt
 
-def resum(text_draft_pol, text_validate ,text_cx, text_a3, text_b1, text_m1):
+def resum(text_draft_pol, text_validate ,text_cx, text_a3, text_b1, text_m1,text_r1):
     print "="*45
     print "           Resum Gestio de Contractes"
     print "="*45
@@ -51,6 +51,8 @@ def resum(text_draft_pol, text_validate ,text_cx, text_a3, text_b1, text_m1):
     print text_b1
     print titol("MODIFICACIONS M1")
     print text_m1
+    print titol("MODIFICACIONS R1")
+    print text_r1
     print "="*45
 
 def dades_casos(cas_obj, cas, delay_01, delay_02):
@@ -143,7 +145,7 @@ text_draft_pol += "\n   ==> Per eliminar (mes de {delay_max}): {draft_to_clean}"
 text_draft_pol = text_draft_pol.format(**locals())
 
 
-#Casos de switching CX (c06 tambe eh borrar), A3, B1, M1
+#Casos de switching CX (c06 tambe eh borrar), A3, B1, M1 i R1
 sw_ids = sw_obj.search([('state','=','open'),
                        ('proces_id.name','like','C')])
 total_open = len(sw_ids)
@@ -155,10 +157,11 @@ text_cx = (text_c0 + text_c1 + text_c2).format(**locals())
 text_a3 = dades_casos('a3','A3',delay_a3_01, delay_a3_02)
 text_b1 = dades_casos('b1','B1',delay_01, delay_02)
 text_m1 = dades_casos('m1','M1',delay_01, delay_02)
+text_r1 = dades_casos('r1','R1',delay_01, delay_02)
 
-#Falten casos: D1, R1, W1
+#Falten casos: D1, W1
 
-resum(text_draft_pol,text_validate ,text_cx, text_a3, text_b1, text_m1)
+resum(text_draft_pol,text_validate ,text_cx, text_a3, text_b1, text_m1,text_r1)
 
 
 
