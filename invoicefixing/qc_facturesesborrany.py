@@ -24,7 +24,7 @@ Validació de Factures en Esborrany del lot
 - Factures de zero dies: {zero_days} 
 - Factures sense linies de energia: {zero_lines}
 
-Detall (ids de factures):
+Detall (números de pòlisses):
 
 - Factures en esborrany: {draft_ids} 
 - Amb imports de més de 5000  & a fora de mitjana±100€ & factures amb darrera lecture estimada: {bigger_than_5000_ids} 
