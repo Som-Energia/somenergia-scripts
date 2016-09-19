@@ -5,7 +5,7 @@ from datetime import datetime,timedelta
 import configdb
 
  
-O = Client(**configdb.erpeek)
+O = Client(**configdb.erppeek)
 
 comp_obj = O.GiscedataLecturesComptador
 lectP_obj = O.GiscedataLecturesLecturaPool
