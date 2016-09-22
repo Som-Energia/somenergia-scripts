@@ -248,9 +248,3 @@ validation:
       parameters:
         cnae:
           userdescription: CNAE
-tests:
-  description: Test de prueba
-  scripts:
-    testemail:
-      title: testemail
-      script: execute_send_email.py -C ~/config.py -s test -t cesar.lopez@somenergia.coop -- python -c print "Hello world!"
