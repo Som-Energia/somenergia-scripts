@@ -46,7 +46,6 @@ client = erppeek.Client(**dbconfig.erppeek)
 contract_obj = client.model('giscedata.polissa')
 contract_power_obj = client.model('giscedata.polissa.potencia.contractada.periode')
 partner_obj = client.model('res.partner')
-category_obj = client.model('giscedata.polissa.category')
 cups_obj = client.model('giscedata.cups.ps')
 meter_obj = client.model('giscedata.lectures.comptador')
 bill_obj = client.model('giscedata.facturacio.factura')
@@ -217,11 +216,11 @@ def get_bill(bill_id):
         })
     return bill 
 
-def build(start, end, category, contractsfile, billsfile,
+def build(start, end, partner, contractsfile, billsfile,
         lang='es_ES', **args):
 
-    category_id = category_obj.search([('name','=',category)])[0]
-    search_params = [('category_id','=',category_id),('state','=','activa')]
+    partner_id = partner_obj.search([('ref','=',partner)])[0]
+    search_params = [('titular','=',partner_id),('state','=','activa')]
     contracts_id = contract_obj.search(search_params)
     contracts = [get_contract(contract_id) for contract_id in contracts_id]
     dump_contracts(contracts, contractsfile, lang)
@@ -248,9 +247,9 @@ def parseArguments():
             help="End date (isoformat)",
             )
         sub.add_argument(
-            'category',
+            'partner',
             type=str,
-            help="Category",
+            help="Partner",
             )
         sub.add_argument(
             'contractsfile', 
