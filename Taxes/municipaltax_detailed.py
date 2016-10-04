@@ -43,7 +43,8 @@ class MunicipalTaxesInvoicingReport:
         self.end_date = end_date
 
     def by_city(self, ine):
-        sql = '../patchscripts/Taxes/sql/municipaltax_detailed.sql'
+        sql = os.path.join(os.path.dirname(
+              os.path.realpath(__file__)), 'sql', 'municipaltax_detailed.sql')
         with open(sql) as f:
             query = f.read()
             self.cursor.execute(query,{ 
