@@ -3,6 +3,7 @@
 import sys
 import psycopg2
 import psycopg2.extras
+import os
 
 import configdb
 import datetime
