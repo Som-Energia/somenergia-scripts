@@ -25,8 +25,7 @@ Validació de Factures en Esborrany del lot
 
 Detall (números de pòlisses):
 
-- Factures en esborrany: {draft_ids} 
-- Amb imports de més de 15000 & a fora de mitjana±100€ & factures amb darrera lecture estimada: {bigger_than_15000_ids} 
+- Amb imports de més de 5000 & a fora de mitjana±100€ & factures amb darrera lecture estimada: {bigger_than_5000_ids} 
 - Amb consums més grans que el que permet la potència: {sobre_consum_ids} 
 - Amb R1 oberts: {r1_obert_ids} 
 - Factures de zero dies: {zero_days_ids} 
