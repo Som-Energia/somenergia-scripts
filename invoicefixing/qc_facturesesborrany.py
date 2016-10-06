@@ -19,6 +19,7 @@ Validació de Factures en Esborrany del lot
 - Import de les factures en esborrany: {draft_amount:.2f}€
 - Amb imports de més de 5000: {bigger_than_5000} 
 - Amb consums més grans que el que permet la potència: {sobre_consum} 
+- Amb consums més grans que el 50% del que permet la potència: {sobre_consum_50} 
 - Amb R1 oberts: {r1_obert} 
 - Factures de zero dies: {zero_days} 
 - Factures sense linies de energia: {zero_lines}
@@ -27,6 +28,7 @@ Detall (números de pòlisses):
 
 - Amb imports de més de 5000: {bigger_than_5000_ids} 
 - Amb consums més grans que el que permet la potència: {sobre_consum_ids} 
+- Amb consums més grans que el 50% del que permet la potència: {sobre_consum_50_ids} 
 - Amb R1 oberts: {r1_obert_ids} 
 - Factures de zero dies: {zero_days_ids} 
 - Factures sense linies de energia: {zero_lines_ids} 

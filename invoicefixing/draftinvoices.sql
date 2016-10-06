@@ -6,7 +6,13 @@ SELECT
 --					invoice.amount_total < past_invoices.avg-100)
 --					and lecturas.ultima_estimada
 				  THEN 1 ELSE 0 END),0) AS bigger_than_5000,
-    COALESCE(SUM(CASE WHEN factura.potencia*factura.dies*24 < factura.energia_kwh THEN 1 ELSE 0 END),0) AS sobre_consum,
+    COALESCE(SUM(CASE WHEN
+        factura.potencia*factura.dies*24 < factura.energia_kwh
+        THEN 1 ELSE 0 END),0) AS sobre_consum,
+    COALESCE(SUM(CASE WHEN
+        factura.potencia*factura.dies*24 >= factura.energia_kwh AND
+        factura.potencia*factura.dies*24*0.5 < factura.energia_kwh
+        THEN 1 ELSE 0 END),0) AS sobre_consum_50,
     COALESCE(SUM(CASE WHEN r1.polissa_id IS NOT NULL THEN 1 ELSE 0 END),0) AS r1_obert,
     COALESCE(SUM(CASE WHEN factura.data_final<=factura.data_inici THEN 1 ELSE 0 END),0) AS zero_days,
     COALESCE(SUM(CASE WHEN linia_energia.factura_id IS NULL THEN 1 ELSE 0 END),0) AS zero_lines,
@@ -16,7 +22,13 @@ SELECT
 --					invoice.amount_total < past_invoices.avg-100) and
 --				  lecturas.ultima_estimada
 				  THEN invoice.name ELSE NULL END, ','),'') AS bigger_than_5000_ids,
-    COALESCE(STRING_AGG(CASE WHEN factura.potencia*factura.dies*24 < factura.energia_kwh THEN invoice.name ELSE NULL END, ','),'') AS sobre_consum_ids,
+    COALESCE(STRING_AGG(CASE WHEN
+        factura.potencia*factura.dies*24 < factura.energia_kwh
+        THEN invoice.name ELSE NULL END, ','),'') AS sobre_consum_ids,
+    COALESCE(STRING_AGG(CASE WHEN
+        factura.potencia*factura.dies*24 >= factura.energia_kwh AND
+        factura.potencia*factura.dies*24*0.5 < factura.energia_kwh
+        THEN invoice.name ELSE NULL END, ','),'') AS sobre_consum_50_ids,
     COALESCE(STRING_AGG(CASE WHEN r1.polissa_id IS NOT NULL THEN invoice.name ELSE NULL END, ','),'') AS r1_obert_ids,
     COALESCE(STRING_AGG(CASE WHEN factura.data_final<=factura.data_inici THEN invoice.name ELSE NULL END, ','),'') AS zero_days_ids,
     COALESCE(STRING_AGG(CASE WHEN linia_energia.factura_id IS NULL THEN invoice.name ELSE NULL END, ','),'') AS zero_lines_ids,
