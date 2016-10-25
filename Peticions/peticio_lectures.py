@@ -44,6 +44,9 @@ def getPolissesExcesEstimades(db,min_data,in_,distrs):
                 SELECT polissa.id
                 FROM giscedata_polissa AS polissa
                 LEFT JOIN res_partner AS rp ON rp.id = polissa.distribuidora
+                LEFT JOIN giscedata_polissa_category_rel AS category_rel ON polissa.id=category_rel.polissa_id
+                LEFT JOIN giscedata_polissa_category AS category ON category.id = category_rel.category_id
+                LEFT JOIN giscedata_polissa_category AS category_ ON category_.id = category.parent_id
                 WHERE polissa.id NOT IN
                 (  SELECT comptador.polissa
                     FROM giscedata_lectures_lectura_pool AS lectura
@@ -53,6 +56,7 @@ def getPolissesExcesEstimades(db,min_data,in_,distrs):
                     GROUP BY lectura.comptador, comptador.polissa
                     ORDER BY comptador.polissa
                 )
+                AND (category_.name IS NULL OR category_.name != 'En curs')
                 AND polissa.active
                 AND polissa.state ='activa'
                 AND polissa.data_alta < '%s'
