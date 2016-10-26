@@ -10,7 +10,7 @@ pol_obj = O.GiscedataPolissa
 sw_obj = O.GiscedataSwitching
 
 relativetime = relativedelta(months=1)
-nif = 'ESP'
+nif = 'ESG'
 if nif == 'ESH':
     text = 'Comunitat de veins'
 elif nif == 'ESP':

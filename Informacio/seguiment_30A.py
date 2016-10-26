@@ -21,9 +21,9 @@ if not(data_inici):
     data_inici = datetime.today().strftime('%Y-%m-%d')
 
 def contractesNous(tarifa, data_inici):
+    tots = []    
     sense_not = []
-    mails = ['tarifa3.0@somenergia.coop']
-    mails.append('ccvv@somenergia.coop')
+    mails = ['tarifa3.0@somenergia.coop','ccvv@somenergia.coop']
     data_fi = datetime.strftime(datetime.today(),'%Y-%m-%d')
     pol_ids = pol_obj.search([('tarifa.name','=',tarifa),
                        ('data_firma_contracte','>=',data_inici),
@@ -32,12 +32,16 @@ def contractesNous(tarifa, data_inici):
     pol_reads = pol_obj.read(pol_ids,
                         ['notificacio_email','cups'])
     for pol_read in pol_reads:
-        if not(pol_read['notificacio_email']  in mails):
-            if pol_read['cups']:
+        print pol_read
+        if pol_read['cups']:
+            tots.append(pol_read['cups'][1])
+            if not(pol_read['notificacio_email']  in mails):
                 sense_not.append(pol_read['cups'][1])
     sense_not_ = len(sense_not)
     text_pnews = "\n" + 40*"=" 
     text_pnews += "\nContractes Nous des de {data_inici} (inclosa) fins a {data_fi} (no inclosa): {sol_pol}"
+    for a in tots:
+        text_pnews += "\n {a}".format(**locals())
     text_pnews += "\n Dels quals no ens han dit quina potencia volen: {sense_not_}"
     for a in sense_not:
         text_pnews += "\n {a}".format(**locals())
