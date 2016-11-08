@@ -10,10 +10,10 @@ from yamlns import namespace as ns
 
 contract_header = {
         'ca_ES': ['CIF','Titular','Adreça','CUPS','Data Alta','Data Baixa','Contracte',
-            'Distribuidora','Potència contractada P1 (kW)','Potència contractada P2 (kW)',
+            'Distribuidora','Tarifa','Potència contractada P1 (kW)','Potència contractada P2 (kW)',
             'Potència contractada P3 (kW)','Lloguer'],
         'es_ES': ['CIF','Titular','Dirección','CUPS','Fecha Alta','Fecha Baja','Contrato',
-            'Distribuidora','Potencia contratada P1 (kW)','Potencia contratada P2',
+            'Distribuidora','Tarifa','Potencia contratada P1 (kW)','Potencia contratada P2',
             'Potencia contratada P3','Alquiler']
         }
 
@@ -60,7 +60,7 @@ def get_period(string, start='(', stop=')'):
 
 def dump_contracts(contracts, filename, lang):
     fields = ['cif','titular','adreca','cups','data_alta','data_baixa','name',
-            'distribuidora','P1','P2','P3','lloguer']
+            'distribuidora','tarifa','P1','P2','P3','lloguer']
 
     with codecs.open(filename, 'wb', 'utf-8') as csvfile:
         writer = csv.writer(csvfile, delimiter=';',
