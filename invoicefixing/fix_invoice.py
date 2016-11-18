@@ -12,6 +12,49 @@ from utils import *
 from validation_utils import adelantar_polissa_endarerida
 from display import *
 
+def check_contract(O, polissa_id, lects):
+    if len(lects) < 2:
+        return
+
+    offset_ct = {'2.0A (P1)': 1, '2.1A (P1)': 1,
+                 '2.0DHA (P1)': 2, '2.1DHA (P1)': 2}
+
+    tobe_fixed = 0
+    for back_idx in reversed(range(1, min(len(lects), 15))):
+        if not (lects[0]['periode'][1].startswith('2')) or 'DHS' in lects[0]['periode'][1]:
+            # 3.0 and DHS pending
+            continue
+
+        offset = offset_ct[lects[0]['periode'][1]]
+        try:
+            def check_origen(lects, n, origen, start, offset):
+                for idx in range(start, n+1, offset):
+                    if not lects[idx]['origen_id'][1] == origen:
+                        return False
+                return True
+
+            prev_idx = back_idx*offset
+            last_idx = offset + prev_idx
+
+            offset_status = [check_origen(lects, prev_idx, "Estimada", offset, offset),
+                             check_origen(lects, prev_idx, "Estimada", offset+1, offset)]
+
+            if ((offset_status[0]) \
+                and (lects[0]['lectura'] >= lects[last_idx]['lectura']) \
+                and (lects[0]['lectura'] < lects[prev_idx]['lectura'])) \
+                or ((offset == 2) \
+                and (offset_status[1]) \
+                and (lects[1]['lectura'] >= lects[last_idx+1]['lectura']) \
+                and (lects[1]['lectura'] < lects[prev_idx+1]['lectura'])):
+
+                for day_idx in range(1, back_idx+1):
+                    tobe_fixed += 1
+
+        except Exception, e:
+            print e
+            pass
+    return tobe_fixed
+
 def remove_modmeter_lect(meters, lects):
     dates_out = {meter['data_baixa']: meter['id'] for meter in meters if meter['data_baixa']}
     return [lect for lect in lects if not((lect['name'] in dates_out.keys())
