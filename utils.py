@@ -155,3 +155,21 @@ def get_contract_status(O, contract_id):
         return 'UNPAID'
 
     return 'OK'
+
+def open_and_send(O, ids, lang, send_refund=True, send_rectified=True, send_digest=False, num_contracts=1):
+    ctx = {
+	    'active_id': ids[0],
+	    'active_ids': ids,
+            'lang': lang,
+	    'tz': 'Europe/Madrid'
+           }
+    vals = {
+            'state': 'init',
+            'send_refund': send_refund,
+            'send_rectified': send_rectified,
+            'send_digest': send_digest,
+            'num_contracts': num_contracts,
+        }
+    wizard_id = O.WizardInvoiceOpenAndSend.create(vals, ctx)
+    wizard = O.WizardInvoiceOpenAndSend.get(wizard_id)
+    wizard.action_obrir_i_enviar(ctx)
