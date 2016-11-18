@@ -4,7 +4,7 @@ from ooop import OOOP
 import configdb
 from datetime import datetime,timedelta
 
-from validacio_eines import * 
+from validacio_eines import *
 from fix_invoice import *
 from utils import *
 
@@ -20,15 +20,15 @@ cups_obj = O.GiscedataCupsPs
 partner_obj = O.ResPartner
 
 contracts_max = 50
-invoices_max = 3 
+invoices_max = 3
 
 dif_maxima = 55
 euro_max = 1000
 euro_perday_max = euro_max/31
 kwh_max = 9000
-kwh_perday_max = kwh_max/31 
+kwh_perday_max = kwh_max/31
 
-def get_detained(): 
+def get_detained():
     lectures_massa_diferencia = []
     error_al_comptador_inactiu = []
 
@@ -60,8 +60,8 @@ def get_detained():
                 #Comprovar si té gir de comptador
                 if not(comp_read['giro']):
                     continue
-            
-                if not(comp_read['name'] == pol_read['comptador']):       
+
+                if not(comp_read['name'] == pol_read['comptador']):
                     continue
                 #Cerca de lectures problematiques
                 limit_superior_consum = int(comp_read['giro'])* 9/10
@@ -72,25 +72,25 @@ def get_detained():
                 if lect_ids:
                     #Ja tenim identificat el comptador i lectures amb problemes
                     break
-            
+
             #Iterem per lectura problematica
             for lect_id in lect_ids:
                 #Si el comptador no és l'actiu, s'ha d'anar amb cuidado perque pot ser que li facturem malament
-                if not(comp_read['name'] == pol_read['comptador']):       
+                if not(comp_read['name'] == pol_read['comptador']):
                     break
                 lectura = lect_fact_obj.get(lect_id)
                 # Problemes amb lectures de Fenosa. Per ara només els filtrem
                 # A sota hi ha codi de com solucionar-ho
                 if lectura.lectura == 0 and pol_read['distribuidora'][0] == 2316:
-                    break       
-                # Busquem la lectura de la data final de l'ultima factura              
+                    break
+                # Busquem la lectura de la data final de l'ultima factura
                 search_vals_ref = [('comptador','=',lectura.comptador.name),
                                 ('tipus','=',lectura.tipus),
                                 ('periode','like', lectura.periode.name),
                                 ('name','=', pol_read['data_ultima_lectura'])]
                 lect_ref_id = lect_fact_obj.search(search_vals_ref)[0]
                 lect_ref_read = lect_fact_obj.read(lect_ref_id,['lectura'])
-                
+
                 ##BUSCAR SI TE UNA LECTURA POSTERIOR
                 search_vals_post = [('comptador','=',lectura.comptador.name),
                                 ('tipus','=',lectura.tipus),
@@ -98,26 +98,26 @@ def get_detained():
                                 ('name','>',lectura.name),
                                 ('lectura','>=',lect_ref_read['lectura'])]
                 lect_post_ids = lect_pool_obj.search(search_vals_post)
-                
+
                 if lect_post_ids:
                     break
-                    
+
                 lect_search_vals_mult = [('comptador','=',comp_id),
                                     ('tipus','=',lectura.tipus),
                                     ('periode','like', lectura.periode.name),
                                     ('name','>',pol_read['data_ultima_lectura'])]
-        
+
                 lect_mult_ids = lect_fact_obj.search(lect_search_vals_mult)
-        
+
                 if len(lect_mult_ids) > 1:
                     # TODO: TO BE REVIEWD #
                     # Té lectures múltiples. Eliminem la penultima lectura entrada"
                     break
-                    
+
                 if not(lect_ref_read['lectura']):
                     # No trobem lectura de referencia
                     break
-                
+
                 lectures_dif = lect_ref_read['lectura'] - lectura.lectura
                 no_consum_mensual = False
                 cups_id = pol_read['cups'][0]
@@ -127,7 +127,7 @@ def get_detained():
                     no_consum_mensual =  True
                 else:
                     dif_maxima = cups_read['conany_kwh']/12.0
-                
+
                 if  0 < lectures_dif <= dif_maxima*1.1:
                     ""
                     # Lectura copiada de l'anterior per haver fet una sobreestimació
@@ -142,7 +142,7 @@ def get_detained():
                         # Diferencia superior a diferencia màxima
                         if not pol_read['name'] in lectures_massa_diferencia:
                             lectures_massa_diferencia.append(pol_read['name'])
-       
+
         except Exception, e:
             print e
             errors.append({pol_id:e})
@@ -240,7 +240,7 @@ for contract_name in contracts:
         print 'failed fixing contract %d' % contract_id
         continue
     if o:
-        out += o 
+        out += o
     adelantar_polissa_endarerida([contract_id])
 
 # Remove failing issues
@@ -255,9 +255,9 @@ for contract_id in contracts_fixed:
     invoices = read_invoices(O, invoices_id, [])
     valid = [True if ((invoice['amount_total']/invoice['dies']) < euro_perday_max and
                       (invoice['energia_kwh']/invoice['dies']) < kwh_perday_max)
-                      else False] 
+                      else False]
     if not all(valid):
-       fact_obj.unlink(invoices_id) 
+       fact_obj.unlink(invoices_id)
 
 
 # Deliver invoices
