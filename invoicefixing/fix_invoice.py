@@ -9,7 +9,7 @@ import configdb
 from ooop import OOOP
 from consolemsg import error
 from utils import *
-from validation_utils import adelantar_polissa_endarerida
+from validacio_eines import adelantar_polissa_endarerida
 from display import *
 
 def check_contract(O, polissa_id, lects):
