@@ -33,7 +33,7 @@ final = []
 un_comptador_una_mod = []
 un_comptador_multiples_mod = []
 un_comptador_sense_lectura_tall = []
-sense_comptador_baixa = []
+multiples_comptadors_actius = []
 casos_normals_canvi_comptador = []
 cx06 = []
 m105 = []
@@ -42,7 +42,7 @@ sense_m105 = []
 def resum(polisses_resoltes_alinear_dates,
         errors, cefaco,final, un_comptador_una_mod, 
         un_comptador_multiples_mod, m105, un_comptador_sense_lectura_tall, 
-        sense_m105, sense_comptador_baixa, casos_normals_canvi_comptador, cx06):
+        sense_m105, multiples_comptadors_actius, casos_normals_canvi_comptador, cx06):
     print "="*76
     print "--> Hem descartat les polisses que fa menys de 40 dies que s'ha activat el contracte"
     print "--> Polisses amb situació normal. Fa menys de 40 dies d'ultima lectura. TOTAL: {}".format(len(casos_normals_canvi_comptador))
@@ -57,8 +57,8 @@ def resum(polisses_resoltes_alinear_dates,
     print "    --> Casos que tenen M105. TOTAL: {}. Casos: {}".format(len(m105),m105)
     print "        --> Casos sense lectura de tall. TOTAL: {}. Casos: {}".format(len(un_comptador_sense_lectura_tall),un_comptador_sense_lectura_tall)
     print "    --> Casos que NO tenen M105. TOTAL: {}. Casos: {}".format(len(sense_m105),sense_m105)
-    print "\n Sense comptador de baixa. TOTAL: {}".format(len(sense_comptador_baixa))
-    print sense_comptador_baixa
+    print "\n Sense comptador de baixa. TOTAL: {}".format(len(multiples_comptadors_actius))
+    print multiples_comptadors_actius
     print "\nPolisses per analitzar. TOTAL: {}".format(len(final)) 
     print final
     print "\n PASSAR A LA MARTA. Te casos ATR amb pas 06. TOTAL {}".format(len(cx06))
@@ -209,10 +209,14 @@ for pol_id in pol_ids:
         #detectem els comptadors de baixa   
         comp_baixa_ids = comp_obj.search([('id','in',comp_ids),
                                         ('active','=', False)])
-        #Sense comptador de baixa
+        #Sense comptador de baixa i amb més d'un comptador
         if not (comp_baixa_ids):
-            print "No te comptadors de baixa"
-            sense_comptador_baixa.append(pol_id)
+            print "Multiples comptadors actius"
+            for comp_id in comp_ids:
+                
+            multiples_comptadors_actius.append(pol_id)
+            #cas 1: Els que tenen un comptador d'activa i un de reactiva
+            #cas 2: Els que tenne un comptador sense lectures
             continue
         if avui_40 < pol_read['data_ultima_lectura']:
             print "Casos nous, nomes fa 40 dies de la ultima lectura"
@@ -223,4 +227,4 @@ for pol_id in pol_ids:
         errors.append({pol_id:e})
         print e
 
-resum(polisses_resoltes_alinear_dates, errors, cefaco,final, un_comptador_una_mod,         un_comptador_multiples_mod, m105, un_comptador_sense_lectura_tall,         sense_m105, sense_comptador_baixa, casos_normals_canvi_comptador, cx06)
+resum(polisses_resoltes_alinear_dates, errors, cefaco,final, un_comptador_una_mod,         un_comptador_multiples_mod, m105, un_comptador_sense_lectura_tall,         sense_m105, multiples_comptadors_actius, casos_normals_canvi_comptador, cx06)

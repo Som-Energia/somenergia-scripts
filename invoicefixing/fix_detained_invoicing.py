@@ -265,7 +265,7 @@ for contract_id in contracts_fixed:
     if not all(valid):
         contract_name = O.GiscedataPolissa.read(contract_id,['name'])['name']   
         contract_remove_invoices.append(contract_name)
-        #fact_obj.unlink(invoices_ids,{})
+        fact_obj.unlink(invoices_ids,{})
 print contract_remove_invoices
 
 # Deliver invoices
@@ -286,10 +286,10 @@ for contract_id in contracts_ids:
         continue
     contract_name = O.GiscedataPolissa.read(contract_id,['name'])['name']   
     contract_deliver_invoices.append(contract_name)
-    #open_and_send(O, invoices_ids, lang,
-    #        send_refund=True,
-    #        send_rectified=True,
-    #        send_digest=True,
-    #        num_contracts=1)
+    open_and_send(O, invoices_ids, lang,
+            send_refund=True,
+            send_rectified=True,
+            send_digest=True,
+            num_contracts=1)
 print contract_deliver_invoices
 # vim: ts=4 sw=4 et
