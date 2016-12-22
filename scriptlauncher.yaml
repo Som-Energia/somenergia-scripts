@@ -41,7 +41,15 @@ measurefixing:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio2_eliminar_polisses_baixa.py
       title: Eliminar pòlisses de baixa
       description: 
-    
+
+    sobrestimacions_ab_re:
+      script: SOME_SRC/invoice-janitor/invoicefixing/fix_detained_invoicing.py
+      title: Corregir Sobreestimaciones amb AB i RE
+      description: >
+         Identifiquem tots els casos que hem fet sobreestimacions,
+         i triem els que tenen un consum major del consum mensual del contracte i menor a 5 cops al consum mensual.
+         Els solucionem fent abonaments i rectificadores.
+
     sobreestimaciones:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio3_sobre_estimacions.py
       title: Corretgir Sobreestimaciones
