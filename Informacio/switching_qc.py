@@ -76,10 +76,16 @@ def dades_casos(cas_obj, cas, delay_01, delay_02):
     c01_endarrerits = sw_obj.search([('id','in',c01_ids),
                                 ('create_date','<',data_limit_01)])
     if c01_endarrerits:
-        delayed_reads_01 = sw_obj.read(c01_endarrerits,['cups_id'])
+        delayed_reads_01 = sw_obj.read(c01_endarrerits,['cups_id','cups_polissa_id'])
     else:    
         delayed_reads_01 = []
-    delayed_cups_01 = [a['cups_id'][1] for a in delayed_reads_01]
+    
+    delayed_cups_01 = [
+	a['cups_id'][1]
+	if a['cups_id']
+	else "Sense CUPS polissa {}".format(a['cups_polissa_id'][1])
+	for a in delayed_reads_01
+	]
 
     delayed_01 = len(c01_endarrerits)
     c01_pendents_ids = sw_obj.search([('id','in',c01_ids),
