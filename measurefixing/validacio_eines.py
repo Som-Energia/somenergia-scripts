@@ -98,7 +98,6 @@ def adelantar_polissa_endarerida(pol_ids):
         data_ultima_lectura_futura = facturar_manual([pol_id])
         if not data_ultima_lectura_futura: continue
         data_limit_facturacio = datetime.strftime((datetime.today() - timedelta(MIN_DIES_FACT)),"%Y-%m-%d")
-        data_limit_facturacio = datetime.strftime((datetime.today() - timedelta(MIN_DIES_FACT)),"%Y-%m-%d")
         if data_ultima_lectura_futura < data_limit_facturacio:
             polissa_endarerida.append(pol_id)
     print "polisses encara endarerides %s" % polissa_endarerida
