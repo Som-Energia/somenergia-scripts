@@ -34,7 +34,7 @@ measurefixing:
     
     validacionbajas:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio1_baixes_2.py
-      title: Corretgir errors en baixes
+      title: Corregir errors en baixes
       description: 
     
     polizasbajas:  
@@ -55,32 +55,32 @@ measurefixing:
             default: factura@somenergia.coop
     sobreestimaciones:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio3_sobre_estimacions.py
-      title: Corretgir Sobreestimaciones
+      title: Corregir Sobreestimaciones
       description:     
     
     sinlecturamaximetro:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio4_sense_lectura_maximetre.py
-      title: Corretgir errors en lectures de maximetre
+      title: Corregir errors en lectures de maximetre
       description: 
     
     validacionincompleta:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio5_incompleta.py
-      title: Corretgir lectures que estan incompletes
+      title: Corregir lectures que estan incompletes
       description: 
     
     lecturacierre:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio6_lectura_tancament.py
-      title: Corretgir lectures de tancament de comptadors (passar-lo fins que no l'ajuntem amb l'altre)
+      title: Corregir lectures de tancament de comptadors (passar-lo fins que no l'ajuntem amb l'altre)
       description: 
     
     cierremejorado:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio7_tancament_millorat.py
-      title: Corretgir lectures de tancament de comptadors (millorat)
+      title: Corregir lectures de tancament de comptadors (millorat)
       description: 
     
     senselectureanterior:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio8_sense_lectura_anterior.py
-      title: Corretgir pòlisses que no es troba la lectura anterior.
+      title: Corregir pòlisses que no es troba la lectura anterior.
       description: 
 
 invoicefixing:
@@ -112,7 +112,7 @@ invoicefixing:
         - SOME_SRC/invoice-janitor/invoicefixing/fix_refund_invoice.py
         - -i
         - "{invoice}"
-      title: Corretgir factura rectificativa
+      title: Corregir factura rectificativa
       description: 
       parameters:
         invoice:
