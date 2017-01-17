@@ -7,7 +7,7 @@ general:
         description: Aquest quadre de control et permet veure la stiaució molt genèrica de com està la comercialitació i ens serveix per omplir el Quadre de Control del drive. Si teniu peticions de noves coses a controlar podeu escriure a en Pere
         parameters:
           date:
-            userdescription: Introdueix la data (inclosa) fins a la que vols fer l'estudi amb el format 'YYYY-mm-dd'
+            description: Introdueix la data (inclosa) fins a la que vols fer l'estudi amb el format 'YYYY-mm-dd'
 measurefixing:
 
   description: Facturació. Validació de lectures
@@ -51,7 +51,7 @@ measurefixing:
          Els solucionem fent abonaments i rectificadores.
         parameters:
           mail:
-            userdescription: Introdueix el correu electrònic
+            description: Introdueix el correu electrònic
             default: factura@somenergia.coop
     sobreestimaciones:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio3_sobre_estimacions.py
@@ -116,7 +116,7 @@ invoicefixing:
       description: 
       parameters:
         invoice:
-          userdescription: Invoice number
+          description: Invoice number
 
     fixinvoice:
       script: python SOME_SRC/invoice-janitor/invoicefixing/fix_invoice.py -c {contract_name} -s {start_date} -e {end_date}
@@ -124,11 +124,11 @@ invoicefixing:
       description: 
       parameters:
         contract_name:
-          userdescription: Número de contracte
+          description: Número de contracte
         start_date:
-          userdescription: data inici
+          description: data inici
         end_date:
-          userdescription: data final
+          description: data final
 
     killalreadyexist:
       script: SOME_SRC/patchscripts/Importacions_F1_Q1/Fact_impF1_eliminar_Ja_existeix.py
@@ -141,7 +141,7 @@ invoicefixing:
         description: Petició d'autolectures (5 mesos sense lectures reals) 
         parameters:
           nmsgs:
-            userdescription: Número de missatges a enviar 
+            description: Número de missatges a enviar 
 
 gestiocontractes:
     description: Gestió de contractes
@@ -160,7 +160,7 @@ gestiocontractes:
         description: Aquest quadre de control està en construcció. Potser hi ha funcionalitats que s'haurien de tractar a fora d'aquest quadre. S'hi ha de treballar una mica més.
         parameters:
           date:
-            userdescription: Introdueix la data dels des dels quals vols veure els nous contractes amb el format 'YYYY-mm-dd'
+            description: Introdueix la data dels des dels quals vols veure els nous contractes amb el format 'YYYY-mm-dd'
       seguiment3:
         script: 
         - python
@@ -171,7 +171,7 @@ gestiocontractes:
         description: 
         parameters:
           date:
-            userdescription: Introdueix la data amb el format 'YYYY-mm-dd', l'última no inclosa
+            description: Introdueix la data amb el format 'YYYY-mm-dd', l'última no inclosa
       cupstoemailb:
         script: SOME_SRC/cups2email/cups2email_lang_b.py {file}
         title: Email validació de instalació a partir dels CUPS facilitats per la distribuidora
@@ -179,7 +179,7 @@ gestiocontractes:
         parameters:
           file:
             type: FILE
-            userdescription: Excel con los cups
+            description: Excel con los cups
       cupstoemaila:
         script: SOME_SRC/cups2email/cups2email_lang_a.py {file}
         title: Email petició documentació a partir dels CUPS facilitats per la distribuidora
@@ -187,7 +187,7 @@ gestiocontractes:
         parameters:
           file:
             type: FILE
-            userdescription: Excel con los cups
+            description: Excel con los cups
 
 admin:
   description: Administració
@@ -199,24 +199,24 @@ admin:
       parameters:
         file:
           type: FILE
-          userdescription: CSV dades municipi
+          description: CSV dades municipi
         start_date:
-          userdescription: data inici (ex. 2015-01-01)
+          description: data inici (ex. 2015-01-01)
         end_date:
-          userdescription: data final (ex. 2015-03-31)
+          description: data final (ex. 2015-03-31)
         filetype:
-          userdescription: format sortida (xml|csv)
+          description: format sortida (xml|csv)
     municipaltaxdetail:
       script: python SOME_SRC/patchscripts/Taxes/municipaltax_detailed.py {ine} {start_date} {end_date}
       title: Generació detall impost municipal 1.5%
       description:
       parameters:
         ine:
-          userdescription: INE municipi
+          description: INE municipi
         start_date:
-          userdescription: data inici (ex. 2015-01-01)
+          description: data inici (ex. 2015-01-01)
         end_date:
-          userdescription: data final (ex. 2015-03-31)
+          description: data final (ex. 2015-03-31)
 
 generation:
   description: Generació
@@ -230,7 +230,7 @@ generation:
       description: Formateja arxius de previsió
       parameters:
         celles:
-          userdescription: Enganxa les celles de l'Excel >
+          description: Enganxa les celles de l'Excel >
 
 validation:
   description: Validació de codis
@@ -240,22 +240,22 @@ validation:
       script: python SOME_SRC/somenergia-api-validators/check_iban.py {iban}
       parameters:
         iban:
-          userdescription: IBAN code
+          description: IBAN code
     checkvat:
       title: Check DNI/NIF
       script: python SOME_SRC/somenergia-api-validators/check_vat.py {vat}
       parameters:
         vat:
-          userdescription: DNI/NIF
+          description: DNI/NIF
     checkcups:
       title: Check CUPS
       script: python SOME_SRC/somenergia-api-validators/check_cups.py {cups}
       parameters:
         cups:
-          userdescription: CUPS
+          description: CUPS
     checkcnae:
       title: Check CNAE
       script: python SOME_SRC/somenergia-api-validators/check_cnae.py {cups}
       parameters:
         cnae:
-          userdescription: CNAE
+          description: CNAE
