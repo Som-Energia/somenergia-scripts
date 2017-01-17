@@ -1,13 +1,18 @@
 general:
-    description: Informació General
-    scripts:
-      quadrecontrolgeneral:
-        script: python SOME_SRC/patchscripts/Informacio/General_Quadre_control.py -d {date}
-        title: Quadre de control de comercializació
-        description: Aquest quadre de control et permet veure la stiaució molt genèrica de com està la comercialitació i ens serveix per omplir el Quadre de Control del drive. Si teniu peticions de noves coses a controlar podeu escriure a en Pere
-        parameters:
-          date:
-            description: Introdueix la data (inclosa) fins a la que vols fer l'estudi amb el format 'YYYY-mm-dd'
+  description: Informació General
+  scripts:
+    quadrecontrolgeneral:
+      script: python SOME_SRC/patchscripts/Informacio/General_Quadre_control.py -d {date}
+      title: Quadre de control de comercializació
+      description: >
+        Aquest quadre de control et permet veure la situació molt genèrica
+        de com està la comercialitació.
+        Ens serveix per omplir el Quadre de Control del drive.
+        Si teniu peticions de noves coses a controlar podeu escriure a en Pere.
+      parameters:
+        date:
+          description: Introdueix la data (inclosa) fins a la que vols fer l'estudi amb el format 'YYYY-mm-dd'
+
 measurefixing:
 
   description: Facturació. Validació de lectures
@@ -30,13 +35,16 @@ measurefixing:
     errorsprincipals:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio0_errors_principal.py
       title: Script principal
-      description: Ha d'acabar sent l'script on s'excutint tots els altres scripts de correcció de lectures en el procés de validació. Per ara fa una validació de tots els errors de lectura i soluciona els problemes de lectures amb les 3.1A. 
-    
+      description: >
+        Ha d'acabar sent l'script on s'excutint tots els altres
+        scripts de correcció de lectures en el procés de validació.
+        Per ara fa una validació de tots els errors de lectura i
+        soluciona els problemes de lectures amb les 3.1A.
     validacionbajas:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio1_baixes_2.py
       title: Corregir errors en baixes
       description: 
-    
+
     polizasbajas:  
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio2_eliminar_polisses_baixa.py
       title: Eliminar pòlisses de baixa
@@ -56,28 +64,28 @@ measurefixing:
     sobreestimaciones:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio3_sobre_estimacions.py
       title: Corregir Sobreestimaciones
-      description:     
-    
+      description:  
+
     sinlecturamaximetro:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio4_sense_lectura_maximetre.py
       title: Corregir errors en lectures de maximetre
       description: 
-    
+
     validacionincompleta:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio5_incompleta.py
       title: Corregir lectures que estan incompletes
       description: 
-    
+
     lecturacierre:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio6_lectura_tancament.py
       title: Corregir lectures de tancament de comptadors (passar-lo fins que no l'ajuntem amb l'altre)
       description: 
-    
+
     cierremejorado:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio7_tancament_millorat.py
       title: Corregir lectures de tancament de comptadors (millorat)
       description: 
-    
+
     senselectureanterior:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio8_sense_lectura_anterior.py
       title: Corregir pòlisses que no es troba la lectura anterior.
