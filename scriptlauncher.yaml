@@ -23,9 +23,14 @@ measurefixing:
       description: Serveix per quantificar els errors que podem detectar a les factures en esborrany
 
     quadrecontrolvalidacio:
+#      script: execute_send_email.py -C ~/config.py -s [Web_Scripts]_Quadre_de_control_validacio -t {mail} -- SOME_SRC/invoice-janitor/measurefixing/Validacio_Quadre_control.py
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio_Quadre_control.py
       title: Quadre de control Validació
-      description: Serveix per quantificar els errors que actualment tenim en el validació de les lectures  
+      description: Serveix per quantificar els errors que actualment tenim en el validació de les lectures. 
+      parameters:
+        mail:
+          userdescription: Introdueix el correu electrònic
+          default: pere.roig@somenergia.coop
 
     canvicomptadors:
       script: SOME_SRC/invoice-janitor/measurefixing/rectificar_lectures_canvi_comptador.py
@@ -51,16 +56,16 @@ measurefixing:
       description: 
 
     sobrestimacions_ab_re:
-      script: execute_send_email.py -C ~/config.py -s "[Web Scripts] Resultat sobreestimacions AB i RE" -t {mail} -- python SOME_SRC/invoice-janitor/invoicefixing/fix_detained_invoicing.py
+      script: execute_send_email.py -C ~/config.py -s [Web_Scripts]_Resultat_sobreestimacions_AB_i_RE -t {mail} -- python SOME_SRC/invoice-janitor/invoicefixing/fix_detained_invoicing.py
       title: Corregir Sobreestimaciones amb AB i RE
       description: >
          Identifiquem tots els casos que hem fet sobreestimacions,
          i triem els que tenen un consum major del consum mensual del contracte i menor a 5 cops al consum mensual.
          Els solucionem fent abonaments i rectificadores.
-        parameters:
-          mail:
-            description: Introdueix el correu electrònic
-            default: factura@somenergia.coop
+      parameters:
+        mail:
+          description: Introdueix el correu electrònic
+          default: pere.roig@somenergia.coop
     sobreestimaciones:
       script: SOME_SRC/invoice-janitor/measurefixing/Validacio3_sobre_estimacions.py
       title: Corregir Sobreestimaciones
