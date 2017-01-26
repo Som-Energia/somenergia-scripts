@@ -42,7 +42,7 @@ measurefixing:
       description: Serveix per quantificar els errors que actualment tenim en el validació de les lectures. 
       parameters:
         mail:
-          userdescription: Introdueix el correu electrònic
+          description: Introdueix el correu electrònic
           default: pere.roig@somenergia.coop
 
     canvicomptadors:
