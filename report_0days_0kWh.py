@@ -2,6 +2,7 @@
 import psycopg2
 import psycopg2.extras
 import csv
+import sys
 from ooop import OOOP
 
 
@@ -108,16 +109,10 @@ def refacturar(polissa_id):
 
 dbcur = None
 try:
-    pg_con = " host=" + configdb.pg['DB_HOSTNAME'] + \
-             " port=" + str(configdb.pg['DB_PORT']) + \
-             " dbname=" + configdb.pg['DB_NAME'] + \
-             " user=" + configdb.pg['DB_USER'] + \
-             " password=" + configdb.pg['DB_PASSWORD']
-    #dbconn=psycopg2.connect(pg_con)
     dbconn=psycopg2.connect(**configdb.psycopg)
     dbcur = dbconn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 except Exception, ex:
-    print "Unable to connect to database " + configdb.pg['DB_NAME']
+    print "Unable to connect to database"
     raise ex
 
 O = None
@@ -137,6 +132,7 @@ try:
             print int(factura['polissa_id'])
             eliminar_factures(O, int(factura['polissa_id']))
             alinear_mod_contractuals(O,int(factura['polissa_id']))
+	    # Per ara la funcio refacturar no fa re
             refacturar(factura['polissa_id'])
     dump('Energy 0 lines', factures)
 
