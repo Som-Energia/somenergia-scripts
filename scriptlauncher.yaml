@@ -9,7 +9,12 @@ general:
         de com està la comercialitació.
         Ens serveix per omplir el Quadre de Control del drive.
         Si teniu peticions de noves coses a controlar podeu escriure a en Pere.
+      send:
+        to:
+        - '{mail}'
       parameters:
+        mail:
+          description: Introdueix el correu electrònic # TODO, si vols rebre la informació per correu
         date:
           description: Introdueix la data (inclosa) fins a la que vols fer l'estudi amb el format 'YYYY-mm-dd'
 
