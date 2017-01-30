@@ -3,13 +3,12 @@ from ooop import OOOP
 import configdb
 
 O = OOOP(**configdb.ooop)
-imp_cups = True
-if imp_cups:
-    vals_search = [('state','=','erroni'),('cups_id','=','cups_name')]
 
+cups_name = ''
+vals_search = [('state','=','erroni'),('cups_id','=','cups_name')]
 
-erronis_id = O.GiscedataFacturacioImportacioLinia.search(vals_search)
-wiz_obj = O.GiscedataFacturacioSwitchingWizard
+lin_obj = O.GiscedataFacturacioImportacioLinia
+erronis_id = lin_obj.search(vals_search)
 
 #comptadors
 count=0
@@ -21,25 +20,21 @@ print "Hi ha %d amb importacions erronies inicials" % total
 imp_sense_canvis = []
 imp_amb_canvi = []
 
-for imp_id in erronis_id:
-    imp = O.GiscedataFacturacioImportacioLinia.read(imp_id,['info'])
-    info_inicial = imp['info']
-    ctx = {'active_id':imp_id, 'fitxer_xml': True}
-    wz_id = wiz_obj.create({}, ctx)
-    wiz = wiz_obj.get(wz_id)
-    wiz.action_importar_f1(ctx)
-    imp = O.GiscedataFacturacioImportacioLinia.read(imp_id,['info'])
+for linia_id in erronis_id:
+    info_inicial = lin_obj.read(linia_id,['info'])
+    linia_nova_id = li_obj.process_line(linia_id)
+    info_nova = lin_obj.read(linia_nova_id,['info'])
     count+=1
-    if info_inicial == imp['info']:
+    if info_inicial == info_nova:
         print "informacio igual: %s" % info_inicial
-        imp_sense_canvis.append(imp_id)
+        imp_sense_canvis.append(linia_id)
     else:
-        print "Missatge Inicial: %s \n Missatge Final: %s" % (info_inicial, imp['info'])
+        print "Missatge Inicial: %s \n Missatge Final: %s" % (info_inicial,info_nova)
         imp_amb_canvi.append(imp_id)
     print "%d/%d"%(count,total)
         
         
-erronis_finals_id = O.GiscedataFacturacioImportacioLinia.search(vals_search)  
+erronis_finals_ids = lin_obj.search(vals_search)  
 
 erronis_finals = len(erronis_finals_id)
 print "Hi havia %d amb importacions erronies inicials, sense el missatge 'Ja existeix una factura'" % total
