@@ -22,7 +22,7 @@ imp_amb_canvi = []
 
 for linia_id in erronis_id:
     info_inicial = lin_obj.read(linia_id,['info'])
-    linia_nova_id = li_obj.process_line(linia_id)
+    linia_nova_id = lin_obj.process_line(linia_id)
     info_nova = lin_obj.read(linia_nova_id,['info'])
     count+=1
     if info_inicial == info_nova:
