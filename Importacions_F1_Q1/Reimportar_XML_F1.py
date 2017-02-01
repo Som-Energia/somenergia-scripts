@@ -1,18 +1,59 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from ooop import OOOP
 import configdb
-
+import time
+from consolemsg import fail
 O = OOOP(**configdb.ooop)
 
-cups_name = ''
-vals_search = [('state','=','erroni'),('cups_id','=','cups_name')]
-
 lin_obj = O.GiscedataFacturacioImportacioLinia
-erronis_id = lin_obj.search(vals_search)
+
+def parseargs():
+    import argparse
+    parser = argparse.ArgumentParser(description='Reimportar els F1')
+    parser.add_argument('-c', '--cups',
+        help="Escull per cups",
+        )
+    parser.add_argument('-i', '--info',
+        help="Escull F1 per missatge d'error",
+        )
+    return parser.parse_args()
+
+def output(total, erronis_finals):
+    print "Importacions erronies inicials: %d" % total
+    print "Importacions correctes:  %d" % (total-erronis_finals)
+    print "Importacions encara erronies: %d" % erronis_finals
+
+def reimportar_ok(linia_id):
+    info_inicial = lin_obj.read([linia_id],['info'])[0]['info']
+    lin_obj.process_line(linia_id)
+    time.sleep(15)
+    info_nova = lin_obj.read([linia_id],['info'])[0]['info']
+    if info_inicial == info_nova:
+        print "informacio igual: %s" % info_inicial
+        return False
+    print "Missatge Inicial: %s \n Missatge Final: %s" % (info_inicial,info_nova)
+    return True
+
+args=parseargs()
+
+if not args.cups and not args.info: 
+    fail("Introdueix un cups o el missatge d'error")
+
+vals_search = [
+    ('state','=','erroni'),
+    ] + (
+    [('cups_id.name','=',args.cups) ] if args.cups else []
+    ) + (
+    [('info','=',args.info) ] if args.info else []
+    )
+
+
+erronis_ids = lin_obj.search(vals_search)
 
 #comptadors
 count=0
-total=len(erronis_id)
+total=len(erronis_ids)
 
 print "Hi ha %d amb importacions erronies inicials" % total
 
@@ -20,23 +61,15 @@ print "Hi ha %d amb importacions erronies inicials" % total
 imp_sense_canvis = []
 imp_amb_canvi = []
 
-for linia_id in erronis_id:
-    info_inicial = lin_obj.read(linia_id,['info'])
-    linia_nova_id = lin_obj.process_line(linia_id)
-    info_nova = lin_obj.read(linia_nova_id,['info'])
+for linia_id in erronis_ids:
     count+=1
-    if info_inicial == info_nova:
-        print "informacio igual: %s" % info_inicial
+    if reimportar_ok(linia_id):
         imp_sense_canvis.append(linia_id)
     else:
-        print "Missatge Inicial: %s \n Missatge Final: %s" % (info_inicial,info_nova)
-        imp_amb_canvi.append(imp_id)
+        imp_amb_canvi.append(linia_id)
     print "%d/%d"%(count,total)
-        
-        
 erronis_finals_ids = lin_obj.search(vals_search)  
+erronis_finals = len(erronis_finals_ids)
 
-erronis_finals = len(erronis_finals_id)
-print "Hi havia %d amb importacions erronies inicials, sense el missatge 'Ja existeix una factura'" % total
-print "Desrpés del script, hi ha %d amb importacions erronies, sense el missatge 'Ja existeix una factura...' " % erronis_finals
-print "S'han importat bé %d arxius xml" % (total-erronis_finals)
+output(total,erronis_finals)
+
