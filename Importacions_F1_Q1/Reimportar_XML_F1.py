@@ -22,6 +22,9 @@ def parseargs():
     parser.add_argument('-i', '--info',
         help="Escull F1 per missatge d'error",
         )
+    parser.add_argument('-d', '--date',
+        help="Escull data des de que comencem a fer la cerca",
+        )
     return parser.parse_args()
 
 def output(total, erronis_finals):
@@ -43,7 +46,7 @@ def reimportar_ok(linia_id):
     return True
 
 args=parseargs()
-if not args.cups and not args.info:
+if not args.cups and not args.info and not args.date:
     fail("Introdueix un cups o el missatge d'error")
 
 vals_search = [
@@ -53,6 +56,19 @@ vals_search = [
     ) + (
     [('info','like',args.info) ] if args.info else []
     )
+
+if args.date:
+    data_carrega = args.date
+    def valid_date(date_text):
+        from datetime import datetime
+        try:
+            datetime.strptime(date_text, '%Y-%m-%d')
+        except ValueError:
+            raise ValueError("Incorrect data format, should be YYYY-MM-DD")
+        return True
+    data_carrega = data_carrega if data_carrega and valid_date(data_carrega) else None
+    if data_carrega:
+        vals_search += [('data_carrega','>',data_carrega)]
 
 erronis_ids = lin_obj.search(vals_search)
 
