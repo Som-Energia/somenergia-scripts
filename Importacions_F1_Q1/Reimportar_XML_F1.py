@@ -1,9 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
+
+# To do: problemes ne mostrar missatges que em reotrna el ERP
+# Per temes de enconding
+
 from ooop import OOOP
 import configdb
 import time
 from consolemsg import fail
+
 O = OOOP(**configdb.ooop)
 
 lin_obj = O.GiscedataFacturacioImportacioLinia
@@ -30,9 +35,11 @@ def reimportar_ok(linia_id):
     time.sleep(15)
     info_nova = lin_obj.read([linia_id],['info'])[0]['info']
     if info_inicial == info_nova:
-        print "informacio igual: %s" % info_inicial
+        #print "informacio igual: %s" % info_inicial
+        print "Mateix missatge"
         return False
-    print "Missatge Inicial: %s \n Missatge Final: %s" % (info_inicial,info_nova)
+    #print "Missatge Inicial: %s \n Missatge Final: %s" % (info_inicial,info_nova)
+    print "S'ha actualitzat el missatge"
     return True
 
 args=parseargs()
