@@ -8,6 +8,7 @@ O = OOOP(**configdb.ooop)
 imp_obj = O.GiscedataFacturacioImportacioLinia
 
 imp_del_ids = imp_obj.search([('state','=','erroni'),('info','like',"Aquest fitxer XML ja s'ha processat en els següents IDs")])
+imp_del_ids = imp_obj.search([('state','=','erroni'),('info','like',"Ja existeix una factura amb el mateix origen")])
 #imp_del_ids += imp_obj.search([('state','=','erroni'),('info','like','XML erroni')])
 imp_del_ids += imp_obj.search([('state','=','erroni'),('info','like',"XML no es correspon al tipus F1")])
 imp_del_ids += imp_obj.search([('state','=','erroni'),('info','like',"Document invàlid")])
