@@ -36,8 +36,7 @@ def reimportar_ok(linia_id):
     return True
 
 args=parseargs()
-
-if not args.cups and not args.info: 
+if not args.cups and not args.info:
     fail("Introdueix un cups o el missatge d'error")
 
 vals_search = [
@@ -45,9 +44,8 @@ vals_search = [
     ] + (
     [('cups_id.name','=',args.cups) ] if args.cups else []
     ) + (
-    [('info','=',args.info) ] if args.info else []
+    [('info','like',args.info) ] if args.info else []
     )
-
 
 erronis_ids = lin_obj.search(vals_search)
 
