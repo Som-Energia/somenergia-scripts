@@ -125,14 +125,16 @@ invoicefixing:
       script: SOME_SRC/invoice-janitor/report_0days_0kWh.py -C  SOME_SRC/invoice-janitor/configdb.py
 
     ReImportF1:
-      script: python SOME_SRC/patchscripts/Importacions_F1_Q1/Reimportar_XML_F1.py -c {cups} -i {info}
+      script: python SOME_SRC/patchscripts/Importacions_F1_Q1/Reimportar_XML_F1.py -c {cups} -i {info} -d {date}
       title: Reimportar F1 massivament
-      description: Servei per importar massivament els F1, ja sigui pel cups o per la info
+      description: Importa massivament els F1, ja sigui pel cups o per la info. Pots posar una data des d'on inicii la cerca
       parameters:
         cups:
           description: Introduir el CUPS
         info:
           description: Introduir un tros del missatge que indentifiqui clarament quin és
+        date:
+          description: Introduir la data des de quan voleu fer la cerca amb format YYYY-mm-dd
 
     fixrefundinvoice:
       script:
