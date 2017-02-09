@@ -22,18 +22,6 @@ measurefixing:
 
   description: Facturació. Validació de lectures
   scripts:
-    quadrecontrolesborrany:
-      script: SOME_SRC/invoice-janitor/invoicefixing/qc_facturesesborrany.py -C  SOME_SRC/invoice-janitor/configdb.py 
-      title: Quadre de control Factures en esborrany
-      description: Serveix per quantificar els errors que podem detectar a les factures en esborrany
-
-    arreglar0lines:
-      title: Arreglar Factures amb 0 Lines
-      description: >
-        Aquest script arregla les factures en esborrany que no tenen linies de energia.
-        Per ara arregla les que tenen les lectures en la modificació activa,
-        les altres les haurem de resoldre manualment.
-      script: SOME_SRC/invoice-janitor/report_0days_0kWh.py -C  SOME_SRC/invoice-janitor/configdb.py 
 
     quadrecontrolvalidacio:
 #      script: execute_send_email.py -C ~/config.py -s [Web_Scripts]_Quadre_de_control_validacio -t {mail} -- SOME_SRC/invoice-janitor/measurefixing/Validacio_Quadre_control.py
@@ -113,12 +101,12 @@ invoicefixing:
   description: Facturació. Eines per lots, F1 i factures
   scripts:
 
-    contractmove:
-      script: python SOME_SRC/patchscripts/lots/moure_polisses.py
-      title: Moure polisses al lot següent 
-      description: ATENCIÓ! Aquest script només s'ha d'utiltizar quan es vol fer canvi de lot i lot actual el volem tancar. Aquest scripts et permet moure les polisses que falten per facturar al següent lot
+    quadrecontrolesborrany:
+      script: SOME_SRC/invoice-janitor/invoicefixing/qc_facturesesborrany.py -C  SOME_SRC/invoice-janitor/configdb.py
+      title: Quadre de control Factures en esborrany
+      description: Serveix per quantificar els errors que podem detectar a les factures en esborrany
 
-    fixmoddate:  
+    fixmoddate:
       script: python SOME_SRC/invoice-janitor/fix_modcontractual_orig.py
       title: Corregir errors data de modificació contractual 
       description:
@@ -128,10 +116,13 @@ invoicefixing:
       title: Corregir errors extra line
       description: 
 
-    report0lines0days:
-      script: SOME_SRC/invoice-janitor/report_0days_0kWh.py
-      title: Factures 0days 0lines
-      description: 
+    arreglar0lines:
+      title: Arreglar Factures amb 0 Lines
+      description: >
+        Aquest script arregla les factures en esborrany que no tenen linies de energia.
+        Per ara arregla les que tenen les lectures en la modificació activa,
+        les altres les haurem de resoldre manualment.
+      script: SOME_SRC/invoice-janitor/report_0days_0kWh.py -C  SOME_SRC/invoice-janitor/configdb.py
 
     fixrefundinvoice:
       script:
@@ -167,7 +158,13 @@ invoicefixing:
         description: Petició d'autolectures (5 mesos sense lectures reals) 
         parameters:
           nmsgs:
-            description: Número de missatges a enviar 
+            description: Número de missatges a enviar
+
+    contractmove:
+      script: python SOME_SRC/patchscripts/lots/moure_polisses.py
+      title: Moure polisses al lot següent
+      description: ATENCIÓ! Aquest script només s'ha d'utiltizar quan es vol fer canvi de lot i lot actual el volem tancar. Aquest scripts et permet moure les polisses que falten per facturar al següent lot
+
 
 gestiocontractes:
     description: Gestió de contractes
