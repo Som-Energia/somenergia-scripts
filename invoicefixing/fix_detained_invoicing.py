@@ -28,6 +28,18 @@ euro_perday_max = euro_max/31
 kwh_max = 9000
 kwh_perday_max = kwh_max/31
 
+def show_param_conf(contracts_max,invoices_max,
+                    dif_maxima,
+                    euro_max, euro_perday_max,
+                    kwh_max,kwh_perday_max):
+     print "\nPARAMENTRES DE CONFIGURACIO DEL SCRIPT"
+     print "Contractes maxims a tractar: %d" % contracts_max
+     print "Número d'abonadores màxim a fer: %d" % invoices_max
+     print "Descartem"
+     print " - Import superior a %d ( o superior a %d per dia)" % (euro_max,euro_perday_max)
+     print " - Energia factura superior a %d kWh ( o superior a %d per dia)" % (kwh_max,kwh_perday_max)
+     print "Detall: Si no tenen consum mensual, farem com si fos %d kWh" % dif_maxima
+
 def get_detained():
     lectures_massa_diferencia = []
     error_al_comptador_inactiu = []
@@ -301,3 +313,8 @@ for contract_id in contracts_ids:
             num_contracts=1)
 print contract_deliver_invoices
 # vim: ts=4 sw=4 et
+
+show_param_conf(contracts_max,invoices_max,
+                    dif_maxima,
+                    euro_max, euro_perday_max,
+                    kwh_max,kwh_perday_max)
