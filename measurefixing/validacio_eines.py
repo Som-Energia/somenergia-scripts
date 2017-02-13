@@ -165,20 +165,23 @@ def activar_modcon(pol_id, data_final):
     return True    
         
                 
-def reimportar_F1(cups_id):
-    imp_obj = O.GiscedataFacturacioImportacioLinia
-    wiz_obj = O.GiscedataFacturacioSwitchingWizard
-    
-    vals_search = [('state','=','erroni'),('cups_id','=',cups_id)]
-    imp_ids = imp_obj.search(vals_search)
-    for imp_id in imp_ids:
-        imp_read = O.GiscedataFacturacioImportacioLinia.read(imp_id,['info'])
-        ctx = {'active_id':imp_id, 'fitxer_xml': True}
-        wz_id = wiz_obj.create({}, ctx)
-        wiz = wiz_obj.get(wz_id)
-        wiz.action_importar_f1(ctx)
-        imp_new_id = O.GiscedataFacturacioImportacioLinia.read(imp_id,['info'])
-        if imp_read['info'] == imp_new_id['info']:
-            return False
-        else:
-            return True
+def reimportar_ok(linia_id):
+    import time
+    lin_obj = O.GiscedataFacturacioImportacioLinia
+    info_inicial = lin_obj.read([linia_id],['info'])[0]['info']
+    lin_obj.process_line(linia_id)
+    time.sleep(15)
+    lin_read = lin_obj.read([linia_id],['info','conte_factures'])
+    info_nova = lin_read[0]['info']
+    conte_factures = lin_read[0]['conte_factures']
+    value = {'mateix_missatge':False,'ok':False}
+    if lin_read[0]['conte_factures']:
+        value['ok'] = True
+    if info_inicial == info_nova:
+        #print "informacio igual: %s" % info_inicial
+        print "Mateix missatge"
+        value['mateix_missatge']=True
+    else:
+        #print "Missatge Inicial: %s \n Missatge Final: %s" % (info_inicial,info_nova)
+        print "S'ha actualitzat el missatge"
+    return value
