@@ -114,7 +114,7 @@ def enviar_correu(pol_id, template_id, from_id, src_model):
 
 def es_cefaco(pol_id):
     pol_read = O.GiscedataPolissa.read(pol_id,['category_id'])
-    return bool(set(pol_read['category_id']) & set([3,4,5,6,7]))
+    return bool(set(pol_read['category_id']) & set([1,3,5,6,7,8,9,14,15,21,]))
     
 def copiar_lectures(lectura_id):
     ctx = {'active_id': lectura_id}
