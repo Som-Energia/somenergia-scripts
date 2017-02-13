@@ -42,11 +42,19 @@ def get_detained():
     errors = []
     print pol_ids
     for pol_id in pol_ids:
-        print pol_id
         n += 1
-        pol_read = pol_obj.read([pol_id],['name','comptador', 'comptadors','tarifa','data_ultima_lectura','distribuidora','lot_facturacio','cups','category_id'])[0]
-        print pol_read
-	if pol_read['id'] == 45536:
+        pol_read = pol_obj.read(pol_id,
+            ['name',
+             'comptador',
+             'comptadors',
+             'tarifa',
+             'data_ultima_lectura',
+             'distribuidora',
+             'lot_facturacio',
+             'cups',
+             'category_id'])
+
+        if pol_id == 45536:
             continue
         try:
             #Comprovar si s'està gestionant
@@ -58,7 +66,7 @@ def get_detained():
 
             comp_id = pol_read['comptador']
             for comp_id in pol_read['comptadors']:
-                comp_read = comp_obj.read([comp_id], ['giro','name'])[0]
+                comp_read = comp_obj.read(comp_id, ['giro','name'])
                 #Comprovar si té gir de comptador
                 if not(comp_read['giro']):
                     continue
@@ -91,7 +99,7 @@ def get_detained():
                                 ('periode','like', lectura.periode.name),
                                 ('name','=', pol_read['data_ultima_lectura'])]
                 lect_ref_id = lect_fact_obj.search(search_vals_ref)[0]
-                lect_ref_read = lect_fact_obj.read([lect_ref_id],['lectura'])[0]
+                lect_ref_read = lect_fact_obj.read(lect_ref_id,['lectura'])
 
                 ##BUSCAR SI TE UNA LECTURA POSTERIOR
                 search_vals_post = [('comptador','=',lectura.comptador.name),
@@ -123,7 +131,7 @@ def get_detained():
                 lectures_dif = lect_ref_read['lectura'] - lectura.lectura
                 no_consum_mensual = False
                 cups_id = pol_read['cups'][0]
-                cups_read = cups_obj.read([cups_id],['conany_kwh'])[0]
+                cups_read = cups_obj.read(cups_id,['conany_kwh'])
                 if not(cups_read):
                     dif_maxima = 55.0
                     no_consum_mensual =  True
@@ -274,8 +282,8 @@ contract_deliver_invoices = []
 contracts_ids = list(set(contracts_fixed))
 yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 for contract_id in contracts_ids:
-    pagador_id = pol_obj.read([contract_id], ['pagador'])[0]['pagador'][0]
-    lang = partner_obj.read([pagador_id], ['lang'])[0]['lang']
+    pagador_id = pol_obj.read(contract_id, ['pagador'])['pagador'][0]
+    lang = partner_obj.read(pagador_id, ['lang'])['lang']
     search_pattern = [('polissa_id', '=', contract_id),
                       ('type', 'in', ['out_invoice','out_refund']),
                       ('invoice_id.state', '=', 'draft'),
