@@ -99,7 +99,7 @@ for lin_id in lin_ids:
     if reimportacio['ok']:
         print "Factura importada correctament!"
         lin_factura_generada.append(lin_id)
-        break
+        continue
     if reimportacio['mateix_missatge']:
         lin_mateix_missatge.append(lin_id)
     else:
