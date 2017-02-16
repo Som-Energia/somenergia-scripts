@@ -3,6 +3,7 @@
 from ooop import OOOP
 import configdb
 from datetime import datetime,timedelta
+import sys
 
 from validacio_eines import *
 from fix_invoice import *
@@ -19,7 +20,7 @@ fact_obj = O.GiscedataFacturacioFactura
 cups_obj = O.GiscedataCupsPs
 partner_obj = O.ResPartner
 
-contracts_max = 100
+contracts_max = 20
 invoices_max = 3
 
 dif_maxima = 55
@@ -54,6 +55,7 @@ def get_detained():
     errors = []
     print pol_ids
     for pol_id in pol_ids:
+        print pol_id
         n += 1
         pol_read = pol_obj.read(pol_id,
             ['name',
@@ -110,7 +112,11 @@ def get_detained():
                                 ('tipus','=',lectura.tipus),
                                 ('periode','like', lectura.periode.name),
                                 ('name','=', pol_read['data_ultima_lectura'])]
-                lect_ref_id = lect_fact_obj.search(search_vals_ref)[0]
+                lect_ref_ids = lect_fact_obj.search(search_vals_ref)
+                if not lect_ref_ids:
+                    print "En aquest comptador no hi ha lectures"
+                    break
+                lect_ref_id = lect_ref_ids[0]
                 lect_ref_read = lect_fact_obj.read(lect_ref_id,['lectura'])
 
                 ##BUSCAR SI TE UNA LECTURA POSTERIOR
@@ -184,6 +190,7 @@ def load_new_measures_fake(O, contract_id, mtype=range(1,7)+[8], start_date=None
 
 print 'Reading contracts ...'
 contracts=get_detained()
+
 print 'Pending contracts ', len(contracts), contracts
 n=0
 
@@ -238,6 +245,7 @@ for contract_name in contracts:
     except Exception ,e:
         continue
     if n_invoices > invoices_max:
+        print "Masses factures a abonar (%d)" % n_invoices
         continue
 
     if n==contracts_max:
@@ -269,7 +277,9 @@ contract_remove_invoices = []
 # Remove failing issues
 print "Remove Failing issues. Eliminem les factures de les polisses seguents:"
 yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+change_payers = []
 for contract_id in contracts_fixed:
+    # Busquem factures amb imports molt alts
     search_pattern = [('polissa_id', '=', contract_id),
                       ('type', 'in', ['out_invoice','out_refund']),
                       ('invoice_id.state', '=', 'draft'),
@@ -281,12 +291,22 @@ for contract_id in contracts_fixed:
                     and((invoice['energia_kwh']/invoice['dies']) < kwh_perday_max) 
             else False 
             for invoice in invoices]
-
-    if not all(valid):
+    # busquem si hi hagut un canvi de pagador
+    if invoices:
+        payer = invoices[0]['partner_id'][0]
+        change_payer = [True if (payer != invoice['partner_id'][0])
+                        else False
+                        for invoice in invoices]
+    if not all(valid) or any(change_payer):
         contract_name = O.GiscedataPolissa.read(contract_id,['name'])['name']   
         contract_remove_invoices.append(contract_name)
         fact_obj.unlink(invoices_ids,{})
+        if all(change_payer):
+            change_payers.append(contract_name)
+
 print contract_remove_invoices
+print "Tenen un canvi de pagador (Factures elimindes): "
+print change_payers
 
 # Deliver invoices
 print "Deliver invoices. Polisses que obririem i enviariem:"
