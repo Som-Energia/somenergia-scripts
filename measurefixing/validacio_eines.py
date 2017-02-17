@@ -76,7 +76,6 @@ def facturar_manual(pol_ids):
                 if len(fact_ids)>1:
                     factures_dobles.append(dict(polissa_id,fact_ids))
                 n+=1
-                print "%d/%d" % (n,total)
                 print data_fi, data_inici, fact_ids
         except:
             print "polissa_id %d" % polissa_id

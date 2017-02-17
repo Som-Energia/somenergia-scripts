@@ -53,9 +53,7 @@ def get_detained():
     n = 0
 
     errors = []
-    print pol_ids
     for pol_id in pol_ids:
-        print pol_id
         n += 1
         pol_read = pol_obj.read(pol_id,
             ['name',
@@ -114,6 +112,7 @@ def get_detained():
                                 ('name','=', pol_read['data_ultima_lectura'])]
                 lect_ref_ids = lect_fact_obj.search(search_vals_ref)
                 if not lect_ref_ids:
+                    print "\nPolissa id: %d" % pol_id
                     print "En aquest comptador no hi ha lectures"
                     break
                 lect_ref_id = lect_ref_ids[0]
@@ -172,9 +171,9 @@ def get_detained():
                             lectures_massa_diferencia.append(pol_read['name'])
 
         except Exception, e:
-            print e
+            print "\nPolissa amb Error al classifica el tipus de sobreestimacio : %d" % pol_id
+            print "Error %d" % e
             errors.append({pol_id:e})
-            print e
     return lectures_massa_diferencia
 
 def load_new_measures_fake(O, contract_id, mtype=range(1,7)+[8], start_date=None):
@@ -190,10 +189,8 @@ def load_new_measures_fake(O, contract_id, mtype=range(1,7)+[8], start_date=None
 
 print 'Reading contracts ...'
 contracts=get_detained()
-
-print 'Pending contracts ', len(contracts), contracts
+print 'Pending contracts ', len(contracts)
 n=0
-
 # Fix contracts
 contracts_fixed = []
 for contract_name in contracts:
@@ -244,13 +241,16 @@ for contract_name in contracts:
         n_invoices=check_contract(O, contract_id, lects)
     except Exception ,e:
         continue
+
+    print '\n#### %s;%s;%d;%s' % (contract_id, contract_name, n_invoices, last_measure['data_ultima_lectura'])
+
     if n_invoices > invoices_max:
         print "Masses factures a abonar (%d)" % n_invoices
         continue
 
     if n==contracts_max:
         break
-    print '#### %s;%s;%d;%s' % (contract_id,contract_name,n_invoices ,last_measure['data_ultima_lectura'])
+
     contracts_fixed.append(contract_id)
 
     n+=1
@@ -292,20 +292,22 @@ for contract_id in contracts_fixed:
             else False 
             for invoice in invoices]
     # busquem si hi hagut un canvi de pagador
+    change_payer = []
     if invoices:
         payer = invoices[0]['partner_id'][0]
         change_payer = [True if (payer != invoice['partner_id'][0])
                         else False
                         for invoice in invoices]
+
     if not all(valid) or any(change_payer):
-        contract_name = O.GiscedataPolissa.read(contract_id,['name'])['name']   
+        contract_name = O.GiscedataPolissa.read(contract_id,['name'])['name']
         contract_remove_invoices.append(contract_name)
         fact_obj.unlink(invoices_ids,{})
-        if all(change_payer):
+        if any(change_payer):
             change_payers.append(contract_name)
 
 print contract_remove_invoices
-print "Tenen un canvi de pagador (Factures elimindes): "
+print "Tenen un canvi de pagador (Factures eliminades): "
 print change_payers
 
 # Deliver invoices
