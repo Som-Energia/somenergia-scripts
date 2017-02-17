@@ -172,7 +172,7 @@ def get_detained():
 
         except Exception, e:
             print "\nPolissa amb Error al classifica el tipus de sobreestimacio : %d" % pol_id
-            print "Error %d" % e
+            print "Error:" , e
             errors.append({pol_id:e})
     return lectures_massa_diferencia
 
