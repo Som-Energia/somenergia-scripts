@@ -15,23 +15,20 @@ def contractesCIF(cif,tarifa,data):
                     ('tarifa','=',tarifa),
                     ('data_firma_contracte','<',data)])
     return len(pol_ids)
-                    
-
 
 def contractesTarifa(tarifa,data):
     pol_obj = O.GiscedataPolissa
     sw_obj = O.GiscedataSwitching
     m101_obj = O.model('giscedata.switching.m1.01')
     days_draft_delayed = 45
-    
+
     #Polisses actived
     pol_ids = pol_obj.search([('tarifa.name','=',tarifa),
                        ('data_firma_contracte','<',data)])
     sol_pol = len(pol_ids)
     pol_reads = pol_obj.read(pol_ids, ['cups'])
     pol_cups_ids = [a['cups'][0] for a in pol_reads if a['cups']]
-    
-    
+
     #Polisses inactived
     pol_inactived_ids = pol_obj.search([('cups','not in',pol_cups_ids),
                                 ('tarifa.name','=',tarifa),
@@ -43,9 +40,9 @@ def contractesTarifa(tarifa,data):
 
     #Polisses en esborrany
     pol_draft_ids = pol_obj.search([('id','in',pol_ids),
-                                    ('state','=','esborrany')])    
+                                    ('state','=','esborrany')])
     pol_draft = len(pol_draft_ids)
-    
+
     mails = ['tarifa3.0@somenergia.coop']
     mails.append('ccvv@somenergia.coop')
     pol_not_ids = pol_obj.search([('id','in',pol_draft_ids),
@@ -62,13 +59,13 @@ def contractesTarifa(tarifa,data):
     ## quants tenen el mail 3.0A al notificador
     ### Podem mirar quants n'hi ha mab C2
 
-    
+
     #Segmentacio
     ccvv = contractesCIF('ESH',tarifa,data)
     coop = contractesCIF('ESF',tarifa,data)
     ass = contractesCIF('ESG',tarifa,data)
     admin = contractesCIF('ESP',tarifa,data)
-    
+
     #Modificacions de potencia
     sw_ids = sw_obj.search([('cups_id','in',pol_cups_ids),
                             ('proces_id.name','=','M1')])
@@ -77,14 +74,14 @@ def contractesTarifa(tarifa,data):
     ### tenir en compte els c2 amb canvi de potencia
     m101 = len(m1_ids)
     per_m = round(float(m101)/float(sol_pol - pol_draft)*100,2)
-    
+
     #Polisses amb facturacio endarrerida
     endarrerides_ids = pol_obj.search([('facturacio_endarrerida','=',True),
                                     ('id','in',pol_ids)])
     endarrerides = len(endarrerides_ids)
-    
 
-    #Resum 
+
+    #Resum
     text_pol = 40*"=" + "\nContractes amb {tarifa}\n" + 40*"="
     text_pol += "\nSolicituds de contractes total: {sol_pol}"
     text_pol += "\n --> CCVV: {ccvv}"
@@ -124,9 +121,6 @@ def contractesNous(tarifa, data_inici):
         text_pnews += "\n {a}".format(**locals())
     text_pnews = text_pnews.format(**locals())
     print text_pnews
-    
- 
-
 
 #Contractes nous al mes.
 

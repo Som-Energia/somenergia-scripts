@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from ooop import OOOP
@@ -26,3 +27,5 @@ for imp_del_id in imp_del_ids:
         print "%d/%d" % (n,total)
     except Exception, e:
         print e    
+=======
+
