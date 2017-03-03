@@ -37,6 +37,7 @@ def output(total,lin_factura_generada,lin_mateix_missatge,lin_diferent_missatge)
 def reimportar_ok(linia_id):
     import time
     lin_obj = O.GiscedataFacturacioImportacioLinia
+
     info_inicial = lin_obj.read([linia_id],['info'])[0]['info']
     lin_obj.process_line(linia_id)
     time.sleep(15)
@@ -54,6 +55,56 @@ def reimportar_ok(linia_id):
         #print "Missatge Inicial: %s \n Missatge Final: %s" % (info_inicial,info_nova)
         print "S'ha actualitzat el missatge"
     return value
+
+def fix_metter_contract(pol_id):
+    pol_obj = O.GiscedataPolissa
+    comp_obj = O.GiscedataLecturesComptador
+
+    pol_read = pol_obj.read(pol_id,
+            ['name', 'comptadors'])
+    if not(pol_read['comptadors']):
+        print "No te comptadors"
+        return False
+    comp_id = pol_read['comptadors'][0]
+    comp_obj.write(comp_id,
+                   {'data_baixa':False,
+                    'active':True})
+    return True
+
+def contract_from_lin(lin_id):
+    pol_obj = O.GiscedataPolissa
+    lin_obj = O.GiscedataFacturacioImportacioLinia
+
+    lin_read = lin_obj.read(lin_id,['cups_id'])
+    if not(lin_read['cups_id']):
+        return False
+    cups_id = lin_read['cups_id'][0]
+    print lin_read['cups_id']
+    pol_ids = pol_obj.search([('cups', '=', cups_id)],0, 0, False, {'active_test': False})
+    if not(pol_ids):
+        print "no hi ha contracte vinculat al cups del F1"
+        return False
+    return pol_ids[0]
+
+def informacio_contracte(pol_id):
+    pol_obj = O.GiscedataPolissa
+    pol_read = pol_obj.read(pol_id,
+                    ['name','cups'])
+    print "\n--> Contracte: %s" % pol_read['name']
+    print "--> CUPS: %s" % pol_read['cups'][1]
+
+
+def arreglar_importacio(linia_id,pol_id):
+    lin_obj = O.GiscedataFacturacioImportacioLinia
+    info = lin_obj.read(linia_id, ['info'])['info']
+    txt_data_final = "Error introduint lectures en data final."
+
+    if txt_data_final in info:
+        if not pol_id:
+            print "No puc arreglar F1 perque no hi ha polissa vinculada"
+            return False
+        fix_metter_contract(pol_id)
+    return True
 
 args=parseargs()
 if not args.cups and not args.info and not args.date:
@@ -95,6 +146,12 @@ lin_diferent_missatge = []
 
 for lin_id in lin_ids:
     count+=1
+    pol_id = contract_from_lin(lin_id)
+    informacio_contracte(pol_id)
+    per_arreglar = arreglar_importacio(lin_id,pol_id)
+    if not per_arreglar:
+        print "No reimportem perque no hem pogut arreglar el problema"
+        continue
     reimportacio = reimportar_ok(lin_id)
     if reimportacio['ok']:
         print "Factura importada correctament!"
