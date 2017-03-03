@@ -98,13 +98,23 @@ def arreglar_importacio(linia_id,pol_id):
     lin_obj = O.GiscedataFacturacioImportacioLinia
     info = lin_obj.read(linia_id, ['info'])['info']
     txt_data_final = "Error introduint lectures en data final."
+    value_return = {'Si': False,
+                    'txt':None}
 
     if txt_data_final in info:
         if not pol_id:
             print "No puc arreglar F1 perque no hi ha polissa vinculada"
-            return False
+            return value_return
         fix_metter_contract(pol_id)
-    return True
+        value_return['Si'] = True
+        value_return['txt'] = txt_data_final
+        return value_return
+
+    value_return['Si']=True
+    return value_return
+
+# TODO def rollback_contract(pol_id, lin_id, context={}):
+
 
 args=parseargs()
 if not args.cups and not args.info and not args.date:
@@ -148,10 +158,12 @@ for lin_id in lin_ids:
     count+=1
     pol_id = contract_from_lin(lin_id)
     informacio_contracte(pol_id)
-    per_arreglar = arreglar_importacio(lin_id,pol_id)
+
+    per_arreglar = arreglar_importacio(lin_id,pol_id)['Si']
     if not per_arreglar:
         print "No reimportem perque no hem pogut arreglar el problema"
         continue
+
     reimportacio = reimportar_ok(lin_id)
     if reimportacio['ok']:
         print "Factura importada correctament!"
