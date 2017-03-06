@@ -98,6 +98,8 @@ def arreglar_importacio(linia_id,pol_id):
     lin_obj = O.GiscedataFacturacioImportacioLinia
     info = lin_obj.read(linia_id, ['info'])['info']
     txt_data_final = "Error introduint lectures en data final."
+    txt_mod = "La tarifa ("
+
     value_return = {'Si': False,
                     'txt':None}
 
@@ -109,6 +111,8 @@ def arreglar_importacio(linia_id,pol_id):
         value_return['Si'] = True
         value_return['txt'] = txt_data_final
         return value_return
+    if txt_mod in info:
+        pass
 
     value_return['Si']=True
     return value_return
