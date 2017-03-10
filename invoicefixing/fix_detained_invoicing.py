@@ -68,6 +68,9 @@ def get_detained():
 
         if pol_id == 45536:
             continue
+        if pol_id in [432, 1738, 2450, 3133, 7238, 9801, 14769, 16098, 17835, 22951, 26511, 27204, 29919]:
+            #masses factures a abonar, passem
+            continue
         try:
             #Comprovar si s'està gestionant
             if es_cefaco(pol_id):
