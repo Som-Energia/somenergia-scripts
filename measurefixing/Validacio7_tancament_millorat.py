@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from erppeek import Client
 from datetime import datetime, timedelta
-from validacio_eines import buscar_errors_lot_ids, es_cefaco, validar_canvis, copiar_lectures, reimportar_F1
+from validacio_eines import buscar_errors_lot_ids, es_cefaco, validar_canvis, copiar_lectures
 import configdb
 
 #SCRIPT QUE SERVEIX PER DESBLOQUEJAR CASOS QUE NO TENEN LECTURA DE
