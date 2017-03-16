@@ -2,7 +2,7 @@ general:
   description: Informació General
   scripts:
     quadrecontrolgeneral:
-      script: python SOME_SRC/patchscripts/Informacio/General_Quadre_control.py -d {date}
+      script: python SOME_SRC/invoice-janitor/Informacio/General_Quadre_control.py -d {date}
       title: Quadre de control de comercializació
       description: >
         Aquest quadre de control et permet veure la situació molt genèrica
@@ -24,8 +24,8 @@ measurefixing:
   scripts:
 
     quadrecontrolvalidacio:
-#      script: execute_send_email.py -C ~/config.py -s [Web_Scripts]_Quadre_de_control_validacio -t {mail} -- SOME_SRC/invoice-janitor/measurefixing/Validacio_Quadre_control.py
-      script: SOME_SRC/invoice-janitor/measurefixing/Validacio_Quadre_control.py
+#      script: execute_send_email.py -C ~/config.py -s [Web_Scripts]_Quadre_de_control_validacio -t {mail} -- SOME_SRC/invoice-janitor/invoicing/measurefixing/Validacio_Quadre_control.py
+      script: SOME_SRC/invoice-janitor/invoicing/measurefixing/Validacio_Quadre_control.py
       title: Quadre de control Validació
       description: Serveix per quantificar els errors que actualment tenim en el validació de les lectures. 
       parameters:
@@ -34,12 +34,12 @@ measurefixing:
           default: pere.roig@somenergia.coop
 
     canvicomptadors:
-      script: SOME_SRC/invoice-janitor/measurefixing/rectificar_lectures_canvi_comptador.py
+      script: SOME_SRC/invoice-janitor/invoicing/measurefixing/rectificar_lectures_canvi_comptador.py
       title: Canvi de comptadors
       description: Gestiona els canvi de comptadors que no han estat informant i hem seguit facturant-los amb estimades fetes per Som Energia. Informa per pantalla els errors que hi han en el rpocés pe rtla de que es puguin solucionar per temàtica i anar veient quines es poden automatitzar.
 
     errorsprincipals:
-      script: SOME_SRC/invoice-janitor/measurefixing/Validacio0_errors_principal.py
+      script: SOME_SRC/invoice-janitor/invoicing/measurefixing/Validacio0_errors_principal.py
       title: Script principal
       description: >
         Ha d'acabar sent l'script on s'excutint tots els altres
@@ -47,17 +47,17 @@ measurefixing:
         Per ara fa una validació de tots els errors de lectura i
         soluciona els problemes de lectures amb les 3.1A.
     validacionbajas:
-      script: SOME_SRC/invoice-janitor/measurefixing/Validacio1_baixes_2.py
+      script: SOME_SRC/invoice-janitor/invoicing/measurefixing/Validacio1_baixes_2.py
       title: Corregir errors en baixes
       description: 
 
     polizasbajas:  
-      script: SOME_SRC/invoice-janitor/measurefixing/Validacio2_eliminar_polisses_baixa.py
+      script: SOME_SRC/invoice-janitor/invoicing/measurefixing/Validacio2_eliminar_polisses_baixa.py
       title: Eliminar pòlisses de baixa
       description: 
 
     sobrestimacions_ab_re:
-      script: execute_send_email.py -C ~/config.py -s [Web_Scripts]_Resultat_sobreestimacions_AB_i_RE -t {mail} -- python SOME_SRC/invoice-janitor/invoicefixing/fix_detained_invoicing.py
+      script: execute_send_email.py -C ~/config.py -s [Web_Scripts]_Resultat_sobreestimacions_AB_i_RE -t {mail} -- python SOME_SRC/invoice-janitor/invoicing/invoicefixing/fix_detained_invoicing.py
       title: Corregir Sobreestimaciones amb AB i RE
       description: >
          Identifiquem tots els casos que hem fet sobreestimacions,
@@ -68,32 +68,32 @@ measurefixing:
           description: Introdueix el correu electrònic
           default: pere.roig@somenergia.coop
     sobreestimaciones:
-      script: SOME_SRC/invoice-janitor/measurefixing/Validacio3_sobre_estimacions.py
+      script: SOME_SRC/invoice-janitor/invoicing/measurefixing/Validacio3_sobre_estimacions.py
       title: Corregir Sobreestimaciones
       description:  
 
     sinlecturamaximetro:
-      script: SOME_SRC/invoice-janitor/measurefixing/Validacio4_sense_lectura_maximetre.py
+      script: SOME_SRC/invoice-janitor/invoicing/measurefixing/Validacio4_sense_lectura_maximetre.py
       title: Corregir errors en lectures de maximetre
       description: 
 
     validacionincompleta:
-      script: SOME_SRC/invoice-janitor/measurefixing/Validacio5_incompleta.py
+      script: SOME_SRC/invoice-janitor/invoicing/measurefixing/Validacio5_incompleta.py
       title: Corregir lectures que estan incompletes
       description: 
 
     lecturacierre:
-      script: SOME_SRC/invoice-janitor/measurefixing/Validacio6_lectura_tancament.py
+      script: SOME_SRC/invoice-janitor/invoicing/measurefixing/Validacio6_lectura_tancament.py
       title: Corregir lectures de tancament de comptadors (passar-lo fins que no l'ajuntem amb l'altre)
       description: 
 
     cierremejorado:
-      script: SOME_SRC/invoice-janitor/measurefixing/Validacio7_tancament_millorat.py
+      script: SOME_SRC/invoice-janitor/invoicing/measurefixing/Validacio7_tancament_millorat.py
       title: Corregir lectures de tancament de comptadors (millorat)
       description: 
 
     senselectureanterior:
-      script: SOME_SRC/invoice-janitor/measurefixing/Validacio8_sense_lectura_anterior.py
+      script: SOME_SRC/invoice-janitor/invoicing/measurefixing/Validacio8_sense_lectura_anterior.py
       title: Corregir pòlisses que no es troba la lectura anterior.
       description: 
 
@@ -102,17 +102,17 @@ invoicefixing:
   scripts:
 
     quadrecontrolesborrany:
-      script: SOME_SRC/invoice-janitor/invoicefixing/qc_facturesesborrany.py -C  SOME_SRC/invoice-janitor/configdb.py
+      script: SOME_SRC/invoice-janitor/invoicing/invoicefixing/qc_facturesesborrany.py -C  SOME_SRC/invoice-janitor/invoicing/configdb.py
       title: Quadre de control Factures en esborrany
       description: Serveix per quantificar els errors que podem detectar a les factures en esborrany
 
     fixmoddate:
-      script: python SOME_SRC/invoice-janitor/fix_modcontractual_orig.py
+      script: python SOME_SRC/invoice-janitor/invoicing/fix_modcontractual_orig.py
       title: Corregir errors data de modificació contractual 
       description:
 
     fixextraline:  
-      script: SOME_SRC/invoice-janitor/fix_extra_line.py
+      script: SOME_SRC/invoice-janitor/invoicing/fix_extra_line.py
       title: Corregir errors extra line
       description: 
 
@@ -122,10 +122,10 @@ invoicefixing:
         Aquest script arregla les factures en esborrany que no tenen linies de energia.
         Per ara arregla les que tenen les lectures en la modificació activa,
         les altres les haurem de resoldre manualment.
-      script: SOME_SRC/invoice-janitor/report_0days_0kWh.py -C  SOME_SRC/invoice-janitor/configdb.py
+      script: SOME_SRC/invoice-janitor/invoicing/report_0days_0kWh.py -C  SOME_SRC/invoice-janitor/invoicing/configdb.py
 
     ReImportF1:
-      script: python SOME_SRC/patchscripts/Importacions_F1_Q1/Reimportar_XML_F1.py -c {cups} -i {info} -d {date}
+      script: python SOME_SRC/invoice-janitor/Importacions_F1_Q1/Reimportar_XML_F1.py -c {cups} -i {info} -d {date}
       title: Reimportar F1 massivament
       description: Importa massivament els F1, ja sigui pel cups o per la info. Pots posar una data des d'on inicii la cerca
       parameters:
@@ -138,7 +138,7 @@ invoicefixing:
 
     fixrefundinvoice:
       script:
-        - SOME_SRC/invoice-janitor/invoicefixing/fix_refund_invoice.py
+        - SOME_SRC/invoice-janitor/invoicing/invoicefixing/fix_refund_invoice.py
         - -i
         - "{invoice}"
       title: Corregir factura rectificativa
@@ -148,7 +148,7 @@ invoicefixing:
           description: Invoice number
 
     fixinvoice:
-      script: python SOME_SRC/invoice-janitor/invoicefixing/fix_invoice.py -c {contract_name} -s {start_date} -e {end_date}
+      script: python SOME_SRC/invoice-janitor/invoicing/invoicefixing/fix_invoice.py -c {contract_name} -s {start_date} -e {end_date}
       title: Abonar i rectificar
       description: 
       parameters:
@@ -160,12 +160,12 @@ invoicefixing:
           description: data final
 
     killalreadyexist:
-      script: python SOME_SRC/patchscripts/Importacions_F1_Q1/Fact_impF1_eliminar_Ja_existeix.py
+      script: python SOME_SRC/invoice-janitor/Importacions_F1_Q1/Fact_impF1_eliminar_Ja_existeix.py
       title: Eliminar importacions de F1 repetides o invàlides
       description: Elimina les importacions de F1 amb el text d'error "Ja existeix una factura...", "XML erroni", "XML no correspon al tipus F1" i "Document invàlid"
 
     reqadq:
-        script: python SOME_SRC/patchscripts/Peticions/peticio_lectures.py {nmsgs} 
+        script: python SOME_SRC/invoice-janitor/Peticions/peticio_lectures.py {nmsgs} 
         title: Petició d'autolectures
         description: Petició d'autolectures (5 mesos sense lectures reals) 
         parameters:
@@ -173,7 +173,7 @@ invoicefixing:
             description: Número de missatges a enviar
 
     contractmove:
-      script: python SOME_SRC/patchscripts/lots/moure_polisses.py
+      script: python SOME_SRC/invoice-janitor/lots/moure_polisses.py
       title: Moure polisses al lot següent
       description: ATENCIÓ! Aquest script només s'ha d'utiltizar quan es vol fer canvi de lot i lot actual el volem tancar. Aquest scripts et permet moure les polisses que falten per facturar al següent lot
 
@@ -182,15 +182,15 @@ gestiocontractes:
     description: Gestió de contractes
     scripts:
       canvistitular:
-        script: execute_send_email.py -C ~/config.py -s canvi_titular -t modifica@somenergia.coop -- python SOME_SRC/patchscripts/Revisions_periodiques/canvi_titular_fase3.py
+        script: execute_send_email.py -C ~/config.py -s canvi_titular -t modifica@somenergia.coop -- python SOME_SRC/invoice-janitor/Revisions_periodiques/canvi_titular_fase3.py
         title: Canvi de titular. Última fase
         description: Un cop ens arriben els M102 d'accpetació de canvi de titular, fem totes les accions per donar de baixa el contracte vell i crear el nou amb el nou titular.
       quadrecontrolsw:
-        script: python SOME_SRC/patchscripts/Informacio/switching_qc.py
+        script: python SOME_SRC/invoice-janitor/Informacio/switching_qc.py
         title: Quadre de control Gestió de contractes
         description: Aquest quadre de control permet veure la situació dels processos. Veiem si tenim endarreriments en alguns dels passos del cas
       quadrecontrol3:
-        script: python SOME_SRC/patchscripts/Informacio/tres_qc.py {date}
+        script: python SOME_SRC/invoice-janitor/Informacio/tres_qc.py {date}
         title: Quadre de control de tarifa 3.0A
         description: Aquest quadre de control està en construcció. Potser hi ha funcionalitats que s'haurien de tractar a fora d'aquest quadre. S'hi ha de treballar una mica més.
         parameters:
@@ -199,7 +199,7 @@ gestiocontractes:
       seguiment3:
         script: 
         - python
-        - SOME_SRC/patchscripts/Informacio/seguiment_30A.py
+        - SOME_SRC/invoice-janitor/Informacio/seguiment_30A.py
         - "-d {date}"
 
         title: Seguiment de contractes nous 3.0A i contractes endarrerits en esborrany
@@ -228,7 +228,7 @@ admin:
   description: Administració
   scripts:
     municipaltax:
-      script: python SOME_SRC/patchscripts/Taxes/municipaltax.py {file} {start_date} {end_date} {filetype}
+      script: python SOME_SRC/invoice-janitor/Taxes/municipaltax.py {file} {start_date} {end_date} {filetype}
       title: Generació fitxers agrupats impost municipal 1.5%
       description:
       parameters:
@@ -242,7 +242,7 @@ admin:
         filetype:
           description: format sortida (xml|csv)
     municipaltaxdetail:
-      script: python SOME_SRC/patchscripts/Taxes/municipaltax_detailed.py {ine} {start_date} {end_date}
+      script: python SOME_SRC/invoice-janitor/Taxes/municipaltax_detailed.py {ine} {start_date} {end_date}
       title: Generació detall impost municipal 1.5%
       description:
       parameters:
