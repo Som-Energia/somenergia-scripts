@@ -1,0 +1,5 @@
+*~
+scripts_crontab.sh
+configdb.py
+*.pyc
+*.swp
