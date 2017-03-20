@@ -107,7 +107,7 @@ invoicefixing:
       description: Serveix per quantificar els errors que podem detectar a les factures en esborrany
 
     quadrecontrolF1:
-      script: SOME_SRC/somenergia-scripts/Importacions_F1_Q1/Fact_impF1_QuadreDeControl.py -C  SOME_SRC/somenergia-scripts/invoicing/configdb.py
+      script: python SOME_SRC/somenergia-scripts/Importacions_F1_Q1/Fact_impF1_QuadreDeControl.py -d {date}
       title: Quadre de control de F1
       description: Serveix per quantificar els errors detectats a les importacions de F1
       parameters:
