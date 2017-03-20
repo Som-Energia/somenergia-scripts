@@ -27,7 +27,9 @@ def parseargs():
         )
     return parser.parse_args()
 
-def output(total,lin_factura_generada,lin_mateix_missatge,lin_diferent_missatge):
+def output(total,lin_factura_generada,lin_mateix_missatge,
+            lin_diferent_missatge,lin_no_fixed):
+    print "\nNO importades: no s'ha arreglat l'error. %d" % len(lin_no_fixed)
     print "Importacions erronies inicials: %d" % total
     print "Reimportacions que han generat factura:  %d" % len(lin_factura_generada)
     print "Importacions encara erronies: %d" % (len(lin_diferent_missatge)+len(lin_mateix_missatge))
@@ -40,6 +42,7 @@ def reimportar_ok(linia_id):
 
     info_inicial = lin_obj.read([linia_id],['info'])[0]['info']
     lin_obj.process_line(linia_id)
+    # TODO treure a parametres de configuracio
     time.sleep(15)
     lin_read = lin_obj.read([linia_id],['info','conte_factures'])
     info_nova = lin_read[0]['info']
@@ -71,6 +74,35 @@ def fix_metter_contract(pol_id):
                     'active':True})
     return True
 
+def fix_mod(info,pol_id):
+    mod_obj = O.GiscedataPolissaModcontractual
+    pol_obj = O.GiscedataPolissa
+
+    from datetime import datetime, timedelta
+
+    # TODO millorar com extreure informacio
+    data_info = info[-63:-53]
+
+    mod_contractuals = pol_obj.read(pol_id,
+                    ['modcontractuals_ids'])['modcontractuals_ids']
+    if len(mod_contractuals) <= 1:
+        print "La polissa no te cap modificacio contractual"
+        return False
+
+    mod_actual = mod_obj.get(mod_contractuals[0])
+    dies_a_moure = 1
+    data_inici_dt = datetime.strptime(mod_actual.data_inici, '%Y-%m-%d')
+    if data_info != mod_actual.data_inici:
+        data_info_dt = datetime.strptime(data_info, '%Y-%m-%d')
+        dies_a_moure += (data_info_dt - data_inici_dt).days
+
+    if abs(dies_a_moure) > 10:
+        print "Masses dies a moure. Millor fer manualment"
+        return False
+
+    moure_dies_modificacio(dies_a_moure,mod_contractuals[0],mod_contractuals[1])
+    return True
+
 def contract_from_lin(lin_id):
     pol_obj = O.GiscedataPolissa
     lin_obj = O.GiscedataFacturacioImportacioLinia
@@ -79,7 +111,6 @@ def contract_from_lin(lin_id):
     if not(lin_read['cups_id']):
         return False
     cups_id = lin_read['cups_id'][0]
-    print lin_read['cups_id']
     pol_ids = pol_obj.search([('cups', '=', cups_id)],0, 0, False, {'active_test': False})
     if not(pol_ids):
         print "no hi ha contracte vinculat al cups del F1"
@@ -95,34 +126,59 @@ def informacio_contracte(pol_id):
 
 
 def arreglar_importacio(linia_id,pol_id):
+    #TODO: cal returnar el txt?
     lin_obj = O.GiscedataFacturacioImportacioLinia
     info = lin_obj.read(linia_id, ['info'])['info']
     txt_data_final = "Error introduint lectures en data final."
     txt_mod = "La tarifa ("
+    txt_deadblock = "deadblock"
+    txt_timeout = "timeout"
 
     value_return = {'Si': False,
                     'txt':None}
 
     if txt_data_final in info:
+        value_return['txt'] = txt_data_final
         if not pol_id:
             print "No puc arreglar F1 perque no hi ha polissa vinculada"
             return value_return
-        fix_metter_contract(pol_id)
-        value_return['Si'] = True
-        value_return['txt'] = txt_data_final
-        return value_return
+        if not(fix_metter_contract(pol_id)):
+            return value_return
     if txt_mod in info:
-        pass
+        if not(fix_mod(info, pol_id)):
+            value_return['txt'] = txt_mod
+            return value_return
+    if txt_deadblock in info or txt_timeout in info:
+        value_return['Si'] = True
 
     value_return['Si']=True
     return value_return
 
 # TODO def rollback_contract(pol_id, lin_id, context={}):
 
+def moure_dies_modificacio(dies,mod_actual_id, mod_antiga_id):
+    mod_obj = O.GiscedataPolissaModcontractual
+
+    from datetime import datetime, timedelta
+    for a in range(abs(dies)):
+        if dies > 0: b=1
+        else:        b=-1
+        mod_actual = mod_obj.get(mod_actual_id)
+        mod_antiga = mod_obj.get(mod_antiga_id)
+
+        data_final_inicial = mod_antiga.data_final
+        data_final = datetime.strptime(mod_antiga.data_final, '%Y-%m-%d')
+        data_final = datetime.strftime(data_final + timedelta(b), '%Y-%m-%d')
+        mod_antiga.write({'data_final': data_final})
+
+        data_inicial = mod_actual.data_inici
+        data_inici = datetime.strptime(mod_actual.data_inici, '%Y-%m-%d')
+        data_inici = datetime.strftime(data_inici + timedelta(b), '%Y-%m-%d')
+        mod_actual.write({'data_inici': data_inici})
 
 args=parseargs()
 if not args.cups and not args.info and not args.date:
-    fail("Introdueix un cups o el missatge d'error")
+    fail("Introdueix un cups o el missatge d'error o una data")
 
 vals_search = [
     ('state','=','erroni'),
@@ -157,15 +213,17 @@ print "Hi ha %d amb importacions erronies inicials" % total
 lin_factura_generada = []
 lin_mateix_missatge = []
 lin_diferent_missatge = []
+lin_no_fixed = []
 
 for lin_id in lin_ids:
     count+=1
     pol_id = contract_from_lin(lin_id)
     informacio_contracte(pol_id)
 
-    per_arreglar = arreglar_importacio(lin_id,pol_id)['Si']
-    if not per_arreglar:
+    fixed = arreglar_importacio(lin_id,pol_id)['Si']
+    if not fixed:
         print "No reimportem perque no hem pogut arreglar el problema"
+        lin_no_fixed.append(lin_id)
         continue
 
     reimportacio = reimportar_ok(lin_id)
@@ -177,7 +235,5 @@ for lin_id in lin_ids:
         lin_mateix_missatge.append(lin_id)
     else:
         lin_diferent_missatge.append(lin_id)
-    print "%d/%d"%(count,total)
 
-output(total,lin_factura_generada,lin_mateix_missatge,lin_diferent_missatge)
-
+output(total,lin_factura_generada,lin_mateix_missatge,lin_diferent_missatge, lin_no_fixed)
