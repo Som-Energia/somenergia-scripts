@@ -1,14 +1,41 @@
 # -*- coding: utf-8 -*-
 from ooop import OOOP
 import configdb
+from consolemsg import fail
 
-O = OOOP(**configdb)
+O = OOOP(**configdb.ooop)
+
+def parseargs():
+    import argparse
+    parser = argparse.ArgumentParser(description='Reimportar els F1')
+    parser.add_argument('-d', '--date',
+        help="Escull data des de que comencem a fer la cerca",
+        )
+    return parser.parse_args()
+
+args=parseargs()
+if not args.date:
+    fail("Introdueix una data de descarrega")
+
+vals_search = [('state','=','erroni')]
+
+if args.date:
+    data_carrega = args.date
+    def valid_date(date_text):
+        from datetime import datetime
+        try:
+            datetime.strptime(date_text, '%Y-%m-%d')
+        except ValueError:
+            raise ValueError("Incorrect data format, should be YYYY-MM-DD")
+        return True
+    data_carrega = data_carrega if data_carrega and valid_date(data_carrega) else None
+    if data_carrega:
+        vals_search += [('data_carrega','>',data_carrega)]
 
 imp_obj = O.GiscedataFacturacioImportacioLinia
 
-data_carrega = '2010-01-01'
+data_carrega = '2017-03-19'
 
-vals_search = [('state','=','erroni'),('data_carrega','>',data_carrega)]
 erronis_ids = imp_obj.search(vals_search)
 erronis = len(erronis_ids)
 
