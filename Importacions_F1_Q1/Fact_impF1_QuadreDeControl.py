@@ -14,7 +14,6 @@ def parseargs():
     return parser.parse_args()
 
 args=parseargs()
-args.date = '2017-03-19'
 if not args.date:
     fail("Introdueix una data de descarrega")
 
@@ -62,7 +61,7 @@ tipificacio_errors = {
     }
 
 
-print "ERRORS DE IMPORTACIONS"
+print "ERRORS DE IMPORTACIONS de F1"
 for error,error_erp in sorted(tipificacio_errors.items()):
     vals_search_f1 = vals_search + [('info', 'like', error_erp)]
     erronis_ids = imp_obj.search(vals_search_f1)
