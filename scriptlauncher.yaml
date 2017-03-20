@@ -106,6 +106,14 @@ invoicefixing:
       title: Quadre de control Factures en esborrany
       description: Serveix per quantificar els errors que podem detectar a les factures en esborrany
 
+    quadrecontrolF1:
+      script: SOME_SRC/somenergia-scripts/invoice-janitor/Importacions_F1_Q1/Fact_impF1_QuadreDeControl.py -C  SOME_SRC/somenergia-scripts/invoicing/configdb.py
+      title: Quadre de control de F1
+      description: Serveix per quantificar els errors detectats a les importacions de F1
+      parameters:
+        date:
+          description: Introduir la data des de quan voleu fer la cerca amb format YYYY-mm-dd
+
     fixmoddate:
       script: python SOME_SRC/somenergia-scripts/invoicing/fix_modcontractual_orig.py
       title: Corregir errors data de modificació contractual 
