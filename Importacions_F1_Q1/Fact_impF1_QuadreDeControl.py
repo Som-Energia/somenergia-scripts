@@ -44,6 +44,8 @@ tipificacio_errors = {
         "D. Data erronia modificacions contractuals": 'La tarifa (',
         "E. Bloquejos amb altres importacions": 'deadlock',
         "F. Temps d'importacio massa llarg": 'timeout',
+        "G. No es pot facturar a traves de lectures": ": No s'ha pogut facturar a trav",
+        "G. Inicial": ": inicial",
         "G. Data inicial Comptador erronea": 'Error introduint lectures en data inicial',
         "H. Data final Comptador erronea": 'Error introduint lectures en data fi',
         "I. Sense pòlissa vinculada": 'lissa vinculada al cups',
@@ -55,7 +57,7 @@ tipificacio_errors = {
         "O. No existeix cap modificacio contractual": 'Error no existeix cap modificaci',
         "P. Intent de dividir entre 0": "float division",
         "R. No such field": 'child',
-        "S. F1 ja importat": "ja s'ha processat",
+        "\nS. F1 ja importat": "ja s'ha processat",
         "T. XML erroni": 'XML no es correspon al tipus F1',
         "U. Document invalid": 'Document invàlid',
     }
