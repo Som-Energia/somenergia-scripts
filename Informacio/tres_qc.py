@@ -11,18 +11,14 @@ sw_obj = O.GiscedataSwitching
 
 def parseargs():
     import argparse
-    parser = argparse.ArgumentParser(description="Data fins on fer l'estudi")
+    parser = argparse.ArgumentParser(description="Data (no inclosa) fins on fer l'estudi")
     parser.add_argument('-d', '--date',
-        help="Escull data fins on filtrar",
+        help="Escull data fins on filtrar, aquesta no sera inclosa",
+        )
+    parser.add_argument('-de', '--date_end',
+        help="Escull on iniciar l'estudi per ccvv i altres associacions",
         )
     return parser.parse_args()
-
-def contractesCIF(cif,tarifa,data):
-    pol_obj = O.GiscedataPolissa
-    pol_ids = pol_obj.search([('titular_nif','like',cif),
-                    ('tarifa','like',tarifa),
-                    ('data_firma_contracte','<',data)])
-    return len(pol_ids)
 
 def contractesTarifa(tarifa,data):
     pol_obj = O.GiscedataPolissa
@@ -30,27 +26,30 @@ def contractesTarifa(tarifa,data):
     m101_obj = O.model('giscedata.switching.m1.01')
     days_draft_delayed = 45
 
-    #Polisses actived
+    # Polisses actived
     pol_ids = pol_obj.search([('tarifa.name','like',tarifa),
                        ('data_firma_contracte','<',data)])
     sol_pol = len(pol_ids)
     pol_reads = pol_obj.read(pol_ids, ['cups'])
     pol_cups_ids = [a['cups'][0] for a in pol_reads if a['cups']]
 
-    #Polisses inactived
+    # Polisses inactived
     pol_inactived_ids = pol_obj.search([('cups','not in',pol_cups_ids),
                                 ('tarifa.name','like',tarifa),
                                  ('active','=',False),
                                  ('data_alta','!=', False),
                                  ('data_firma_contracte','<',data)])
     pol_inac = len(pol_inactived_ids)
-    per_b = round(float(pol_inac)/float(sol_pol)*100,2)
 
-    #Polisses en esborrany
+    # Percentatges baixes comparat amb solicituts
+    per_b = round(float(pol_inac)/(float(sol_pol) + float(pol_inac))*100,2)
+
+    # Polisses en esborrany
     pol_draft_ids = pol_obj.search([('id','in',pol_ids),
                                     ('state','=','esborrany')])
     pol_draft = len(pol_draft_ids)
 
+    # Polisses que els hi estem fent un estudi
     mails = ['tarifa3.0@somenergia.coop']
     mails.append('ccvv@somenergia.coop')
     pol_not_ids = pol_obj.search([('id','in',pol_draft_ids),
@@ -60,7 +59,8 @@ def contractesTarifa(tarifa,data):
         per_not = 1 - round(float(pol_not)/float(pol_draft)*100,2)
     else:
         per_not = "cap contracte amb esborrany"
-    ## Esborranys endarrerits
+
+    # Esborranys endarrerits
     date_delayed_dt = datetime.today() - timedelta(days_draft_delayed)
     date_dealyed = datetime.strftime(date_delayed_dt,'%Y-%m-%d')
     pol_draft_delayed_ids = pol_obj.search([('id','in',pol_draft_ids),
@@ -97,20 +97,28 @@ def contractesTarifa(tarifa,data):
 
 
     #Resum
-    text_pol = 40*"=" + "\nContractes amb {tarifa}\n" + 40*"="
-    text_pol += "\nSolicituds de contractes total: {sol_pol}"
+    text_pol = 60*"=" + "\nContractes amb {tarifa} a data anterior a {data}\n" + 60*"="
+    text_pol += "\n\nSolicituds de contractes total: {sol_pol}"
     text_pol += "\n --> CCVV: {ccvv}"
     text_pol += "\n --> Cooperatives: {coop}"
     text_pol += "\n --> Associacions: {ass}"
     text_pol += "\n --> Ajuntaments: {admin}"
     text_pol += "\nContractes de baixa : {pol_inac} ({per_b}%)"
-    text_pol += "\n" + 40*"=" 
-    text_pol += "\nContractes en esborrany: {pol_draft}. Endarrerits de {days_draft_delayed} dies: {cups_draft_delayed}."
+    text_pol += "\n" + 60*"="
+    text_pol += "\n\nContractes en esborrany: {pol_draft}. Endarrerits de {days_draft_delayed} dies: {cups_draft_delayed}."
     text_pol += "\n --> Contractes que han demanat un M1 (mail notificador): {pol_not}({per_not})" 
     text_pol += "\nModificacions de contractes: {m101} ({per_m}%)"
     text_pol += "\nPolisses amb facturacio endarerides: {endarrerides}"
+    text_pol += "\n" + 60 * "="
     text_pol = text_pol.format(**locals())
     print text_pol
+
+def contractesCIF(cif,tarifa,data):
+    pol_obj = O.GiscedataPolissa
+    pol_ids = pol_obj.search([('titular_nif','like',cif),
+                    ('tarifa','like',tarifa),
+                    ('data_firma_contracte','<',data)])
+    return len(pol_ids)
 
 #Contractes nous a la setmana
 def contractesNous(tarifa, data_inici):
@@ -129,7 +137,7 @@ def contractesNous(tarifa, data_inici):
             if pol_read['cups']:
                 sense_not.append(pol_read['cups'][1])
     sense_not_ = len(sense_not)
-    text_pnews = "\n" + 40*"=" 
+    text_pnews = "\n" + 60*"="
     text_pnews += "\nContractes Nous des de {data_inici} (inclosa) fins a {data_fi} (no inclosa): {sol_pol}"
     text_pnews += "\n Dels quals no ens han dit quina potencia volen: {sense_not_}"
     for a in sense_not:
@@ -190,17 +198,117 @@ def getPolissesM1():
 #Analisis de porta d'entrada. Formulari?
 
 #Contractes en 3.1A
+def contractes_nif(nif,tarifa,data,date_end):
+    from datetime import datetime, timedelta
+    from dateutil.relativedelta import relativedelta
+
+    pol_obj = O.GiscedataPolissa
+    sw_obj = O.GiscedataSwitching
+
+    relativetime = relativedelta(months=1)
+
+    ccvv_hist_list_3 = []
+    ccvv_hist_list = []
+    dates = []
+
+    if nif == 'ESH':
+        text = 'Comunitat de veins'
+    elif nif == 'ESP':
+        text = 'Ajuntaments'
+    elif nif == 'ESF':
+        text = 'Cooperatives'
+    elif nif == 'ESG':
+        text = 'Associacions'
+    ccvv = pol_obj.search([('titular_nif', 'like', nif)])
+    ccvv_3 = pol_obj.search([('tarifa.name', 'like', tarifa),
+                             ('titular_nif', 'like', nif)])
+
+    cups_read = pol_obj.read(ccvv, ['cups'])
+    cups = [a['cups'][0] for a in cups_read if a['cups']]
+
+    sw_realitzats = sw_obj.search([('cups_id', 'in', cups),
+                                   ('proces_id.name', '=', 'M1'),
+                                   ('step_id.name', '=', '05')])
+
+    if ccvv_3:
+        cups_3_read = pol_obj.read(ccvv_3, ['cups'])
+        cups_3 = [a['cups'][0] for a in cups_3_read]
+    else:
+        cups_3 = []
+
+    sw_realitzats_3 = sw_obj.search([('cups_id', 'in', cups_3),
+                                     ('proces_id.name', '=', 'M1'),
+                                     ('step_id.name', '=', '05')])
+    ### Mitjana (en obres)
+    avui = datetime.strftime(datetime.today(), '%Y-%m-%d')
+    data__ = datetime.strptime('2015-11-09', '%Y-%m-%d')
+    avui_60 = datetime.strftime(data__ + timedelta(60), '%Y-%m-%d')
+
+    ccvv_anterior = pol_obj.search([('titular_nif', 'like', nif),
+                                    ('data_firma_contracte', '<=', avui_60),
+                                    ('data_firma_contracte', '>', '2015-11-09')])
+    ccvv_anterior_3 = pol_obj.search([('titular_nif', 'like', nif),
+                                      ('tarifa.name', 'like', tarifa),
+                                      ('data_firma_contracte', '<=', avui_60),
+                                      ('data_firma_contracte', '>', '2015-11-09')])
+    mitja_setmanal_dos_mesos = float(len(ccvv_anterior)) * 7 / 60
+    mitja_setmanal_3_dos_mesos = float(len(ccvv_anterior_3)) * 7 / 60
+
+    ####_________RESUM_______________
+    print "\n______" + text + "______"
+    print "           CONTRACTES"
+    print "  - Contractes totals: {}".format(len(ccvv))
+    print "  - Contractes amb {}: {}".format(tarifa, len(ccvv_3))
+    print "\n           MODIFICACIONS"
+    print "  - Modificacions totals : {}".format(len(sw_realitzats))
+    print "  - Modificacions {} : {}".format(tarifa,len(sw_realitzats_3))
+    print "\n HISTORIC:"
+
+    data = '2014-01-01'
+    avui_30 = datetime.strftime(datetime.today() + relativetime, '%Y-%m-%d')
+    ccvv_anterior = pol_obj.search([('titular_nif', 'like', nif),
+                                    ('data_firma_contracte', '<', date_end)])
+    ccvv_anterior_3 = pol_obj.search([('titular_nif', 'like', nif),
+                                      ('tarifa.name', 'like', tarifa),
+                                      ('data_firma_contracte', '<', date_end)])
+
+    print "date_end --     contractesTotals -- contractes{}".format(tarifa)
+    while date_end < avui_30:
+        ccvv_historic = pol_obj.search([('titular_nif', 'like', nif),
+                                        ('data_firma_contracte', '<', date_end)])
+        ccvv_historic_3 = pol_obj.search([('titular_nif', 'like', nif),
+                                          ('tarifa.name', 'like', tarifa),
+                                          ('data_firma_contracte', '<', date_end)])
+        print "{} --   {} (+{})       --   {} (+{})".format(date_end,
+            len(ccvv_historic),
+            len(ccvv_historic) - len(ccvv_anterior),
+            len(ccvv_historic_3),
+            len(ccvv_historic_3) - len(ccvv_anterior_3))
+        dates.append(date_end)
+        ccvv_hist_list.append(len(ccvv_historic))
+        ccvv_hist_list_3.append(len(ccvv_historic_3))
+
+        date_end = datetime.strftime(
+            datetime.strptime(date_end, '%Y-%m-%d') + relativetime, '%Y-%m-%d')
+
+        ccvv_anterior = ccvv_historic
+        ccvv_anterior_3 = ccvv_historic_3
+
 
 def resum_qc(text_evol):
     from consolemsg import fail
     args = parseargs()
-    if not args.date:
-        fail("Introdueix una data fins on fer l'estudi")
+    if not(args.date and args.date_end):
+        fail("Introdueix una data fins on fer l'estudi i la data on iniciar a fer l'estudi de ccvv")
     contractesTarifa('3.0A',args.date)
+    contractes_nif('ESH', '3.0A', args.date, args.date_end)
+    contractes_nif('ESF','3.0A', args.date, args.date_end)
+    contractes_nif('ESG','3.0A', args.date, args.date_end)
+    contractes_nif('ESP','3.0A', args.date, args.date_end)
     contractesTarifa('3.1A',args.date)
     #contractesNous('3.0A','2016-04-29')
     #print "\nEvolucio de contractes mensual"
-    #print 40*"="
+    #print 60*"="
     #print text_evol
     #getPolissesM1()
 
