@@ -9,10 +9,18 @@ O = Client(**configdb.erppeek)
 pol_obj = O.GiscedataPolissa
 sw_obj = O.GiscedataSwitching
 
+def parseargs():
+    import argparse
+    parser = argparse.ArgumentParser(description="Data fins on fer l'estudi")
+    parser.add_argument('-d', '--date',
+        help="Escull data fins on filtrar",
+        )
+    return parser.parse_args()
+
 def contractesCIF(cif,tarifa,data):
     pol_obj = O.GiscedataPolissa
     pol_ids = pol_obj.search([('titular_nif','like',cif),
-                    ('tarifa','=',tarifa),
+                    ('tarifa','like',tarifa),
                     ('data_firma_contracte','<',data)])
     return len(pol_ids)
 
@@ -23,7 +31,7 @@ def contractesTarifa(tarifa,data):
     days_draft_delayed = 45
 
     #Polisses actived
-    pol_ids = pol_obj.search([('tarifa.name','=',tarifa),
+    pol_ids = pol_obj.search([('tarifa.name','like',tarifa),
                        ('data_firma_contracte','<',data)])
     sol_pol = len(pol_ids)
     pol_reads = pol_obj.read(pol_ids, ['cups'])
@@ -31,7 +39,7 @@ def contractesTarifa(tarifa,data):
 
     #Polisses inactived
     pol_inactived_ids = pol_obj.search([('cups','not in',pol_cups_ids),
-                                ('tarifa.name','=',tarifa),
+                                ('tarifa.name','like',tarifa),
                                  ('active','=',False),
                                  ('data_alta','!=', False),
                                  ('data_firma_contracte','<',data)])
@@ -48,14 +56,21 @@ def contractesTarifa(tarifa,data):
     pol_not_ids = pol_obj.search([('id','in',pol_draft_ids),
                             ('notificacio_email','not in',mails)])
     pol_not = len(pol_not_ids)
-    per_not = 1 - round(float(pol_not)/float(pol_draft)*100,2)
+    if pol_draft:
+        per_not = 1 - round(float(pol_not)/float(pol_draft)*100,2)
+    else:
+        per_not = "cap contracte amb esborrany"
     ## Esborranys endarrerits
     date_delayed_dt = datetime.today() - timedelta(days_draft_delayed)
     date_dealyed = datetime.strftime(date_delayed_dt,'%Y-%m-%d')
     pol_draft_delayed_ids = pol_obj.search([('id','in',pol_draft_ids),
                                     ('data_firma_contracte','<',date_dealyed)])
-    pol_reads = pol_obj.read(pol_draft_delayed_ids, ['cups'])
-    cups_draft_delayed = [a['cups'][1] for a in pol_reads if a['cups']]
+    if pol_draft_delayed_ids:
+        pol_reads = pol_obj.read(pol_draft_delayed_ids, ['cups'])
+        cups_draft_delayed = [a['cups'][1] for a in pol_reads if a['cups']]
+    else:
+        cups_draft_delayed = 0
+
     ## quants tenen el mail 3.0A al notificador
     ### Podem mirar quants n'hi ha mab C2
 
@@ -103,7 +118,7 @@ def contractesNous(tarifa, data_inici):
     mails = ['tarifa3.0@somenergia.coop']
     mails.append('ccvv@somenergia.coop')
     data_fi = datetime.strftime(datetime.today(),'%Y-%m-%d')
-    pol_ids = pol_obj.search([('tarifa.name','=',tarifa),
+    pol_ids = pol_obj.search([('tarifa.name','like',tarifa),
                        ('data_firma_contracte','>=',data_inici),
                        ('data_firma_contracte','<',data_fi)])
     sol_pol = len(pol_ids)
@@ -143,6 +158,7 @@ def getPolissesM1():
         raise ex
 
     dbcur = dbconn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    # TODO polissa.tarifa = {}.format.(locals**)
     sql_query = """
     select polissa.id as polissa_ids
     from giscedata_polissa as polissa
@@ -176,8 +192,12 @@ def getPolissesM1():
 #Contractes en 3.1A
 
 def resum_qc(text_evol):
-    contractesTarifa('3.0A','2016-10-01')
-    #contractesTarifa('3.1A')
+    from consolemsg import fail
+    args = parseargs()
+    if not args.date:
+        fail("Introdueix una data fins on fer l'estudi")
+    contractesTarifa('3.0A',args.date)
+    contractesTarifa('3.1A',args.date)
     #contractesNous('3.0A','2016-04-29')
     #print "\nEvolucio de contractes mensual"
     #print 40*"="
