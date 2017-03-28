@@ -198,12 +198,14 @@ gestiocontractes:
         title: Quadre de control Gestió de contractes
         description: Aquest quadre de control permet veure la situació dels processos. Veiem si tenim endarreriments en alguns dels passos del cas
       quadrecontrol3:
-        script: python SOME_SRC/somenergia-scripts/Informacio/tres_qc.py {date}
+        script: python SOME_SRC/somenergia-scripts/Informacio/tres_qc.py {date} {date_end}
         title: Quadre de control de tarifa 3.0A
         description: Aquest quadre de control està en construcció. Potser hi ha funcionalitats que s'haurien de tractar a fora d'aquest quadre. S'hi ha de treballar una mica més.
         parameters:
           date:
             description: Introdueix la data dels des dels quals vols veure els nous contractes amb el format 'YYYY-mm-dd'
+          date_end:
+            description: Introdueix la data amb que vols que comencen l'anàlisi de ccvv i altres associacions
       seguiment3:
         script: 
         - python
