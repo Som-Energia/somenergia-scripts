@@ -53,7 +53,7 @@ def get_detained():
     n = 0
 
     errors = []
-    for pol_id in pol_ids[:120]:
+    for pol_id in pol_ids:
         n += 1
         print n
         pol_read = pol_obj.read(pol_id,
