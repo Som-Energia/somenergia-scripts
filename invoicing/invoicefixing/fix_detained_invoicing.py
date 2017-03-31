@@ -175,7 +175,7 @@ def get_detained():
             print "\nPolissa amb Error al classifica el tipus de sobreestimacio : %d" % pol_id
             print "Error:" , e
             errors.append({pol_id:e})
-    return sorted(error_al_comptador_inactiu + lectures_massa_diferencia)
+    return sorted(set(error_al_comptador_inactiu + lectures_massa_diferencia))
 
 def load_new_measures_fake(O, contract_id, mtype=range(1,7)+[8], start_date=None):
     meters_id = O.GiscedataLecturesComptador.search([('polissa', '=', contract_id)])
