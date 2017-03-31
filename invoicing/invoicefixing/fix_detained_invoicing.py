@@ -53,8 +53,9 @@ def get_detained():
     n = 0
 
     errors = []
-    for pol_id in pol_ids:
+    for pol_id in pol_ids[:120]:
         n += 1
+        print n
         pol_read = pol_obj.read(pol_id,
             ['name',
              'comptador',
@@ -66,9 +67,8 @@ def get_detained():
              'cups',
              'category_id'])
 
-        if pol_id == 45536:
-            continue
-        if pol_id in [432, 1738, 2450, 3133, 7238, 9801, 14769, 16098, 17835, 22951, 26511, 27204, 29919]:
+        #eliminar quan es faci agrupació de factures (i fer més de 3 factures abonades)
+        if pol_id in [432, 1738, 2450, 3133, 7238, 9801, 14769, 16098, 17835, 22951, 26511, 27204, 29919,45536]:
             #masses factures a abonar, passem
             continue
         try:
@@ -79,15 +79,12 @@ def get_detained():
             if not(pol_read['comptadors']):
                 continue
 
-            comp_id = pol_read['comptador']
             for comp_id in pol_read['comptadors']:
                 comp_read = comp_obj.read(comp_id, ['giro','name'])
                 #Comprovar si té gir de comptador
                 if not(comp_read['giro']):
                     continue
 
-                if not(comp_read['name'] == pol_read['comptador']):
-                    continue
                 #Cerca de lectures problematiques
                 limit_superior_consum = int(comp_read['giro'])* 9/10
                 lect_search_vals = [('comptador','=',comp_id),
@@ -102,7 +99,8 @@ def get_detained():
             for lect_id in lect_ids:
                 #Si el comptador no és l'actiu, s'ha d'anar amb cuidado perque pot ser que li facturem malament
                 if not(comp_read['name'] == pol_read['comptador']):
-                    break
+                    error_al_comptador_inactiu.append(pol_read['name'])
+                    continue
                 lectura = lect_fact_obj.get(lect_id)
                 # Problemes amb lectures de Fenosa. Per ara només els filtrem
                 # A sota hi ha codi de com solucionar-ho
@@ -177,7 +175,7 @@ def get_detained():
             print "\nPolissa amb Error al classifica el tipus de sobreestimacio : %d" % pol_id
             print "Error:" , e
             errors.append({pol_id:e})
-    return lectures_massa_diferencia
+    return sorted(error_al_comptador_inactiu + lectures_massa_diferencia)
 
 def load_new_measures_fake(O, contract_id, mtype=range(1,7)+[8], start_date=None):
     meters_id = O.GiscedataLecturesComptador.search([('polissa', '=', contract_id)])
@@ -194,6 +192,7 @@ print 'Reading contracts ...'
 contracts=get_detained()
 print 'Pending contracts ', len(contracts)
 n=0
+print contracts
 # Fix contracts
 contracts_fixed = []
 for contract_name in contracts:
@@ -276,9 +275,10 @@ for contract_name in contracts:
         out += o
     adelantar_polissa_endarerida([contract_id])
 
+print "Fixed Contracts. Contractes que hem intentat arreglar"
 contract_remove_invoices = []
 # Remove failing issues
-print "Remove Failing issues. Eliminem les factures de les polisses seguents:"
+print "Remove Failing issues. Eliminem les factures erronies de les polisses seguents:"
 yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 change_payers = []
 for contract_id in contracts_fixed:
@@ -317,7 +317,9 @@ print change_payers
 print "Deliver invoices. Polisses que obririem i enviariem:"
 contract_deliver_invoices = []
 contracts_ids = list(set(contracts_fixed))
+print contract_deliver_invoices
 yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+contracts_ids = []
 for contract_id in contracts_ids:
     pagador_id = pol_obj.read(contract_id, ['pagador'])['pagador'][0]
     lang = partner_obj.read(pagador_id, ['lang'])['lang']
