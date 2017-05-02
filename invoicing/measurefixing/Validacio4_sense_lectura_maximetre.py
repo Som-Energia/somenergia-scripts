@@ -26,6 +26,7 @@ lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])[0]
 clot_ids = clot_obj.search([('status','like',u'No t\xe9 lectura de max\xedmetre'),
                             ('status','not like',u'No t\xe9 lectures entrades'),
                             ('status','not like',u'No t\xe9 lectura anterior'),
+                            ('state','=','obert'),
                             ('lot_id','=',lot_id)])
 clot_reads = clot_obj.read(clot_ids,['polissa_id'])
 pol_ids = [clot_read['polissa_id'][0] for clot_read in clot_reads]
