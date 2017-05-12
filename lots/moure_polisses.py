@@ -42,6 +42,6 @@ pol_ids += O.GiscedataPolissa.search([('id','not in',pol_sw_ids),
 for pol_id in pol_ids:
     pol = O.GiscedataPolissa.get(pol_id)
     pol.write({'lot_facturacio': id_lot_dest})
-print 'Pòlissa id %s' % pol_id
+    print 'Pòlissa id %s' % pol_id
 
 O.GiscedataFacturacioLot.update_progress([id_lot_dest] + [id_lot_orig])
