@@ -92,9 +92,13 @@ def fix_mod(info,pol_id):
     mod_actual = mod_obj.get(mod_contractuals[0])
     dies_a_moure = 1
     data_inici_dt = datetime.strptime(mod_actual.data_inici, '%Y-%m-%d')
+    #  La tarifa (2.0A) de la pólissa 49549 no és la mateixa que la del
+    # F1 (2.0DHA) el dia 2017-02-24. Comprovi que la tarifa de la
+    # pólissa és la correcte
     if data_info != mod_actual.data_inici:
         data_info_dt = datetime.strptime(data_info, '%Y-%m-%d')
-        dies_a_moure += (data_info_dt - data_inici_dt).days
+        # He tret el += de dies a moure. Valorar que es millor
+        dies_a_moure = (data_info_dt - data_inici_dt).days
 
     if abs(dies_a_moure) > 10:
         print "Masses dies a moure. Millor fer manualment"
