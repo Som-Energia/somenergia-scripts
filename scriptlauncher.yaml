@@ -2,16 +2,13 @@ general:
   description: Informació General
   scripts:
     quadrecontrolgeneral:
-      script: python SOME_SRC/somenergia-scripts/Informacio/General_Quadre_control.py -d {date}
+      script: execute_send_email.py -C ~/config.py -s Quadre_de_Control -t {mail} -- python SOME_SRC/somenergia-scripts/Informacio/General_Quadre_control.py -d {date}
       title: Quadre de control de comercializació
       description: >
         Aquest quadre de control et permet veure la situació molt genèrica
         de com està la comercialitació.
         Ens serveix per omplir el Quadre de Control del drive.
         Si teniu peticions de noves coses a controlar podeu escriure a en Pere.
-      send:
-        to:
-        - '{mail}'
       parameters:
         mail:
           description: Introdueix el correu electrònic # TODO, si vols rebre la informació per correu

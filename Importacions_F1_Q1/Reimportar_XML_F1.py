@@ -222,6 +222,7 @@ lin_no_fixed = []
 for lin_id in lin_ids:
     count+=1
     pol_id = contract_from_lin(lin_id)
+    if not pol_id: continue
     informacio_contracte(pol_id)
 
     fixed = arreglar_importacio(lin_id,pol_id)['Si']
