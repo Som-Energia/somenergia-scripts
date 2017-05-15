@@ -123,6 +123,9 @@ def load_new_measures(O, contract_id, mtype=range(1,7)+[8], start_date=None):
     new_measures = []
     for meter_id in meters_id:
         invoice_measures = get_measures_by_meter(O, meter_id, range(1,12), pool=False)
+	if not invoice_measures:
+            print "Sense lectures a comptador id: "+str(meter_id)
+            continue
         new_measures += get_measures_by_meter(O, meter_id, mtype, True, invoice_measures[0]['name'])
     for new_measure in new_measures:
         load_new_measure(O, new_measure['id'])
