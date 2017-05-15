@@ -210,7 +210,7 @@ for contract_name in contracts:
     old_measures = get_measures_by_contract(O, contract_id, range(1,12))
     lects = []
     fields_to_read = ['name', 'comptador', 'periode', 'lectura', 'origen_id', 'observacions']
-    if old_measures[0]['origen_id'][0] not in [7,10,11]:
+    if old_measures and old_measures[0]['origen_id'] and old_measures[0]['origen_id'][0] not in [7,10,11]:
         end_date = old_measures[0]['name']
     else:
         if new_measures:
@@ -260,7 +260,7 @@ for contract_name in contracts:
 
     old_measures = get_measures_by_contract(O, contract_id, range(1,12))
     new_measures = load_new_measures(O, contract_id)
-    if old_measures[0]['origen_id'][0] not in [7,10,11]:
+    if old_measures and old_measures[0]['origen_id'] and old_measures[0]['origen_id'][0] not in [7,10,11]:
         end_date = old_measures[0]['name']
     else:
         if new_measures:
@@ -319,7 +319,6 @@ contract_deliver_invoices = []
 contracts_ids = list(set(contracts_fixed))
 print contract_deliver_invoices
 yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-contracts_ids = []
 for contract_id in contracts_ids:
     pagador_id = pol_obj.read(contract_id, ['pagador'])['pagador'][0]
     lang = partner_obj.read(pagador_id, ['lang'])['lang']
