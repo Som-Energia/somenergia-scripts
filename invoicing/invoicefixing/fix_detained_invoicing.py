@@ -68,7 +68,7 @@ def get_detained():
              'category_id'])
 
         #eliminar quan es faci agrupació de factures (i fer més de 3 factures abonades)
-        if pol_id in [432, 1738, 2450, 3133, 7238, 9801, 14769, 16098, 17835, 22951, 26511, 27204, 29919,45536]:
+        if pol_id in [432, 1738, 2450, 3133, 7238, 9801, 14769, 16098, 17835, 22951, 26511, 27204, 29919,45536, 11901, 12685, 15760, 25347, 28022, 29571, 3084, 31785, 33030, 37889, 39413, 39579, 40078, 40757, 41848, 43166, 43262, 44982, 45160, 49512]:
             #masses factures a abonar, passem
             continue
         try:
