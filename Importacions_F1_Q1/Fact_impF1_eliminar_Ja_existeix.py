@@ -13,12 +13,13 @@ imp_del_ids = imp_obj.search([('state','=','erroni'),('info','like','Ja existeix
 #imp_del_ids += imp_obj.search([('state','=','erroni'),('info','like','XML erroni')])
 imp_del_ids += imp_obj.search([('state','=','erroni'),('info','like',"XML no es correspon al tipus F1")])
 imp_del_ids += imp_obj.search([('state','=','erroni'),('info','like',"Document invàlid")])
-imp_del_ids = imp_obj.search([('state','=','erroni'),('info','like',"Aquest fitxer XML ja s'ha proces")])
+imp_del_ids += imp_obj.search([('state','=','erroni'),('info','like',"Aquest fitxer XML ja s'ha proces")])
 imp_del_ids_reads = O.GiscedataFacturacioImportacioLinia.read(imp_del_ids,['state','info'])
 
 
 total = len(imp_del_ids)
 n = 0
+print total
 for imp_del_id in imp_del_ids:
     try:
         imp_obj.unlink([imp_del_id])
