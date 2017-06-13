@@ -110,14 +110,22 @@ def fix_mod(info,pol_id):
 def contract_from_lin(lin_id):
     pol_obj = O.GiscedataPolissa
     lin_obj = O.GiscedataFacturacioImportacioLinia
-
-    lin_read = lin_obj.read(lin_id,['cups_id'])
-    if not(lin_read['cups_id']):
+    if not lin_id:
+        print "\nlin_id invalid --> " +str(lin_id)
         return False
+    try:
+        lin_read = lin_obj.read(lin_id,['cups_id'])
+    except Exception as e:
+        print "\nError de cerca "+str(lin_id)+" -> "+str(e)
+        return False
+    if not lin_read or not(lin_read['cups_id']):
+        print "\nlin_id Eliminat per acció d'usuari extern al script --> "+str(lin_id)
+        return False
+
     cups_id = lin_read['cups_id'][0]
     pol_ids = pol_obj.search([('cups', '=', cups_id)],0, 0, False, {'active_test': False})
     if not(pol_ids):
-        print "no hi ha contracte vinculat al cups del F1"
+        print "\nno hi ha contracte vinculat al cups del F1"
         return False
     return pol_ids[0]
 
