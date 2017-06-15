@@ -141,16 +141,17 @@ invoicefixing:
         date:
           description: Introduir la data des de quan voleu fer la cerca amb format YYYY-mm-dd
 
-    fixrefundinvoice:
-      script:
-        - SOME_SRC/somenergia-scripts/invoicing/invoicefixing/fix_refund_invoice.py
-        - -i
-        - "{invoice}"
-      title: Corregir factura rectificativa
-      description: 
-      parameters:
-        invoice:
-          description: Invoice number
+    # To Do: for future elimination, the ERP already can do the same and the script seems to be error prone 
+    #fixrefundinvoice:
+    #  script:
+    #    - SOME_SRC/somenergia-scripts/invoicing/invoicefixing/fix_refund_invoice.py
+    #    - -i
+    #    - "{invoice}"
+    #  title: Corregir factura rectificativa
+    #  description: 
+    #  parameters:
+    #    invoice:
+    #      description: Invoice number
 
     fixinvoice:
       script: python SOME_SRC/somenergia-scripts/invoicing/invoicefixing/fix_invoice.py -c {contract_name} -s {start_date} -e {end_date}
