@@ -8,10 +8,13 @@ from ooop import OOOP
 import configdb
 import time
 from consolemsg import fail
+import traceback
 
 O = OOOP(**configdb.ooop)
 
 lin_obj = O.GiscedataFacturacioImportacioLinia
+
+errors_ti = 0
 
 def parseargs():
     import argparse
@@ -35,6 +38,16 @@ def output(total,lin_factura_generada,lin_mateix_missatge,
     print "Importacions encara erronies: %d" % (len(lin_diferent_missatge)+len(lin_mateix_missatge))
     print "  - Amb el mateix missatge: %d" % len(lin_mateix_missatge)
     print "  - Amb un missatge diferent: %d" % len(lin_diferent_missatge)
+    print "Errors a reportar a IT: %d" % errors_it
+
+def printTiException(e,comment=''):
+    print "Excepció controlada: "+str(e)
+    if comment:
+        print comment
+    print "Bolcat de pila per IT ------------------------------"
+    traceback.print_exc()
+    print "Bolcat de pila per IT finalizat --------------------"
+    errors_ti += 1
 
 def reimportar_ok(linia_id):
     import time
@@ -181,12 +194,25 @@ def moure_dies_modificacio(dies,mod_actual_id, mod_antiga_id):
         data_final_inicial = mod_antiga.data_final
         data_final = datetime.strptime(mod_antiga.data_final, '%Y-%m-%d')
         data_final = datetime.strftime(data_final + timedelta(b), '%Y-%m-%d')
-        mod_antiga.write({'data_final': data_final})
+        try:
+            mod_antiga.write({'data_final': data_final})
+        except Exception as e:
+            printTiException(e,"Mod contractual ANTIGA modificant data_final per:"
+                "\n -dies: "+str(dies)+
+                "\n -id:"+str(mod_antiga_id)+
+                "\n -data:"+str(data_final))
 
         data_inicial = mod_actual.data_inici
         data_inici = datetime.strptime(mod_actual.data_inici, '%Y-%m-%d')
         data_inici = datetime.strftime(data_inici + timedelta(b), '%Y-%m-%d')
-        mod_actual.write({'data_inici': data_inici})
+        try:
+            mod_actual.write({'data_inici': data_inici})
+        except Exception as e:
+            printTiException(e,"Mod contractual ACTUAL modificant data_final per:" 
+                "\n -dies: "+str(dies)+
+                "\n -id:"+str(mod_actual_id)+
+                "\n -data:"+str(data_inici))
+
 
 args=parseargs()
 if not args.cups and not args.info and not args.date:
@@ -249,4 +275,4 @@ for lin_id in lin_ids:
     else:
         lin_diferent_missatge.append(lin_id)
 
-output(total,lin_factura_generada,lin_mateix_missatge,lin_diferent_missatge, lin_no_fixed)
+output(total,lin_factura_generada,lin_mateix_missatge,lin_diferent_missatge,lin_no_fixed)
