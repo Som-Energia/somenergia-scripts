@@ -14,8 +14,6 @@ O = OOOP(**configdb.ooop)
 
 lin_obj = O.GiscedataFacturacioImportacioLinia
 
-errors_ti = 0
-
 def parseargs():
     import argparse
     parser = argparse.ArgumentParser(description='Reimportar els F1')
@@ -38,7 +36,6 @@ def output(total,lin_factura_generada,lin_mateix_missatge,
     print "Importacions encara erronies: %d" % (len(lin_diferent_missatge)+len(lin_mateix_missatge))
     print "  - Amb el mateix missatge: %d" % len(lin_mateix_missatge)
     print "  - Amb un missatge diferent: %d" % len(lin_diferent_missatge)
-    print "Errors a reportar a IT: %d" % errors_it
 
 def printTiException(e,comment=''):
     print "Excepció controlada: "+str(e)
@@ -47,7 +44,6 @@ def printTiException(e,comment=''):
     print "Bolcat de pila per IT ------------------------------"
     traceback.print_exc()
     print "Bolcat de pila per IT finalizat --------------------"
-    errors_ti += 1
 
 def reimportar_ok(linia_id):
     import time
@@ -131,8 +127,13 @@ def contract_from_lin(lin_id):
     except Exception as e:
         print "\nError de cerca "+str(lin_id)+" -> "+str(e)
         return False
-    if not lin_read or not(lin_read['cups_id']):
+
+    if not lin_read:
         print "\nlin_id Eliminat per acció d'usuari extern al script --> "+str(lin_id)
+        return False
+
+    if not(lin_read['cups_id']):
+        print "\nlin_id sense cups vàlid --> "+str(lin_id)
         return False
 
     cups_id = lin_read['cups_id'][0]
