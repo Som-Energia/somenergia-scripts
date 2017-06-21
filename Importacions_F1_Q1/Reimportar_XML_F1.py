@@ -50,12 +50,14 @@ def output(total,lin_factura_generada,lin_mateix_missatge,
 
 def inter_output(total,count,lin_factura_generada,lin_mateix_missatge,
             lin_diferent_missatge,lin_no_fixed):
-    line = "(%d / %d) " % (count,total)
+    line = "\n"
+    line += "(%d / %d) " % (count,total)
     line += "no arreglades %d; " % (len(lin_no_fixed))
     line += "reimpor.gen.factura %d; " % (len(lin_factura_generada)) 
     line += "erronies %d; " % (len(lin_diferent_missatge)+len(lin_mateix_missatge))
     line += "mateix msg %d; " % (len(lin_mateix_missatge))
     line += "diferent msg %d " % (len(lin_diferent_missatge))
+
     print line
 
 def printTiException(e,comment=''):
@@ -252,13 +254,13 @@ if args.date:
     data_carrega = args.date
     data_carrega = data_carrega if data_carrega and valid_date(data_carrega) else None
     if data_carrega:
-        vals_search += [('data_carrega','>',data_carrega)]
+        vals_search += [('data_carrega','>=',data_carrega)]
 
 if args.dend:
     data_final = args.dend
     data_final = data_final if data_final and valid_date(data_final) else None 
     if data_final:
-        vals_search += [('data_carrega','<=',data_final)]
+        vals_search += [('data_carrega','<',data_final)]
 
 lin_ids = lin_obj.search(vals_search)
 
