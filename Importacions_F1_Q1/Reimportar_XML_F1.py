@@ -48,6 +48,16 @@ def output(total,lin_factura_generada,lin_mateix_missatge,
     print "  - Amb el mateix missatge: %d" % len(lin_mateix_missatge)
     print "  - Amb un missatge diferent: %d" % len(lin_diferent_missatge)
 
+def inter_output(total,count,lin_factura_generada,lin_mateix_missatge,
+            lin_diferent_missatge,lin_no_fixed):
+    line = "(%d / %d) " % (count,total)
+    line += "no arreglades %d; " % (len(lin_no_fixed))
+    line += "reimpor.gen.factura %d; " % (len(lin_factura_generada)) 
+    line += "erronies %d; " % (len(lin_diferent_missatge)+len(lin_mateix_missatge))
+    line += "mateix msg %d; " % (len(lin_mateix_missatge))
+    line += "diferent msg %d " % (len(lin_diferent_missatge))
+    print line
+
 def printTiException(e,comment=''):
     print "Excepció controlada: "+str(e)
     if comment:
@@ -266,6 +276,9 @@ lin_no_fixed = []
 
 for lin_id in lin_ids:
     count+=1
+
+    inter_output(total,count,lin_factura_generada,lin_mateix_missatge,lin_diferent_missatge,lin_no_fixed)
+
     pol_id = contract_from_lin(lin_id)
     if not pol_id: continue
     informacio_contracte(pol_id)
