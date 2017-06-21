@@ -26,7 +26,18 @@ def parseargs():
     parser.add_argument('-d', '--date',
         help="Escull data des de que comencem a fer la cerca",
         )
+    parser.add_argument('-e', '--dend',
+        help="Escull data limit per a fer la cerca",
+        )
     return parser.parse_args()
+
+def valid_date(date_text):
+    from datetime import datetime
+    try:
+        datetime.strptime(date_text, '%Y-%m-%d')
+    except ValueError:
+        raise ValueError("Incorrect data format, should be YYYY-MM-DD")
+    return True
 
 def output(total,lin_factura_generada,lin_mateix_missatge,
             lin_diferent_missatge,lin_no_fixed):
@@ -229,16 +240,15 @@ vals_search = [
 
 if args.date:
     data_carrega = args.date
-    def valid_date(date_text):
-        from datetime import datetime
-        try:
-            datetime.strptime(date_text, '%Y-%m-%d')
-        except ValueError:
-            raise ValueError("Incorrect data format, should be YYYY-MM-DD")
-        return True
     data_carrega = data_carrega if data_carrega and valid_date(data_carrega) else None
     if data_carrega:
         vals_search += [('data_carrega','>',data_carrega)]
+
+if args.dend:
+    data_final = args.dend
+    data_final = data_final if data_final and valid_date(data_final) else None 
+    if data_final:
+        vals_search += [('data_carrega','<=',data_final)]
 
 lin_ids = lin_obj.search(vals_search)
 
