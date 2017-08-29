@@ -243,7 +243,7 @@ if not args.cups and not args.info and not args.date:
     fail("Introdueix un cups o el missatge d'error o una data")
 
 vals_search = [
-    ('state','=','erroni'),
+    ('state','in',['erroni',False]),
     ] + (
     [('cups_id.name','=',args.cups) ] if args.cups else []
     ) + (
