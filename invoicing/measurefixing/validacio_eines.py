@@ -184,3 +184,5 @@ def reimportar_ok(linia_id):
         #print "Missatge Inicial: %s \n Missatge Final: %s" % (info_inicial,info_nova)
         print "S'ha actualitzat el missatge"
     return value
+
+# vim: et ts=4 sw=4

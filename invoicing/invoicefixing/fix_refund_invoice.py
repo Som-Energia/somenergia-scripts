@@ -48,10 +48,11 @@ def downgrade_invoice(O, invoice_id,vals):
 
 
 def refund_invoice(O, invoice_id,rectificar):
+    #Depecrated: use utils/payInvoice
     action = 'anullar'
     if rectificar:
         action = 'rectificar'
-    wiz = O.WizardRanas.new()
+    wiz = O.WizardRanas.new(context = {'active_ids': invoice_id})
     wiz_id = wiz.save()
     rects = wiz._action(action,{'active_ids':[invoice_id]})
 

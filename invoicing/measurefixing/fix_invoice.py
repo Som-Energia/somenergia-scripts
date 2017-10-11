@@ -4,6 +4,7 @@ from ooop import OOOP
 import configdb
 import os
 from datetime import datetime, timedelta
+from utils import *
 
 O = OOOP(**configdb.ooop)
 
@@ -18,17 +19,6 @@ def dump(polissa_id, lects, header, n):
                                                                   'origen': lects[idx]['origen_id'][1] })
     except Exception as e:
         pass
-
-def payInvoice(invoice_id, rectificar):
-    action = 'anullar'
-    if rectificar:
-        action = 'rectificar'
-    wiz = O.WizardRanas.new()
-    wiz_id = wiz.save()
-
-    print "Applying {action} on {invoice_id}".format(**locals())
-    return wiz._action(action,{'active_ids': [invoice_id]})
-
 
 def get_contract_amount_mean(polissa_id):
     def months_between(d1, d2):
@@ -145,7 +135,7 @@ def fix_contract(polissa_id, quarantine):
                                                                                     ('data_inici', '=', invoice_date_start)])
 
                     if invoice_rectified_id:
-                        invoices_id = payInvoice(invoice_rectified_id[0], True)
+                        invoices_id = pay_invoice(O, invoice_rectified_id[0], True)
                         if invoices_id:
                             invoices = O.GiscedataFacturacioFactura.read(invoices_id, ['amount_total'])
                             invoice_original = invoices[1]['amount_total']

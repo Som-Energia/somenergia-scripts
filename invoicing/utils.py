@@ -7,12 +7,12 @@ DAYS_PER_MONTH=30.0
 
 
 def pay_invoice(O, invoice_id, rectificar):
-    action = 'rectificar' if rectificar else 'anullar'
-    wiz = O.WizardRanas.new()
-    wiz_id = wiz.save()
-
-    print "Refunding {invoice_id}".format(**locals())
-    return wiz._action(action,{'active_ids': [invoice_id]})
+    #action = 'rectificar' if rectificar else 'anullar'
+    wiz_id = O.WizardRanas.create({},{'active_ids': [invoice_id]})
+    wiz = O.WizardRanas.get(wiz_id)
+    if rectificar:
+        return wiz.action_rectificar({'active_ids': [invoice_id]})
+    return wiz.action_anullar({'active_ids': [invoice_id]})
 
 
 def get_contract_daily_consumption(O, contract_id):
