@@ -11,9 +11,12 @@ imp_ids_no_del = [470571, 468790, 462576, 459709, 456920, 455680, 458431, 457376
 
 imp_del_ids = imp_obj.search([('state','=','erroni'),('info','like','Ja existeix una factura'),('id','not in', imp_ids_no_del)])
 #imp_del_ids += imp_obj.search([('state','=','erroni'),('info','like','XML erroni')])
-imp_del_ids += imp_obj.search([('state','=','erroni'),('info','like',"XML no es correspon al tipus F1")])
-imp_del_ids += imp_obj.search([('state','=','erroni'),('info','like',"Document invàlid")])
+#imp_del_ids += imp_obj.search([('state','=','erroni'),('info','like',"XML no es correspon al tipus F1")])
+#imp_del_ids += imp_obj.search([('state','=','erroni'),('info','like',"Document invàlid")])
 imp_del_ids += imp_obj.search([('state','=','erroni'),('info','like',"Aquest fitxer XML ja s'ha proces")])
+imp_del_ids += imp_obj.search([('state','=','erroni'),('info','like',"El XML no se corresponde con el tipo F1")])
+imp_del_ids += imp_obj.search([('state','=','erroni'),('info','like',"El destinatari d'aquest fitxer no és la nostra comercialitzadora")])
+
 imp_del_ids_reads = O.GiscedataFacturacioImportacioLinia.read(imp_del_ids,['state','info'])
 
 
