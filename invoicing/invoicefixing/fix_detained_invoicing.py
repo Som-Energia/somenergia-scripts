@@ -21,7 +21,7 @@ cups_obj = O.GiscedataCupsPs
 partner_obj = O.ResPartner
 
 contracts_max = 20
-invoices_max = 3
+invoices_max = 6
 
 dif_maxima = 55
 euro_max = 1000

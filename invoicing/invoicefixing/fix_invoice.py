@@ -250,3 +250,5 @@ if __name__ == "__main__":
     out = fix_contract(O, contract_id, quarantine, start_date, end_date)
     adelantar_polissa_endarerida([contract_id])
     print out
+
+# vim: et ts=4 sw=4
