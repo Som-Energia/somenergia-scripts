@@ -20,7 +20,7 @@ fact_obj = O.GiscedataFacturacioFactura
 cups_obj = O.GiscedataCupsPs
 partner_obj = O.ResPartner
 
-contracts_max = 20
+contracts_max = 5
 invoices_max = 6
 
 dif_maxima = 55
@@ -188,6 +188,72 @@ def load_new_measures_fake(O, contract_id, mtype=range(1,7)+[8], start_date=None
             pass
     return new_measures
 
+
+def deleteOldInvoices(contract_id):
+    remove_invoices = False
+    change_payers = False
+    #print "Fixed Contracts. Contractes que hem intentat arreglar"
+    #contract_remove_invoices = []
+    # Remove failing issues
+    #print "Remove Failing issues. Eliminem les factures erronies de les polisses seguents:"
+    yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+    #change_payers = []
+    #for contract_id in contracts_fixed:
+    # Busquem factures amb imports molt alts
+    search_pattern = [('polissa_id', '=', contract_id),
+                      ('type', 'in', ['out_invoice','out_refund']),
+                      ('invoice_id.state', '=', 'draft'),
+                      ('invoice_id.date_invoice', '>', yesterday),
+                      ]
+    invoices_ids = get_invoices(O, search_pattern, None, False)
+    invoices = read_invoices(O, invoices_ids, [])
+    valid = [True if ((invoice['amount_total']/invoice['dies']) < euro_perday_max)
+                    and((invoice['energia_kwh']/invoice['dies']) < kwh_perday_max)
+            else False
+            for invoice in invoices]
+    # busquem si hi hagut un canvi de pagador
+    change_payer = []
+    if invoices:
+        payer = invoices[0]['partner_id'][0]
+        change_payer = [True if (payer != invoice['partner_id'][0])
+                        else False
+                        for invoice in invoices]
+
+    if not all(valid) or any(change_payer):
+        contract_name = O.GiscedataPolissa.read(contract_id,['name'])['name']
+        remove_invoices = contract_name
+        fact_obj.unlink(invoices_ids,{})
+        if any(change_payer):
+            change_payers = contract_name
+    return remove_invoices, change_payers
+
+
+def openAndSend(contract_id):
+    #print "Deliver invoices. Polisses que obririem i enviariem:"
+    #contract_deliver_invoices = []
+    #contracts_ids = list(set(contracts_fixed))
+    #print contract_deliver_invoices
+    yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+    #for contract_id in contracts_ids:
+    pagador_id = pol_obj.read(contract_id, ['pagador'])['pagador'][0]
+    lang = partner_obj.read(pagador_id, ['lang'])['lang']
+    search_pattern = [('polissa_id', '=', contract_id),
+                      ('type', 'in', ['out_invoice','out_refund']),
+                      ('invoice_id.state', '=', 'draft'),
+                      ('invoice_id.date_invoice', '>', yesterday),
+                      ]
+    invoices_ids = get_invoices(O, search_pattern, None, False)
+    if not invoices_ids:
+        return False
+    contract_name = O.GiscedataPolissa.read(contract_id,['name'])['name']
+    #contract_deliver_invoices.append(contract_name)
+    open_and_send(O, invoices_ids, lang,
+            send_refund=True,
+            send_rectified=True,
+            send_digest=True,
+            num_contracts=1)
+    return True
+
 print 'Reading contracts ...'
 contracts=get_detained()
 print 'Pending contracts ', len(contracts)
@@ -253,7 +319,7 @@ for contract_name in contracts:
     if n==contracts_max:
         break
 
-    contracts_fixed.append(contract_id)
+    #contracts_fixed.append(contract_id)
 
     n+=1
     quarantine = {'kWh': [], 'euro': []}
@@ -275,70 +341,21 @@ for contract_name in contracts:
         out += o
     adelantar_polissa_endarerida([contract_id])
 
-print "Fixed Contracts. Contractes que hem intentat arreglar"
-contract_remove_invoices = []
-# Remove failing issues
-print "Remove Failing issues. Eliminem les factures erronies de les polisses seguents:"
-yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-change_payers = []
-for contract_id in contracts_fixed:
-    # Busquem factures amb imports molt alts
-    search_pattern = [('polissa_id', '=', contract_id),
-                      ('type', 'in', ['out_invoice','out_refund']),
-                      ('invoice_id.state', '=', 'draft'),
-                      ('invoice_id.date_invoice', '>', yesterday),
-                      ]
-    invoices_ids = get_invoices(O, search_pattern, None, False)
-    invoices = read_invoices(O, invoices_ids, [])
-    valid = [True if ((invoice['amount_total']/invoice['dies']) < euro_perday_max) 
-                    and((invoice['energia_kwh']/invoice['dies']) < kwh_perday_max) 
-            else False 
-            for invoice in invoices]
-    # busquem si hi hagut un canvi de pagador
-    change_payer = []
-    if invoices:
-        payer = invoices[0]['partner_id'][0]
-        change_payer = [True if (payer != invoice['partner_id'][0])
-                        else False
-                        for invoice in invoices]
+    # Delete old invoices
+    remove_invoices, change_payers = deleteOldInvoices(contract_id)
+    if remove_invoices:
+        print "Esborrades factures erronies de polissa ", contract_id
 
-    if not all(valid) or any(change_payer):
-        contract_name = O.GiscedataPolissa.read(contract_id,['name'])['name']
-        contract_remove_invoices.append(contract_name)
-        fact_obj.unlink(invoices_ids,{})
-        if any(change_payer):
-            change_payers.append(contract_name)
+    if change_payers:
+        print "Canviat el pagador de la polissa ", contract_id
 
-print contract_remove_invoices
-print "Tenen un canvi de pagador (Factures eliminades): "
-print change_payers
+    # Deliver invoices
+    sent = openAndSend(contract_id)
+    if sent:
+        print "Factures de la polissa %s enviades" % contract_id
 
-# Deliver invoices
-print "Deliver invoices. Polisses que obririem i enviariem:"
-contract_deliver_invoices = []
-contracts_ids = list(set(contracts_fixed))
-print contract_deliver_invoices
-yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-for contract_id in contracts_ids:
-    pagador_id = pol_obj.read(contract_id, ['pagador'])['pagador'][0]
-    lang = partner_obj.read(pagador_id, ['lang'])['lang']
-    search_pattern = [('polissa_id', '=', contract_id),
-                      ('type', 'in', ['out_invoice','out_refund']),
-                      ('invoice_id.state', '=', 'draft'),
-                      ('invoice_id.date_invoice', '>', yesterday),
-                      ]
-    invoices_ids = get_invoices(O, search_pattern, None, False)
-    if not invoices_ids:
-        continue
-    contract_name = O.GiscedataPolissa.read(contract_id,['name'])['name']   
-    contract_deliver_invoices.append(contract_name)
-    open_and_send(O, invoices_ids, lang,
-            send_refund=True,
-            send_rectified=True,
-            send_digest=True,
-            num_contracts=1)
 
-print contract_deliver_invoices
+
 
 show_param_conf(contracts_max,invoices_max,
                     dif_maxima,
