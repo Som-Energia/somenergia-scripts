@@ -85,6 +85,9 @@ def facturar_manual(pol_ids):
 def carregar_lectures_from_pool(pol_ids):
     for pol_id in pol_ids:
         comptadors_ids = O.GiscedataLecturesComptador.search([('polissa','=',pol_id)])
+        if comptadors_ids == []: #Evitar error no té lectures
+            print "La polissa %s no te lectures" % pol_id
+            continue
         ctx = {'active_ids': comptadors_ids}
         wiz_id = O.GiscedataLecturesPoolWizard.create({},ctx)
         O.GiscedataLecturesPoolWizard.action_carrega_lectures([wiz_id], ctx)

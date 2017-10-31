@@ -93,7 +93,7 @@ def fix_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
 
     if not isinstance(meters, list):
         meters = [meters]
-
+    #recorregut pels comptadors
     for meter in meters:
         fields_to_search = [('comptador', '=', meter['id'])]
         if start_date:
@@ -111,7 +111,7 @@ def fix_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
 
         offset_ct = {'2.0A (P1)': 1, '2.1A (P1)': 1,
                      '2.0DHA (P1)': 2, '2.1DHA (P1)': 2}
-
+        #Al trobar lectura inferior a la última, mirem fins a 15 lectures més endarrere per corretgir-les (si són estimades)
         for back_idx in reversed(range(1, min(len(lects), 15))):
             if not (lects[0]['periode'][1].startswith('2')) or (lects[0]['periode'][1].endswith('DHS')):
                 # 3.0 and DHS pending
@@ -125,12 +125,13 @@ def fix_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
                             return False
                     return True
 
-                prev_idx = back_idx*offset
+                prev_idx = back_idx*offset #si hi ha DHA, hi ha el doble de lectures
                 last_idx = offset + prev_idx
 
                 offset_status = [check_origen(lects, prev_idx, "Estimada", offset, offset),
                                  check_origen(lects, prev_idx, "Estimada", offset+1, offset)]
 
+                #mirem si lectura actual és més baixa que una lectura antiga
                 if ((offset_status[0]) \
                     and (lects[0]['lectura'] >= lects[last_idx]['lectura']) \
                     and (lects[0]['lectura'] < lects[prev_idx]['lectura'])) \
@@ -141,12 +142,12 @@ def fix_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
 
                     n_days_02 = (datetime.strptime(lects[0]['name'], '%Y-%m-%d') -
                                  datetime.strptime(lects[last_idx]['name'], '%Y-%m-%d')).days
-
                     for day_idx in range(1, back_idx+1):
                         _prev_idx = offset+(back_idx-day_idx)*offset
                         _last_idx = offset+(back_idx-day_idx+1)*offset
                         kWh_day_db = get_contract_daily_consumption(O, polissa_id)
 
+                        #modifiquem lectures antigues per quadrar amb la darrera lectura més baixa
                         if offset_status[0]:
                             # 2.XA
                             quarantine['kWh'] += fix_measure(O, polissa_id, lects, last_idx, _last_idx, _prev_idx,
@@ -166,7 +167,6 @@ def fix_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
                                           ('data_final', '=', invoice_date_end),
                                           ('data_inici', '=', invoice_date_start)]
                         invoice_rectified_id = get_invoices(O, search_pattern, None, True)
-
                         if not invoice_rectified_id:
                             invoice_date_start = datetime.strftime(datetime.strptime(lects[_last_idx]['name'],
                                                                                      '%Y-%m-%d') + timedelta(days=1), '%Y-%m-%d')
@@ -176,6 +176,7 @@ def fix_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
                                               ('data_inici', '=', invoice_date_start)]
                             invoice_rectified_id = get_invoices(O, search_pattern, None, True)
 
+                        #abonem i rectifiquem les factures de periodes afectats per les noves lectures
                         if invoice_rectified_id:
                             invoices_id = pay_invoice(O, invoice_rectified_id[0], True)
                             if invoices_id:
@@ -241,6 +242,10 @@ if __name__ == "__main__":
     quarantine = {'kWh': [], 'euro': []}
 
     old_measures = get_measures_by_contract(O, contract_id, range(1,12))
+    if old_measures == []:
+        error("El compatador actiu no té mesures")
+        raise
+
     new_measures = load_new_measures(O, contract_id)
     if old_measures[0]['origen_id'][0] not in [7,10,11]:
         end_date = old_measures[0]['name']

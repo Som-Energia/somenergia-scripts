@@ -337,10 +337,12 @@ for contract_id in contracts_ids:
             send_rectified=True,
             send_digest=True,
             num_contracts=1)
+
 print contract_deliver_invoices
-# vim: ts=4 sw=4 et
 
 show_param_conf(contracts_max,invoices_max,
                     dif_maxima,
                     euro_max, euro_perday_max,
                     kwh_max,kwh_perday_max)
+
+# vim: ts=4 sw=4 et
