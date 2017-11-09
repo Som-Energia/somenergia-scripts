@@ -31,6 +31,12 @@ tomatic:
       description: >
         Un llistat bastan cru de les trucades fallides del dia
 
+    detall:
+      script: SOME_SRC/somenergia-tomatic/tomatic_calls.py all
+      title: Detall de totes les trucades del dia
+      description: >
+        Un llistat bastan cru de totes les trucades del dia
+
     says:
       script: SOME_SRC/somenergia-tomatic/tomatic_says.py  {quelcom}
       title: Tomàtic diu
