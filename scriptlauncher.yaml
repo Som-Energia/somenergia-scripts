@@ -187,9 +187,9 @@ invoicefixing:
         contract_name:
           description: Número de contracte
         start_date:
-          description: data inici
+          description: data inici (YYYY-MM-DD)
         end_date:
-          description: data final
+          description: data final (YYYY-MM-DD)
 
     killalreadyexist:
       script: python SOME_SRC/somenergia-scripts/Importacions_F1_Q1/Fact_impF1_eliminar_Ja_existeix.py
