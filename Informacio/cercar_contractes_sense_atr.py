@@ -1,13 +1,13 @@
 import sys
-import dbconfig
-import erppeek_wst
+import configdb
+import erppeek
 
 '''
     Busca contractes, entre les dates especificades, en els quals no s'ha obert
     un cas ATR del tipus Alta o Switching
 '''
 
-O = erppeek_wst.ClientWST(**dbconfig.erppeek);
+O = erppeek.Client(**configdb.erppeek);
 
 def cercaContracteEnCasos(casos, contracte):
     for cas in casos:
