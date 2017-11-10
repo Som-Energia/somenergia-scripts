@@ -263,6 +263,15 @@ gestiocontractes:
           file:
             type: FILE
             description: Excel con los cups
+      contractesSenseATR:
+        script: python SOME_SRC/somenergia-scripts/Informacio/cercar_contractes_sense_atr.py {data_from} {data_to}
+        title: Cerca contractes sense casos ATR creats
+        description: Busca contractes, entre les dates especificades, en els quals no s'ha obert un cas ATR del tipus Alta o Switching (C1, C2, A3). Aquesta cerca es custosa, intenta acotar les dates.
+        parameters:
+          date_from:
+            description: Data dels contractes més antics que es miraran 'YYYY-mm-dd'
+          date_to:
+            description: Data dels contractes més nous que es miraran 'YYYY-mm-dd'
 
 admin:
   description: Administració

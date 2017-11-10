@@ -71,8 +71,8 @@ def netejar_remesa(data_max, balance, order_id):
 
     po_read = po_obj.read(order_id)
 
+    i = 0
     for record in balance:
-        print "dins for"
         data_reg = record['min']
         data_param = datetime.datetime.strptime(data_max, '%Y-%m-%d').date()
         if data_reg < data_param:
@@ -99,18 +99,27 @@ def netejar_remesa(data_max, balance, order_id):
                 'account_id': account_id,
                 'bank_id': bank_inversions,
             })
+        i = i + 1
+    print "Afegides ", i, " linies a la remesa"
 
 
 try:
-    pg_con = " host=" + configdb.psycopg['DB_HOSTNAME'] + \
-             " port=" + str(configdb.psycopg['DB_PORT']) + \
-             " dbname=" + configdb.psycopg['DB_NAME'] + \
-             " user=" + configdb.psycopg['DB_USER'] + \
-             " password=" + configdb.psycopg['DB_PASSWORD']
+    pg_con = " host=" + configdb.pg['DB_HOSTNAME'] + \
+             " port=" + str(configdb.pg['DB_PORT']) + \
+             " dbname=" + configdb.pg['DB_NAME'] + \
+             " user=" + configdb.pg['DB_USER'] + \
+             " password=" + configdb.pg['DB_PASSWORD']
     dbconn=psycopg2.connect(pg_con)
 except Exception, ex:
-    print "Unable to connect to database " + configdb.pyscopg['DB_NAME']
+    print "Unable to connect to database " + configdb.pg['DB_NAME']
     error=True
+    raise ex
+
+try:
+    sys.argv[1]
+    sys.argv[2]
+except Exception, ex:
+    print "Falten Parametres"
     raise ex
 
 dbcur = dbconn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
