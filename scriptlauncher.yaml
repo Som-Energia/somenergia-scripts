@@ -292,6 +292,15 @@ admin:
           description: data inici (ex. 2015-01-01)
         end_date:
           description: data final (ex. 2015-03-31)
+    remesaTitols:
+      script: python SOME_SRC/somenergia-scripts/admin/crear_remesa_aportacions.py {end_date} {id_remesa}
+      title: Omplir remesa amb el retorn dels títols participatius fins a una data determinada
+      description:
+      parameters:
+        end_date:
+          description: Data final titols a retornar (ex. 2012-10-31)
+        id_remesa:
+          description: Id remesa on posar el retorn dels títol (ex. 2349)
 
 generation:
   description: Generació
