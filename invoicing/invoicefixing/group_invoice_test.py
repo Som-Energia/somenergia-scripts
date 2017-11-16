@@ -105,6 +105,20 @@ class GroupInvoice(unittest.TestCase):
         self.assertEqual(total, 100)
         self.assertEqual(sorted(invoices), sorted([fact_gff_2.id,fact_gff_1.id]))
 
+    def test_obertesDelContracte_noResta(self):
+        id = self.GiscedataPolissa.create({'potencia':'5.000'})
+        factura = self.GiscedataFacturacioFactura.read(self.personalData.factura_id)
+        fact_ai_1 = self.crearFacturaAI(id, 121)
+        fact_gff_1 = self.crearFacturaGFF(id, fact_ai_1, 'R')
+        self.openInvoiceGFF(fact_gff_1.id)
+        fact_ai_2 = self.crearFacturaAI(id, 21)
+        fact_gff_2 = self.crearFacturaGFF(id, fact_ai_2, 'B')
+        self.openInvoiceGFF(fact_gff_2.id)
+
+        invoices, total = group_invoice.facturesObertesDelContracte(self.AccountInvoice, self.GiscedataFacturacioFactura, id.name)
+
+        self.assertNotEqual(total, 121)
+        self.assertNotEqual(sorted(invoices), sorted([fact_gff_1.id]))
 
 unittest.TestCase.__str__ = unittest.TestCase.id
 
