@@ -173,6 +173,13 @@ def open_and_send(O, ids, lang, send_refund=True, send_rectified=True, send_dige
             'send_digest': send_digest,
             'num_contracts': num_contracts,
         }
-    wizard_id = O.WizardInvoiceOpenAndSend.create(vals, ctx)
-    wizard = O.WizardInvoiceOpenAndSend.get(wizard_id)
+    wizard_id = o.wizardinvoiceopenandsend.create(vals, ctx)
+    wizard = o.wizardinvoiceopenandsend.get(wizard_id)
     wizard.action_obrir_i_enviar(ctx)
+
+def getPeriodId(O):
+    period_name = datetime.today().strftime('%m/%Y')
+    return O.AccountPeriod.get([('name','=',period_name)])
+    
+
+# vim: et ts=4 sw=4
