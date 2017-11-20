@@ -215,6 +215,17 @@ invoicefixing:
       title: Moure polisses al lot següent
       description: ATENCIÓ! Aquest script només s'ha d'utiltizar quan es vol fer canvi de lot i lot actual el volem tancar. Aquest scripts et permet moure les polisses que falten per facturar al següent lot
 
+    groupinvoice:
+      script: python SOME_SRC/somenergia-scripts/invoicing/invoicefixing/group_invoice.py -c {contract_name} -rp {po_payable} -rc {po_receivable}
+      title: Agrupar pagaments factures d'un contracte
+      description: Cal informar número de contracte i nom de les remeses de cobrament i pagament. Agafa les factures obertes i les agrupa en un sol pagament a la remesa que toqui.
+      parameters:
+        contract_name:
+          description: Número de contracte
+        po_receivable:
+          description: Remesa de cobrament (ex. 2017/1460)
+        po_payable:
+          description: Remesa de pagament (ex. 2017/952)
 
 gestiocontractes:
     description: Gestió de contractes
