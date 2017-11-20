@@ -177,9 +177,9 @@ def open_and_send(O, ids, lang, send_refund=True, send_rectified=True, send_dige
     wizard = o.wizardinvoiceopenandsend.get(wizard_id)
     wizard.action_obrir_i_enviar(ctx)
 
-def getPeriodId(O):
+def getPeriodId(period_obj):
     period_name = datetime.today().strftime('%m/%Y')
-    return O.AccountPeriod.get([('name','=',period_name)])
+    return period_obj.search([('name','=',period_name)])[0]
     
 
 # vim: et ts=4 sw=4

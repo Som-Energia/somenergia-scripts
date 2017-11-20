@@ -18,7 +18,7 @@ from display import *
     2.- Agrupar totes les factures d'una polissa en un sol pagament de remesa. Tenir en compte IBAN correcte, codi de remesa (paràmetre)
 '''
 ACC_DEVOLUTIONS = 532
-#4315
+
 def contractId(gp, contract_name):
     try:
         return gp.search([('name', '=', contract_name)])[0]
@@ -34,8 +34,8 @@ def facturesObertesDelContracte(ai, gff, contract_name):
         invoices_gisce.append(gff_id[0])
         gff_obj = gff.read(gff_id[0])
         ai_obj = ai.read(i)
-        print "Factura %s de %s a %s del tipus %s amb un import de %s." % (str(ai_obj['number']), str(gff_obj['data_inici']), str(gff_obj['data_final']), str(gff_obj['tipo_rectificadora']), str(ai_obj['amount_total']))
-        print "Compara " , ai_obj['account_id'][0], " amb ",ACC_DEVOLUTIONS
+        #print "Factura %s de %s a %s del tipus %s amb un import de %s." % (str(ai_obj['number']), str(gff_obj['data_inici']), str(gff_obj['data_final']), str(gff_obj['tipo_rectificadora']), str(ai_obj['amount_total']))
+        #print "Compara " , ai_obj['account_id'][0], " amb ",ACC_DEVOLUTIONS
         if ai_obj['account_id'][0] == ACC_DEVOLUTIONS:
             raise Exception("Hi ha almenys una factura amb el compte devolucions")
         if gff_obj['tipo_rectificadora'] == 'B':
@@ -73,6 +73,21 @@ def wizardFacturesARemesa(invoices_gisce, order_id):
     wizard_po = O.WizardAfegirFacturesRemesa.get(wizard_id_po)
     wizard_po.action_afegir_factures(ctx_po)
 
+def fixIBANInvoice(gp, ai, polissa_id, invoices_ids):
+    polissa = gp.get(polissa_id)
+    for invoice_id in invoices_ids:
+        invoice = ai.get(invoice_id)
+        if polissa.bank != invoice.parnter_bank:
+            ai.write(invoice_id, {'partner_bank': polissa.bank.id})
+
+def fixIBANPaymentOrder(gp, pl, polissa_id, order_id):
+    polissa = gp.get(polissa_id)
+    order_lines = pl.search([('order_id','=', order_id)])
+    for line_id in order_lines:
+        line = pl.get(line_id)
+        if polissa.pagador.id == line.partner_id.id:
+            if polissa.bank.id != line.bank_id.id:
+                pl.write(line_id, {'bank_id': polissa.bank.id})
 
 if __name__ == "__main__":
     import argparse
@@ -95,9 +110,12 @@ if __name__ == "__main__":
     ai = O.AccountInvoice
     gp = O.GiscedataPolissa
     gff = O.GiscedataFacturacioFactura
+    aj = O.AccountJournal
+    ap = O.AccountPeriod
+    pl = O.PaymentLine
 
     contract_id = contractId(gp, contract_name)
-    
+
     invoices_gisce, total = facturesObertesDelContracte(ai, gff, contract_name)
 
     print "Total de factures: ", len(invoices_gisce)
@@ -109,12 +127,13 @@ if __name__ == "__main__":
     elif total > 0:
         order_id = int(remesa_cobrament)
     elif total == 0:
-        raise Exception("Conciliar-ho tot")
+        raise Exception("Cal 'Pagar grup de factures' a mà")
 
     wizardAgruparFactures(invoices_gisce, total)
-
+    fixIBANInvoice(gp, ai, contract_id, invoices_gisce)
     print "Factures agrupades. Anem a afegir-les a la remesa ", order_id
 
     wizardFacturesARemesa(invoices_gisce, order_id)
+    fixIBANPaymentOrder(gp, pl, contract_id, order_id)
 
 # vim: et ts=4 sw=4

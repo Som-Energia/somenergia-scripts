@@ -20,6 +20,8 @@ class GroupInvoice(unittest.TestCase):
         self.AccountInvoice = self.erp.AccountInvoice
         self.GiscedataPolissa = self.erp.GiscedataPolissa
         self.GiscedataFacturacioFactura = self.erp.GiscedataFacturacioFactura
+        self.AccountPeriod = self.erp.AccountPeriod
+        self.AccountJournal = self.erp.AccountJournal
 
     def tearDown(self):
         self.erp.rollback()
@@ -92,7 +94,6 @@ class GroupInvoice(unittest.TestCase):
 
     def test_obertesDelContracte_ok(self):
         id = self.GiscedataPolissa.create({'potencia':'5.000'})
-        factura = self.GiscedataFacturacioFactura.read(self.personalData.factura_id)
         fact_ai_1 = self.crearFacturaAI(id, 121)
         fact_gff_1 = self.crearFacturaGFF(id, fact_ai_1, 'R')
         self.openInvoiceGFF(fact_gff_1.id)
@@ -107,7 +108,6 @@ class GroupInvoice(unittest.TestCase):
 
     def test_obertesDelContracte_noResta(self):
         id = self.GiscedataPolissa.create({'potencia':'5.000'})
-        factura = self.GiscedataFacturacioFactura.read(self.personalData.factura_id)
         fact_ai_1 = self.crearFacturaAI(id, 121)
         fact_gff_1 = self.crearFacturaGFF(id, fact_ai_1, 'R')
         self.openInvoiceGFF(fact_gff_1.id)
