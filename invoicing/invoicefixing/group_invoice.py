@@ -25,6 +25,12 @@ def contractId(gp, contract_name):
     except:
         raise Exception("Contract name not found. Maybe som 0 before",1)
 
+def paymentOrderId(po, po_name, po_type):
+    try:
+        return po.search([('reference','=',po_name), ('type','=',po_type)])[0]
+    except:
+        raise Exception("La remesa no existeix o no es del tipus ", po_type)
+
 def facturesObertesDelContracte(ai, gff, contract_name):
     invoices = ai.search([('name', '=', contract_name),('state','=','open')])
     invoices_gisce = []
@@ -96,8 +102,6 @@ if __name__ == "__main__":
     parser.add_argument('-rc', '--remesa-cobrament')
     parser.add_argument('-c', '--contracte')
     args = vars(parser.parse_args())
-    remesa_pagament = args['remesa_pagament']
-    remesa_cobrament = args['remesa_cobrament']
     contract_name = args['contracte']
 
     O = None
@@ -113,12 +117,15 @@ if __name__ == "__main__":
     aj = O.AccountJournal
     ap = O.AccountPeriod
     pl = O.PaymentLine
+    po = O.PaymentOrder
 
     contract_id = contractId(gp, contract_name)
+    remesa_pagament = paymentOrderId(po, args['remesa_pagament'], 'payable')
+    remesa_cobrament = paymentOrderId(po, args['remesa_cobrament'], 'receivable')
 
     invoices_gisce, total = facturesObertesDelContracte(ai, gff, contract_name)
 
-    print "Total de factures: ", len(invoices_gisce)
+    print "Total de factures agrupades: ", len(invoices_gisce)
     print "Balanç import total: ", total
 
     order_id = 0
@@ -131,7 +138,6 @@ if __name__ == "__main__":
 
     wizardAgruparFactures(invoices_gisce, total)
     fixIBANInvoice(gp, ai, contract_id, invoices_gisce)
-    print "Factures agrupades. Anem a afegir-les a la remesa ", order_id
 
     wizardFacturesARemesa(invoices_gisce, order_id)
     fixIBANPaymentOrder(gp, pl, contract_id, order_id)
