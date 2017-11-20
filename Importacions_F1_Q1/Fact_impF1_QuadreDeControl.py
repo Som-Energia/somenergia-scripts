@@ -43,7 +43,9 @@ print "ERRORS DE IMPORTACIONS de F1"
 for a in list_errors:
     vals_search_f1 = vals_search + [('info', 'like', a.keys())]
     erronis_ids = imp_obj.search(vals_search_f1)
+    if not erronis_ids:
+        continue
     for b,c in a.items():
         print "  [" + str(b) + "]. Errors: ",str(len(erronis_ids))
-        print "  Descripció error: ", c , "\n"
+        print u"  Descripció error: ", c , "\n"
 
