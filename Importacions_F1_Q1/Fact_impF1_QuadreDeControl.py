@@ -47,5 +47,7 @@ for a in list_errors:
         continue
     for b,c in a.items():
         print "  [" + str(b) + "]. Errors: ",str(len(erronis_ids))
-        print u"  Descripció error: ", c , "\n"
+        print "  Descripció error: ", c.encode('utf-8')
+        print ""
 
+# vim: et ts=4 sw=4
