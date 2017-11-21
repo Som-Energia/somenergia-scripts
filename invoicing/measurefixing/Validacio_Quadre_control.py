@@ -113,6 +113,7 @@ print "\nERRORS {}. Endarrerits {}".format(len(total_errors), len(endarrerides(l
 print "    [V001] {} (Endarrerits: {}) - Possible volta de comptador".format(len(set(volta_comptador)), len(endarrerides(volta_comptador)))
 print "    [V002] {} (Endarrerits: {}) - No té lectura anterior".format(len(set(no_lectura_anterior)), len(endarrerides(no_lectura_anterior)))
 print "    [V003] {} (Endarrerits: {}) - No te Lectures".format(len(set(no_lectures)), len(endarrerides(no_lectures)))
+print "    [V003] {} (Endarrerits: {}) - No te Lectures de maxímetre i si que te les altres lectures ben entrades".format(len(set(no_lect_max)), len(endarrerides(no_lect_max)))
 print "    [V004] No existeix com Error"
 print "    [V005] {} (Endarrerits: {}) - No té cap comptador actiu".format(len(set(comptador_inactiu)), len(endarrerides(comptador_inactiu)))
 print "    [V006] {} (Endarrerits: {}) - Sobreestimacions".format(len(set(sobreestimacions)), len(endarrerides(sobreestimacions)))
@@ -122,12 +123,11 @@ print "    [V009] {} (Endarrerits: {}) - Excessos del 30 per cent. Maximetre".fo
 print "    [V010] {} (Endarrerits: {}) - Exces del limit establert per SE".format(len(set(superior_limit)), len(endarrerides(superior_limit)))
 print "    [V011] {} (Endarrerits: {}) - El consum de reactiva és superior a l'activa".format(len(set(reactiva)), len(endarrerides(reactiva)))
 print "    [V012] {} (Endarrerits: {}) - Lectura incompleta. Falten periodes".format(len(set(incompleta)), len(endarrerides(incompleta)))
+print "    [V012] {} (Endarrerits: {}) - Lectura incompleta. Falten periodes P4,P5,P6. Són contractes de 3.1A".format(len(set(contractes_31)), len(endarrerides(contractes_31)))
 print "    [V013] {} (Endarrerits: {}) - Lectura anterior i actual són iguals".format(len(set(iguals)), len(endarrerides(iguals)))
 print "    [V014] {} (Endarrerits: {}) - Falta lectura de tancament".format(len(set(baixa)), len(endarrerides(baixa)))
 print "    [V015] {} (Endarrerits: {}) - Falta Mandato".format(len(set(sense_mandato)), len(endarrerides(sense_mandato)))
 print "    [V016] {} (Endarrerits: {}) - Pendent de Carrega TPL".format(len(set(tpl)), len(endarrerides(tpl)))
 
-print "    {} (Endarrerits: {}) - No té lectura de maxímetre".format(len(set(no_lect_max)), len(endarrerides(no_lect_max)))
-print '    {} (Endarrerits: {}) - Tarifa 3.1 no hi ha error'.format(len(set(contractes_31)), len(endarrerides(contractes_31)))
-print "    {} (Endarrerits: {}) - Primer lectura del nou comptador".format(len(set(nou_comptador_una_lectura)), len(endarrerides(nou_comptador_una_lectura)))
+print "    [No sé a quin codi d'error fa referencia] {} (Endarrerits: {}) - Primer lectura del nou comptador".format(len(set(nou_comptador_una_lectura)), len(endarrerides(nou_comptador_una_lectura)))
 print "="*76
