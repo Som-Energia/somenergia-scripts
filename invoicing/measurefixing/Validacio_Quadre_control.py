@@ -104,12 +104,12 @@ total_errors = set(sobreestimacions + maximetre + superior_limit + no_lectures +
 print "\n" + "="*76
 print "TOTAL {}".format(len(total))
 print "    {} Polisses facturades. D'aquestes n'hi ha d'endarrerides {}".format(len(finalitzats), len(endarrerides(finalitzats)))
-print "    {} Polisses amb factures obertes".format(len(facturat))
-print "    {} Polisses amb factures en esborrany".format(len(apunt))
+print "    {} Polisses amb factures esborrany".format(len(facturat))
+print "    {} Polisses amb lectures validades. Llestes per facturar".format(len(apunt))
 print "    {} Polisses per validar (amb errors de validacio o no)".format(len(oberts))
 print "    {} Polisses que encara no s'han validat en aquest lot".format(len(esborranys))
 
-print "\nERRORS {}. Endarrerits {}".format(len(total_errors), len(endarrerides(list(total_errors))))
+print "\nEndarrerits  bloquejats {}".format(len(total_errors), len(endarrerides(list(total_errors))))
 print "    [V001] {} (Endarrerits: {}) - Possible volta de comptador".format(len(set(volta_comptador)), len(endarrerides(volta_comptador)))
 print "    [V002] {} (Endarrerits: {}) - No té lectura anterior".format(len(set(no_lectura_anterior)), len(endarrerides(no_lectura_anterior)))
 print "    [V003] {} (Endarrerits: {}) - No te Lectures".format(len(set(no_lectures)), len(endarrerides(no_lectures)))
