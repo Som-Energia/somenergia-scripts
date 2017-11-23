@@ -72,17 +72,17 @@ def reimportar_ok(linia_id):
     import time
     lin_obj = O.GiscedataFacturacioImportacioLinia
 
-    info_inicial = lin_obj.read([linia_id],['info'])[0]['info']
+    info_inicial = lin_obj.read([linia_id],['info','import_phase'])[0]
     lin_obj.process_line(linia_id)
     # TODO treure a parametres de configuracio
     time.sleep(15)
-    lin_read = lin_obj.read([linia_id],['info','conte_factures'])
+    lin_read = lin_obj.read([linia_id],['info','conte_factures', 'import_phase'])
     info_nova = lin_read[0]['info']
     conte_factures = lin_read[0]['conte_factures']
     value = {'mateix_missatge':False,'ok':False}
-    if lin_read[0]['conte_factures']:
+    if lin_read[0]['import_phase'] == 40:
         value['ok'] = True
-    if info_inicial == info_nova:
+    if info_inicial['info'] == info_nova:
         #print "informacio igual: %s" % info_inicial
         print "Mateix missatge"
         value['mateix_missatge']=True
@@ -303,3 +303,5 @@ for lin_id in lin_ids:
         lin_diferent_missatge.append(lin_id)
 
 output(total,lin_factura_generada,lin_mateix_missatge,lin_diferent_missatge,lin_no_fixed)
+
+# vim: et ts=4 sw=4
