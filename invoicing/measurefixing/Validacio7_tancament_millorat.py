@@ -4,6 +4,7 @@ from erppeek import Client
 from datetime import datetime, timedelta
 from validacio_eines import buscar_errors_lot_ids, es_cefaco, validar_canvis, copiar_lectures
 import configdb
+from yamlns import namespace as ns
 
 #SCRIPT QUE SERVEIX PER DESBLOQUEJAR CASOS QUE NO TENEN LECTURA DE
 # TANCAMENT DEL COMPTADOR DE BAIXA
@@ -21,80 +22,79 @@ lectP_obj = O.GiscedataLecturesLecturaPool
 imp_obj = O.GiscedataFacturacioImportacioLinia
 mod_obj = O.GiscedataPolissaModcontractual
 
-def resum(polisses_resoltes_lectura_copiada,polisses_resoltes_dates_comp_mod, 
-            polisses_resoltes_dates_comp_lect, comptador_amb_lectura_tancament,
-            final, multiples_modificacions_inactive,
-            sense_modificacions_inactives, un_comptador,sense_comptador_baixa,
-            cefaco,m105_ids,polisses_error_f1, errors):
-    #### Resum
-    print "="*76
-    print "POLISSES RESOLTES"
-    print "\n Hem traspasat lectura de pool a lectura de facturació. TOTAL %s" % len(polisses_resoltes_lectura_copiada)
-    print "Polisses: " 
-    print polisses_resoltes_lectura_copiada
-    print "\n Canviada dates de la modificacio alineda a la data del comptador. TOTAL %s" % len(polisses_resoltes_dates_comp_mod)
-    print "Polisses: " 
-    print polisses_resoltes_dates_comp_mod
-    print "\n Canviada dates de lectura alineant a la data del comptador. TOTAL %s" % len(polisses_resoltes_dates_comp_lect)
-    print "Polisses: " 
-    print polisses_resoltes_dates_comp_lect
-    
-    print "POLISSES NO RESOLTES______________"
-    print "\n Reclamacio a distribuidora CEFACO. TOTAL %s" % len(cefaco)
-    print "Polisses: " 
-    print cefaco
-    print "\n ERRORS_________TOTAL %s" % len(errors)
-    print "Polisses: " 
-    print errors
-    print "\n Sense comptador de baixa. No hauria de passar, sempre ha d'haver un comptador de baixa amb aquest error. TOTAL %s" % len(sense_comptador_baixa)
-    print "Polisses: " 
-    print sense_comptador_baixa
-    print "\n Cas no tractat, Només te un comptador. TOTAL %s" % len(un_comptador)
-    print "Polisses: " 
-    print un_comptador
-    
-    print "\n Arriben final del Script. TOTAL %s" % len(final)
-    print "Polisses: " 
-    print final
-    print "\n Te mes d'una modificació contractual inactives. TOTAL %s" % len(multiples_modificacions_inactive)
-    print "Polisses: " 
-    print multiples_modificacions_inactive
-    print "\n Tenen lectures de tancament. problemes amb lectures copiades,"
-    print "tarifes erronies o dates amb modificacions contractuals. TOTAL %s" % len(comptador_amb_lectura_tancament)
-    print "Polisses: " 
-    print comptador_amb_lectura_tancament
-    print "\n Sense modificacio inactiva. TOTAL %s" % len(sense_modificacions_inactives)
-    print "Polisses: " 
-    print sense_modificacions_inactives  
-    print "\n Tenen M105. TOTAL %s" % len(m105_ids)
-    print "Polisses: " 
-    print m105_ids
-    print "\n Polisses amb errors d'importacio F1 . TOTAL %s" % len(polisses_error_f1)
-    print "Polisses: " 
-    print polisses_error_f1
-    
+resum_templ = """\
+============================================================================
 
-    print "="*76 
+# POLISSES RESOLTES
+
+- Hem traspasat lectura de pool a lectura de facturació. TOTAL {len_polisses_resoltes_lectura_copiada}
+    - Polisses: {polisses_resoltes_lectura_copiada}
+- Dates de la modificacio contractual alineades amb les dates del comptador. TOTAL {len_polisses_resoltes_dates_comp_mod}
+    - Polisses: {polisses_resoltes_dates_comp_mod}
+- Dates de lectura alineades amb les dates del comptador. TOTAL {len_polisses_resoltes_dates_comp_lect}
+    - Polisses: {polisses_resoltes_dates_comp_lect}
+    
+# POLISSES NO RESOLTES
+
+- Reclamacio a distribuidora CEFACO. TOTAL {len_cefaco}
+    - Polisses: {cefaco}
+
+- Sense comptador de baixa. Els tancaments sempre han de tenir un comptador de baixa. TOTAL {len_sense_comptador_baixa}
+    - Polisses: {sense_comptador_baixa}
+
+- Cas no tractat, Només te un comptador. TOTAL {len_un_comptador}
+    - Polisses: {un_comptador}
+
+- Te mes d'una modificació contractual inactives. TOTAL {len_multiples_modificacions_inactive}
+    - Polisses: {multiples_modificacions_inactive}
+
+- Tenen lectures de tancament. problemes amb lectures copiades, tarifes erronies o dates amb modificacions contractuals. TOTAL {len_comptador_amb_lectura_tancament}
+    - Polisses: {comptador_amb_lectura_tancament}
+
+- Sense modificacio inactiva. TOTAL {len_sense_modificacions_inactives}
+    - Polisses: {sense_modificacions_inactives}
+
+- Tenen M105. TOTAL {len_m105_ids}
+    - Polisses: {m105_ids}
+- Polisses amb errors d'importacio F1 . TOTAL {len_polisses_error_f1}
+    - Polisses: {polisses_error_f1}
+
+- Casos no identificats. TOTAL {len_final}
+    - Polisses: {final}
+
+- ERRORS_________TOTAL {len_errors}
+    - Polisses: {errors}
+============================================================================
+"""
+
+def resum(result):
+    result.update((
+        ('len_'+k, len(result[k]))
+        for k in result.keys()
+        ))
+    print (resum_templ.format(**result))
 
 #constants:
 
 
+res = ns()
+
 #Inicicialitzadors
 #Comptadors de polisses resoltes
-polisses_resoltes_lectura_copiada = []
-polisses_resoltes_dates_comp_mod = []
-polisses_resoltes_dates_comp_lect = []
+res.polisses_resoltes_lectura_copiada = []
+res.polisses_resoltes_dates_comp_mod = []
+res.polisses_resoltes_dates_comp_lect = []
 #Comptadors de polisses no resoltes
-comptador_amb_lectura_tancament = []
-un_comptador = []
-sense_comptador_baixa = []
-m105_ids = []
-polisses_error_f1 = []
-multiples_modificacions_inactive = []
-sense_modificacions_inactives = []
-final = []
-cefaco= []
-errors = []
+res.comptador_amb_lectura_tancament = []
+res.un_comptador = []
+res.sense_comptador_baixa = []
+res.m105_ids = []
+res.polisses_error_f1 = []
+res.multiples_modificacions_inactive = []
+res.sense_modificacions_inactives = []
+res.final = []
+res.cefaco= []
+res.errors = []
 
 pol_ids = buscar_errors_lot_ids('Falta Lectura de tancament amb data')
 validar_canvis(pol_ids)
@@ -105,7 +105,6 @@ pol_ids = sorted(list(set(pol_ids)))
 total = len(pol_ids)
 n = 0
 
-
 for pol_id in pol_ids:
     n += 1
     pol_read = pol_obj.read(pol_id,
@@ -114,14 +113,14 @@ for pol_id in pol_ids:
     try:
         if es_cefaco(pol_id):
             print "Ja està detectada com a Reclamacio de Distribuidora" 
-            cefaco.append(pol_id)
+            res.cefaco.append(pol_id)
             continue
         #Busquem tots els comptadors
         comp_ids = pol_read['comptadors']
         #Nomes te un comptador
         if len(comp_ids) == 1:
             print "Nomes te un comptador"
-            un_comptador.append(pol_id)
+            res.un_comptador.append(pol_id)
             continue 
         
         #detectem els comptadors de baixa   
@@ -130,7 +129,7 @@ for pol_id in pol_ids:
         #Sense comptador de baixa (no hauria de passar mai amb aquesta tipologia d'error)
         if not (comp_baixa_ids):
             print "No te comptadors de baixa"
-            sense_comptador_baixa.append(pol_id)
+            res.sense_comptador_baixa.append(pol_id)
             continue
         #Busquem quin es el comptador que no te data de baixa (si n'hi ha mes d'un, al passar l'script varis cops, ja és solucionarà
         comptador_sense_lectura_tancament = False
@@ -145,7 +144,7 @@ for pol_id in pol_ids:
                 comptador_sense_lectura_tancament = True
                 break
         if not(comptador_sense_lectura_tancament):
-            comptador_amb_lectura_tancament.append(pol_id)
+            res.comptador_amb_lectura_tancament.append(pol_id)
             continue
         
         lectP_ids = lectP_obj.search([('name','=',data_baixa),
@@ -163,7 +162,7 @@ for pol_id in pol_ids:
             pol_ids_v1 = buscar_errors_lot_ids('Falta Lectura de tancament amb data')
             if not(pol_id in pol_ids_v1):
                 print "No s'havia copiat la lectura des de Pool. Solucionada"
-                polisses_resoltes_lectura_copiada.append(pol_id)
+                res.polisses_resoltes_lectura_copiada.append(pol_id)
                 continue
 
         # 2n No coincideixen les data de baixa de comptador amb la modificacio contratual inactiva
@@ -171,7 +170,7 @@ for pol_id in pol_ids:
                                                 ('active','=',False)])
         if len(mod_contractual_ids) >1:
             print "Hi ha mes d'una modificació inactiva"
-            multiples_modificacions_inactive.append(pol_id)
+            res.multiples_modificacions_inactive.append(pol_id)
             continue
         if mod_contractual_ids:     
             mod_contractual_read = mod_obj.read(mod_contractual_ids[0],
@@ -206,11 +205,11 @@ for pol_id in pol_ids:
             pol_ids_v2 = buscar_errors_lot_ids('Falta Lectura de tancament amb data')
             if not(pol_id in pol_ids_v2):
                 print "S'ha resolt alineant les dates de la modificacio i dels comptadors. Solucionada"
-                polisses_resoltes_dates_comp_mod.append(pol_id)
+                res.polisses_resoltes_dates_comp_mod.append(pol_id)
                 continue        
         else:
             print "No te modificacions contractuals inactives"
-            sense_modificacions_inactives.append(pol_id)                        
+            res.sense_modificacions_inactives.append(pol_id)
         # 3r No coincideixen les dates de baixa de comptador amb la data de les lectures per nomes un dia
         data_baixa_dt = datetime.strptime(data_baixa,'%Y-%m-%d')
         data_baixa_post = datetime.strftime(
@@ -233,14 +232,14 @@ for pol_id in pol_ids:
         pol_ids_v3 = buscar_errors_lot_ids('Falta Lectura de tancament amb data')
         if not(pol_id in pol_ids_v3):
             print "S'ha resolts posant les dates de lectura alineades a la data de tall dels comptadors. Solucionada"
-            polisses_resoltes_dates_comp_lect.append(pol_id)
+            res.polisses_resoltes_dates_comp_lect.append(pol_id)
             continue    
             
         #4rt Errors d'importacio F1
         imp_ids = imp_obj.search([('state','=','erroni'),
                                 ('cups_id','=',pol_read['cups'][0])])
         if imp_ids:
-            polisses_error_f1.append(pol_id)
+            res.polisses_error_f1.append(pol_id)
             print "IMPORTACIONS ERRONIES: {}".format(len(imp_ids))
             imp_reads = imp_obj.read(imp_ids,['info'])
             for imp_read in imp_reads:
@@ -255,17 +254,17 @@ for pol_id in pol_ids:
                                 ('proces_id.name','=','M1'),
                                 ('step_id.name','=','05')])
         if sw_ids:
-            m105_ids.append(pol_id)
+            res.m105_ids.append(pol_id)
             print "Hem fet una M1, ja esta activada"   
-        final.append(pol_id)
+        res.final.append(pol_id)
         continue
         # Mirar si hi ha un F1 amb errors "data del comptador es posterior... exemple pol_id = 01986
 
         
     except Exception, e:
-        errors.append({pol_id:e})
+        res.errors.append({pol_id:e})
         print e
 
 
-resum(polisses_resoltes_lectura_copiada,polisses_resoltes_dates_comp_mod,polisses_resoltes_dates_comp_lect, comptador_amb_lectura_tancament, final, multiples_modificacions_inactive,sense_modificacions_inactives, un_comptador,sense_comptador_baixa,cefaco,m105_ids,polisses_error_f1, errors)
+resum(res)
 
