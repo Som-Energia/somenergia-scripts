@@ -15,6 +15,7 @@ SELECT
         THEN 1 ELSE 0 END),0) AS sobre_consum_50,
     COALESCE(SUM(CASE WHEN r1.polissa_id IS NOT NULL THEN 1 ELSE 0 END),0) AS r1_obert,
     COALESCE(SUM(CASE WHEN factura.data_final<=factura.data_inici THEN 1 ELSE 0 END),0) AS zero_days,
+    COALESCE(SUM(CASE WHEN factura.data_final<= now() - interval '40 days' THEN 1 ELSE 0 END),0) AS forty_days,
     COALESCE(SUM(CASE WHEN linia_energia.factura_id IS NULL THEN 1 ELSE 0 END),0) AS zero_lines,
     COALESCE(STRING_AGG(invoice.name,','),'') AS draft_ids,
     COALESCE(string_agg(CASE WHEN invoice.amount_total >= 5000 -- and (

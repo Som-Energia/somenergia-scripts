@@ -23,7 +23,7 @@ Validació de Factures en Esborrany del lot
 - Amb R1 oberts: {r1_obert} 
 - Factures de zero dies: {zero_days} 
 - Factures sense linies de energia: {zero_lines}
-
+- Factures amb mes de 40 dies : {forty_days}
 Detall (números de pòlisses):
 
 - Amb imports de més de 5000: {bigger_than_5000_ids} 
