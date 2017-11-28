@@ -6,16 +6,12 @@ from datetime import datetime,timedelta
  
 O = OOOP(**configdb.ooop)
 
-comp_obj = O.GiscedataLecturesComptador
-lectP_obj = O.GiscedataLecturesLecturaPool
-lectF_obj = O.GiscedataLecturesLectura
-pol_obj = O.GiscedataPolissa
-clot_obj = O.GiscedataFacturacioContracte_lot
 
 #Constants
 MIN_DIES_FACT = 25
 
 def buscar_errors_lot_ids(text):
+    clot_obj = O.GiscedataFacturacioContracte_lot
     lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])[0]
     search_vals = [('status','like',text),('lot_id','=',lot_id)]
     clot_ids = clot_obj.search(search_vals)
@@ -24,12 +20,15 @@ def buscar_errors_lot_ids(text):
     return pol_ids
 
 def validar_canvis(pol_ids):
+    clot_obj = O.GiscedataFacturacioContracte_lot
     lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])[0]
     search_vals = [('polissa_id','in',pol_ids),('lot_id','=',lot_id)]
     clot_ids = clot_obj.search(search_vals)
     clot_obj.wkf_obert(clot_ids,{})
 
 def endarrerides(clot_ids):
+    clot_obj = O.GiscedataFacturacioContracte_lot
+    pol_obj = O.GiscedataPolissa
     pol_ids = [a['polissa_id'][0] for a in clot_obj.read(clot_ids,['polissa_id'])]
     endarrerides = pol_obj.search([('facturacio_endarrerida','=',True),('id','in',pol_ids)])
     return endarrerides
@@ -38,6 +37,8 @@ def facturar_manual(pol_ids):
     #Objectes
     facturador_obj = O.GiscedataFacturacioFacturador
     factura_obj = O.GiscedataFacturacioFactura
+    comp_obj = O.GiscedataLecturesComptador
+    pol_obj = O.GiscedataPolissa
     
     #Inicialitzadors
     polisses_names=[]
