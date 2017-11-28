@@ -152,7 +152,6 @@ for pol_id in pol_ids:
             res.sense_comptador_baixa.append(pol_id)
             continue
         #Busquem quin es el comptador que no te data de baixa (si n'hi ha mes d'un, al passar l'script varis cops, ja és solucionarà
-        comptador_sense_lectura_tancament = False
         for comp_baixa_id in comp_baixa_ids:
             comp_baixa_read = comp_obj.read(comp_baixa_id,
                                             ['active','name','data_baixa'])
@@ -161,9 +160,8 @@ for pol_id in pol_ids:
                                         ('comptador','=',comp_baixa_id)])
             if not(lectF_ids):
                 print "Comptador sense lectura de tancament. {}".format(comp_baixa_read['name'])
-                comptador_sense_lectura_tancament = True
                 break
-        if not(comptador_sense_lectura_tancament):
+        else:
             res.comptador_amb_lectura_tancament.append(pol_id)
             continue
 
