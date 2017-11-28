@@ -5,11 +5,19 @@ from datetime import datetime, timedelta
 from validacio_eines import buscar_errors_lot_ids, es_cefaco, validar_canvis, copiar_lectures
 import configdb
 from yamlns import namespace as ns
+from consolemsg import step, success
+import sys
 
 #SCRIPT QUE SERVEIX PER DESBLOQUEJAR CASOS QUE NO TENEN LECTURA DE
 # TANCAMENT DEL COMPTADOR DE BAIXA
  
+doit = '--doit' in sys.argv
+
+step("Connectant a l'erp")
 O = Client(**configdb.erppeek)
+
+step("Connectat")
+
 
 #Objectes
 pol_obj = O.GiscedataPolissa
@@ -74,12 +82,17 @@ def resum(result):
         ))
     print (resum_templ.format(**result))
 
-#constants:
+def isSolvedByMessage(pol_id, errorMessage):
+    # TODO: Use single polissa functions to speed up
+    validar_canvis([pol_id])
+    polissa_ids = buscar_errors_lot_ids(errorMessage)
+    return pol_id not in polissa_ids
 
+def isSolved(pol_id):
+    return isSolvedByMessage(pol_id, 'Falta Lectura de tancament amb data')
 
 res = ns()
 
-#Inicicialitzadors
 #Comptadors de polisses resoltes
 res.polisses_resoltes_lectura_copiada = []
 res.polisses_resoltes_dates_comp_mod = []
@@ -96,6 +109,7 @@ res.final = []
 res.cefaco= []
 res.errors = []
 
+step("Validant totes les polisses que tenen l'error")
 pol_ids = buscar_errors_lot_ids('Falta Lectura de tancament amb data')
 validar_canvis(pol_ids)
 pol_ids = buscar_errors_lot_ids('Falta Lectura de tancament amb data')
@@ -107,9 +121,15 @@ n = 0
 
 for pol_id in pol_ids:
     n += 1
-    pol_read = pol_obj.read(pol_id,
-        ['name','comptadors','modcontractuals_ids','tarifa','distribuidora','cups'])
-    print "\n %s/%s  Polissa %s" % (n, total, pol_read['name'])
+    pol_read = pol_obj.read(pol_id, [
+        'name',
+        'comptadors',
+        'modcontractuals_ids',
+        'tarifa',
+        'distribuidora',
+        'cups',
+        ])
+    step("{}/{}  Polissa {}".format(n, total, pol_read['name']))
     try:
         if es_cefaco(pol_id):
             print "Ja està detectada com a Reclamacio de Distribuidora" 
@@ -155,13 +175,9 @@ for pol_id in pol_ids:
             print "Te lectura de Pool i no a lectures de facturacio, la copiem"
             copiar_lectures(lectP_ids[0])
         
-            lectF_ids = lectF_obj.search([('name','=',data_baixa),
-                                        ('comptador','=',comp_baixa_id)])
             #Validem a veure si ja no hi ha el problema
-            validar_canvis([pol_id])
-            pol_ids_v1 = buscar_errors_lot_ids('Falta Lectura de tancament amb data')
-            if not(pol_id in pol_ids_v1):
-                print "No s'havia copiat la lectura des de Pool. Solucionada"
+            if isSolved(pol_id):
+                success("No s'havia copiat la lectura des de Pool. Solucionada")
                 res.polisses_resoltes_lectura_copiada.append(pol_id)
                 continue
 
@@ -201,10 +217,8 @@ for pol_id in pol_ids:
                         print "Escrivim data inicial modificacio contractual activa: {}".format(data_inici)
 
             #Validem a veure si ja no hi ha el problema
-            validar_canvis([pol_id])
-            pol_ids_v2 = buscar_errors_lot_ids('Falta Lectura de tancament amb data')
-            if not(pol_id in pol_ids_v2):
-                print "S'ha resolt alineant les dates de la modificacio i dels comptadors. Solucionada"
+            if isSolved(pol_id):
+                success("S'ha resolt alineant les dates de la modificacio i dels comptadors. Solucionada")
                 res.polisses_resoltes_dates_comp_mod.append(pol_id)
                 continue        
         else:
@@ -228,12 +242,10 @@ for pol_id in pol_ids:
             print "TE LECTURES UN DIA INFERIOR"
             lectF_obj.write(lectF_prev_ids,{'name': data_baixa})         
         #Validem a veure si ja no hi ha el problema
-        validar_canvis([pol_id])
-        pol_ids_v3 = buscar_errors_lot_ids('Falta Lectura de tancament amb data')
-        if not(pol_id in pol_ids_v3):
-            print "S'ha resolts posant les dates de lectura alineades a la data de tall dels comptadors. Solucionada"
+        if isSolved(pol_id):
+            success("S'ha resolts posant les dates de lectura alineades a la data de tall dels comptadors. Solucionada")
             res.polisses_resoltes_dates_comp_lect.append(pol_id)
-            continue    
+            continue
             
         #4rt Errors d'importacio F1
         imp_ids = imp_obj.search([('state','=','erroni'),
