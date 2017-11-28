@@ -5,8 +5,17 @@ from datetime import datetime, timedelta
 from validacio_eines import buscar_errors_lot_ids, es_cefaco, validar_canvis, copiar_lectures
 import configdb
 from yamlns import namespace as ns
-from consolemsg import step, success
+from consolemsg import step, success, error, warn, color, printStdError
 import sys
+
+
+def info(message):
+    print(message)
+    return
+    return printStdError(color('36;1',"   "+message))
+
+def bigstep(message):
+    return printStdError(color('32;1',"\n:: "+message))
 
 #SCRIPT QUE SERVEIX PER DESBLOQUEJAR CASOS QUE NO TENEN LECTURA DE
 # TANCAMENT DEL COMPTADOR DE BAIXA
@@ -16,7 +25,7 @@ doit = '--doit' in sys.argv
 step("Connectant a l'erp")
 O = Client(**configdb.erppeek)
 
-step("Connectat")
+success("Connectat")
 
 
 #Objectes
@@ -89,7 +98,13 @@ def isSolvedByMessage(pol_id, errorMessage):
     return pol_id not in polissa_ids
 
 def isSolved(pol_id):
+    if not doit:
+        warn("Resultat simulat")
+        return True
     return isSolvedByMessage(pol_id, 'Falta Lectura de tancament amb data')
+
+def isodate(adate):
+    return adate and datetime.strptime(adate,'%Y-%m-%d')
 
 res = ns()
 
@@ -129,151 +144,204 @@ for pol_id in pol_ids:
         'distribuidora',
         'cups',
         ])
-    step("{}/{}  Polissa {}".format(n, total, pol_read['name']))
+    bigstep("{}/{}  Polissa {}".format(n, total, pol_read['name']))
     try:
         if es_cefaco(pol_id):
-            print "Ja està detectada com a Reclamacio de Distribuidora"
+            warn("Ja està detectada com a Reclamacio de Distribuidora")
             res.cefaco.append(pol_id)
             continue
         #Busquem tots els comptadors
         comp_ids = pol_read['comptadors']
         #Nomes te un comptador
         if len(comp_ids) == 1:
-            print "Nomes te un comptador"
+            warn("Nomes te un comptador")
             res.un_comptador.append(pol_id)
             continue
 
+        # TODO: Comprovar que hi hagi algun comptador
+
         #detectem els comptadors de baixa
-        comp_baixa_ids = comp_obj.search([('id','in',comp_ids),
-                                        ('active','=', False)])
+        comp_baixa_ids = comp_obj.search([
+            ('id','in',comp_ids),
+            ('active','=', False),
+            ])
         #Sense comptador de baixa (no hauria de passar mai amb aquesta tipologia d'error)
         if not (comp_baixa_ids):
-            print "No te comptadors de baixa"
+            error("No te comptadors de baixa")
             res.sense_comptador_baixa.append(pol_id)
             continue
         #Busquem quin es el comptador que no te data de baixa (si n'hi ha mes d'un, al passar l'script varis cops, ja és solucionarà
         for comp_baixa_id in comp_baixa_ids:
             comp_baixa_read = comp_obj.read(comp_baixa_id,
-                                            ['active','name','data_baixa'])
+                ['active','name','data_baixa'])
             data_baixa = comp_baixa_read['data_baixa']
-            lectF_ids = lectF_obj.search([('name','=',data_baixa),
-                                        ('comptador','=',comp_baixa_id)])
-            if not(lectF_ids):
-                print "Comptador sense lectura de tancament. {}".format(comp_baixa_read['name'])
+            lecturesFacturacio_ids = lectF_obj.search([
+                ('name','=',data_baixa),
+                ('comptador','=',comp_baixa_id),
+            ])
+            if not lecturesFacturacio_ids:
+                warn("Comptador sense lectura de tancament: {}".format(comp_baixa_read['name']))
                 break
         else:
+            error("No s'ha trobat cap comptador de baixa sense la darrera lectura")
             res.comptador_amb_lectura_tancament.append(pol_id)
-            continue
+            continue # next polissa
 
-        lectP_ids = lectP_obj.search([('name','=',data_baixa),
-                                    ('comptador','=',comp_baixa_id)])
-        #Problemes que es poden donar:
-        # 1r No s'ha copiat la lectura de "pool" a "lectures"
-        if lectP_ids and not(lectF_ids):
-            print "Te lectura de Pool i no a lectures de facturacio, la copiem"
-            copiar_lectures(lectP_ids[0])
+        lecturaPool_ids = lectP_obj.search([
+            ('name','=',data_baixa),
+            ('comptador','=',comp_baixa_id),
+            ])
+
+        # Casos
+
+        step(" Comprovant cas: Lectura de pool no passada a facturables")
+
+        if lecturaPool_ids and not lecturesFacturacio_ids:
+            warn("Té lectura de Pool i no la té a lectures de facturacio")
+            step("Copiant lectura de pool a facturable")
+            if doit:
+                copiar_lectures(lecturaPool_ids[0])
 
             #Validem a veure si ja no hi ha el problema
             if isSolved(pol_id):
-                success("No s'havia copiat la lectura des de Pool. Solucionada")
+                success("Lectura copiada. Solucionada")
                 res.polisses_resoltes_lectura_copiada.append(pol_id)
-                continue
+                continue # next polissa
+            else:
+                error("Copiant la lectura no s'ha resolt l'error")
+                # TODO: compile and continue
 
-        # 2n No coincideixen les data de baixa de comptador amb la modificacio contratual inactiva
-        mod_contractual_ids = mod_obj.search([('id','in',pol_read['modcontractuals_ids']),
-                                                ('active','=',False)])
-        if len(mod_contractual_ids) >1:
-            print "Hi ha mes d'una modificació inactiva"
+        step(" Comprovant cas: Data baixa de comptador desplaçada un dia respecta a la modificacio")
+
+        allModification_ids = pol_read['modcontractuals_ids']
+        inactiveModifications_ids = mod_obj.search([
+            ('id','in',allModification_ids),
+            ('active','=',False),
+            ])
+
+        if len(inactiveModifications_ids) > 1:
+            error("Hi ha mes d'una modificació inactiva")
             res.multiples_modificacions_inactive.append(pol_id)
             continue
-        if mod_contractual_ids:
-            mod_contractual_read = mod_obj.read(mod_contractual_ids[0],
+
+
+        if inactiveModifications_ids:
+            mod_contractual_read = mod_obj.read(inactiveModifications_ids[0],
                                             ['data_inici','data_final'])
             #La data final de la modificacio contractual i
             # la data de baixa del comptador han de ser la mateixa
-            if comp_baixa_read['data_baixa'] != mod_contractual_read['data_final']:
-                print "Data COMPTADOR: {}".format(
-                                comp_baixa_read['data_baixa'])
-                print "Data MODIFICACIO: {}".format(
-                                mod_contractual_read['data_final'])
-                data_comptador_dt = datetime.strptime(
-                                comp_baixa_read['data_baixa'],'%Y-%m-%d')
-                data_modificacio_dt = datetime.strptime(
-                                mod_contractual_read['data_final'],'%Y-%m-%d')
-                # Les dos dates només tenen un dia de diferencia?
-                if data_comptador_dt == data_modificacio_dt + timedelta(1):
-                    mod_contractual_active_ids = mod_obj.search([
-                            ('id','in',pol_read['modcontractuals_ids'])])
-                    mod_obj.write(mod_contractual_ids[0],
-                            {'data_final': comp_baixa_read['data_baixa']})
-                    print "escrivim la data final a la modificacio contractual de inactiva: {}".format(comp_baixa_read['data_baixa'])
-                    data_inici_dt =  datetime.strptime(comp_baixa_read['data_baixa'], '%Y-%m-%d')
+            # if dateMissmatchOnMeterVsModification():
 
-                    data_inici = datetime.strftime(data_inici_dt + timedelta(1),'%Y-%m-%d')
-                    for mod_contractual_active_id in mod_contractual_active_ids:
+            dataFinalModificacio = mod_contractual_read['data_final']
+            dataBaixaComptador = comp_baixa_read['data_baixa']
+            
+            if dataBaixaComptador != dataFinalModificacio:
+                warn("Data COMPTADOR: {}".format(dataBaixaComptador))
+                warn("Data MODIFICACIO: {}".format(dataFinalModificacio))
+
+            data_comptador_dt = isodate(dataBaixaComptador)
+            data_modificacio_dt = isodate(dataFinalModificacio)
+            # Les dos dates només tenen un dia de diferencia?
+            if data_comptador_dt == data_modificacio_dt + timedelta(days=1):
+                mod_contractual_active_ids = mod_obj.search([
+                        ('id','in',allModification_ids)])
+                if doit:
+                    mod_obj.write(inactiveModifications_ids[0],
+                        {'data_final': dataBaixaComptador})
+                step(
+                    "Escrivim la data final a la modificacio contractual de inactiva: {}"
+                    .format(dataBaixaComptador))
+                data_inici_dt =  isodate(dataBaixaComptador) + timedelta(days=1)
+                # TODO: Ens podem estalviar passar-ho a str?
+                data_inici = str(data_inici_dt)
+                for mod_contractual_active_id in mod_contractual_active_ids:
+                    if doit:
                         mod_obj.write(mod_contractual_active_id,{'data_inici': data_inici})
-                        print "Escrivim data inicial modificacio contractual activa: {}".format(data_inici)
+                    step(
+                        "Escrivim data inicial modificacio contractual activa: {}"
+                        .format(data_inici))
 
-            #Validem a veure si ja no hi ha el problema
-            if isSolved(pol_id):
-                success("S'ha resolt alineant les dates de la modificacio i dels comptadors. Solucionada")
-                res.polisses_resoltes_dates_comp_mod.append(pol_id)
-                continue
+                #Validem a veure si ja no hi ha el problema
+                if isSolved(pol_id):
+                    success("S'ha resolt alineant les dates de la modificacio i dels comptadors. Solucionada")
+                    res.polisses_resoltes_dates_comp_mod.append(pol_id)
+                    continue
         else:
-            print "No te modificacions contractuals inactives"
+            warn("No te modificacions contractuals inactives")
             res.sense_modificacions_inactives.append(pol_id)
-        # 3r No coincideixen les dates de baixa de comptador amb la data de les lectures per nomes un dia
-        data_baixa_dt = datetime.strptime(data_baixa,'%Y-%m-%d')
-        data_baixa_post = datetime.strftime(
-                            data_baixa_dt + timedelta(1),'%Y-%m-%d')
-        lectF_post_ids = lectF_obj.search([('name','=',data_baixa_post),
-                                        ('comptador','=',comp_baixa_id)])
-        if lectF_post_ids:
-            print "TE LECTURES UN DIA POSTERIOR"
-            lectF_obj.write(lectF_post_ids,{'name': data_baixa})
 
-        data_baixa_prev = datetime.strftime(
-                            data_baixa_dt - timedelta(1),'%Y-%m-%d')
-        lectF_prev_ids = lectF_obj.search([('name','=',data_baixa_prev),
-                                        ('comptador','=',comp_baixa_id)])
-        if lectF_prev_ids:
-            print "TE LECTURES UN DIA INFERIOR"
-            lectF_obj.write(lectF_prev_ids,{'name': data_baixa})
-        #Validem a veure si ja no hi ha el problema
-        if isSolved(pol_id):
-            success("S'ha resolts posant les dates de lectura alineades a la data de tall dels comptadors. Solucionada")
-            res.polisses_resoltes_dates_comp_lect.append(pol_id)
+
+        step(" Comprovant cas: Hi ha lectures un dia abans o despres del final del comptador")
+
+        if not data_baixa:
+            error("Comptador inactiu sense data de baixa")
+            # TODO: encuar-ho a res
             continue
 
+        data_baixa_dt = isodate(data_baixa)
+        data_baixa_post = str(data_baixa_dt + timedelta(days=1))
+        lectF_post_ids = lectF_obj.search([
+            ('name','=',data_baixa_post),
+            ('comptador','=',comp_baixa_id),
+            ])
+
+        if lectF_post_ids:
+            warn("Detectades lectures d'un dia posterior")
+            if doit:
+                lectF_obj.write(lectF_post_ids,{'name': data_baixa})
+
+        data_baixa_prev = str(data_baixa_dt - timedelta(days=1))
+        lectF_prev_ids = lectF_obj.search([
+            ('name','=',data_baixa_prev),
+            ('comptador','=',comp_baixa_id),
+            ])
+        if lectF_prev_ids:
+            warn("Detectades lectures d'un dia anterior")
+            if doit:
+                lectF_obj.write(lectF_prev_ids,{'name': data_baixa})
+
+        if lectF_prev_ids or lectF_post_ids:
+            if isSolved(pol_id):
+                success("Cas solucionat")
+                res.polisses_resoltes_dates_comp_lect.append(pol_id)
+                continue
+
+
+        step(" Considerant cas: Amb errors d'importacio")
         #4rt Errors d'importacio F1
         imp_ids = imp_obj.search([('state','=','erroni'),
                                 ('cups_id','=',pol_read['cups'][0])])
         if imp_ids:
             res.polisses_error_f1.append(pol_id)
-            print "IMPORTACIONS ERRONIES: {}".format(len(imp_ids))
+            info("IMPORTACIONS ERRONIES: {}".format(len(imp_ids)))
             imp_reads = imp_obj.read(imp_ids,['info'])
             for imp_read in imp_reads:
-                print " ----> " + (imp_read['info'])
+                info(" ----> " + (imp_read['info']))
 
 
         #Mirem quantes modificacions contratuals te
-        mod_ids = pol_read['modcontractuals_ids']
-        print "Aquest contracte te {} modificacions contractuals".format(len(mod_ids))
-        sw_ids = sw_obj.search([('cups_id','=',pol_read['cups'][0]),
-                                ('state','=','done'),
-                                ('proces_id.name','=','M1'),
-                                ('step_id.name','=','05')])
+        step(" Aquest contracte te {} modificacions contractuals"
+            .format(len(allModification_ids)))
+
+        sw_ids = sw_obj.search([
+            ('cups_id','=',pol_read['cups'][0]),
+            ('state','=','done'),
+            ('proces_id.name','=','M1'),
+            ('step_id.name','=','05'),
+            ])
         if sw_ids:
             res.m105_ids.append(pol_id)
-            print "Hem fet una M1, ja esta activada"
+            info("Hem fet una M1, ja esta activada")
+        #TODO: Mirar si hi ha un F1 amb errors "data del comptador es posterior... exemple pol_id = 01986
+
+
+        error("Cas no considerat")
         res.final.append(pol_id)
-        continue
-        # Mirar si hi ha un F1 amb errors "data del comptador es posterior... exemple pol_id = 01986
 
-
-    except Exception, e:
+    except Exception as e:
         res.errors.append({pol_id:e})
-        print e
+        raise
+        error(unicode(e))
 
 
 resum(res)
