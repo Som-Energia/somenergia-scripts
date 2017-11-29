@@ -35,8 +35,11 @@ if args.date:
 imp_obj = O.GiscedataFacturacioImportacioLinia
 et_obj = O.GiscedataFacturacioSwitchingErrorTemplate
 
-et_ids = et_obj.search([])
-templates_errors_read = et_obj.read(et_ids,['code','description'])
+et_ids = et_obj.search([('level','=','critical')])
+templates_errors_read = et_obj.read(et_ids,[
+    'code',
+    'description',
+    ])
 list_errors = sorted([{int(a['code'])+int(a['phase'])*1000:a['description']} for a in et_obj.read(et_ids,['code','phase','description'])])
 
 print "ERRORS DE IMPORTACIONS de F1"
