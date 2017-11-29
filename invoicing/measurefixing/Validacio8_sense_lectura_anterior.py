@@ -4,11 +4,13 @@ from erppeek import Client
 from datetime import datetime, timedelta
 from validacio_eines import  es_cefaco, copiar_lectures, validar_canvis
 import configdb
+from consolemsg import step, success
+import sys
+from yamlns import namespace as ns
 
-#SCRIPT QUE SERVEIX PER DESBLOQUEJAR CASOS QUE NO TENEN LECTURA DE
-# TANCAMENT DEL COMPTADOR DE BAIXA
-
+step("Connectant a l'erp") 
 O = Client(**configdb.erppeek)
+success("Connectat")
 
 #Objectes
 pol_obj = O.GiscedataPolissa
@@ -16,8 +18,6 @@ clot_obj = O.GiscedataFacturacioContracte_lot
 comp_obj = O.GiscedataLecturesComptador
 lectF_obj = O.GiscedataLecturesLectura
 lectP_obj = O.GiscedataLecturesLecturaPool
-#fact_obj = O.GiscedataFacturacioFactura
-#cups_obj = O.GiscedataCupsPs
 mod_obj = O.GiscedataPolissaModcontractual
 sw_obj = O.GiscedataSwitching
 m105_obj = O.model('giscedata.switching.m1.05')
@@ -26,49 +26,63 @@ m105_obj = O.model('giscedata.switching.m1.05')
 lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])
 
 #Inicicialitzadors
-polisses_resoltes_alinear_dates = []
-cefaco= []
-errors = []
-final = []
-un_comptador_una_mod = []
-un_comptador_multiples_mod = []
-un_comptador_sense_lectura_tall = []
-multiples_comptadors_actius = []
-casos_normals_canvi_comptador = []
-cx06 = []
-m105 = []
-sense_m105 = []
+res = ns()
+res.polisses_resoltes_alinear_dates = []
+res.cefaco= []
+res.errors = []
+res.final = []
+res.un_comptador_una_mod = []
+res.un_comptador_multiples_mod = []
+res.un_comptador_sense_lectura_tall = []
+res.multiples_comptadors_actius = []
+res.casos_normals_canvi_comptador = []
+res.cx06 = []
+res.m105 = []
+res.sense_m105 = []
 
-def resum(polisses_resoltes_alinear_dates,
-        errors, cefaco,final, un_comptador_una_mod, 
-        un_comptador_multiples_mod, m105, un_comptador_sense_lectura_tall, 
-        sense_m105, multiples_comptadors_actius, casos_normals_canvi_comptador, cx06):
-    print "="*76
-    print "--> Hem descartat les polisses que fa menys de 40 dies que s'ha activat el contracte"
-    print "--> Polisses amb situació normal. Fa menys de 40 dies d'ultima lectura. TOTAL: {}".format(len(casos_normals_canvi_comptador))
-    print "\nPOLISSES RESOLTES______________"
-    print "\n Alinear dates lectures modificacions/M1/lectures. TOTAL: {}".format(len(polisses_resoltes_alinear_dates))
-    print polisses_resoltes_alinear_dates
-    
-    print "\nPOLISSES NO RESOLTES______________"
-    print "\n Només te un comptador i una modificacio de contracte. TOTAL: {}".format(len(un_comptador_una_mod))
-    print un_comptador_una_mod
-    print "\n Només te un comptador i multiples modificacio de contracte. TOTAL: {}".format(len(un_comptador_multiples_mod))
-    print "    --> Casos que tenen M105. TOTAL: {}. Casos: {}".format(len(m105),m105)
-    print "        --> Casos sense lectura de tall. TOTAL: {}. Casos: {}".format(len(un_comptador_sense_lectura_tall),un_comptador_sense_lectura_tall)
-    print "    --> Casos que NO tenen M105. TOTAL: {}. Casos: {}".format(len(sense_m105),sense_m105)
-    print "\n Sense comptador de baixa. TOTAL: {}".format(len(multiples_comptadors_actius))
-    print multiples_comptadors_actius
-    print "\nPolisses per analitzar. TOTAL: {}".format(len(final)) 
-    print final
-    print "\n PASSAR A LA MARTA. Te casos ATR amb pas 06. TOTAL {}".format(len(cx06))
-    print cx06
-    print "\n Reclamacio a distribuidora CEFACO. TOTAL: {}".format(len(cefaco))
-    print cefaco    
-    print "\n ERRORS_________TOTAL %s" % len(errors)
-    print errors
-    print "="*76 
+resum_templ = """\
+Hem descartat les polisses que fa menys de 40 dies que s'ha activat el contracte
+Polisses amb situació normal. Fa menys de 40 dies d'ultima lectura. TOTAL {len_casos_normals_canvi_comptador}
 
+# POLISSES RESOLTES
+- Alinear dates lectures modificacions/M1/lectures. TOTAL: {len_polisses_resoltes_alinear_dates}
+    - Polisses: {polisses_resoltes_alinear_dates}
+
+# POLISSES NO RESOLTES. Filtrem per casos per facilitar l'anàlisi 
+- Només te un comptador i una modificacio de contracte. TOTAL {len_un_comptador_una_mod}
+    - Polisses: {un_comptador_una_mod}
+
+- Només te un comptador i multiples modificacio de contracte. TOTAL {len_un_comptador_multiples_mod}
+    - Tenen un cas M105. TOTAL: {len_m105} Polisses: {m105}
+        - D'aquests, un quants no lectura de tall. TOTAL:  {len_un_comptador_sense_lectura_tall}. Polisses: {un_comptador_sense_lectura_tall}
+    - Casos que NO tenen M105.TOTAL: {len_sense_m105}. Polisses: {sense_m105}
+
+- Sense comptador de baixa. TOTAL {len_multiples_comptadors_actius}
+    - Polisses: {multiples_comptadors_actius}
+
+- S'han d'analitzar més. TOTAL {len_final}
+    - Polisses: {final}
+
+- Té casos ATR amb pas 06. TOTAL {len_cx06}
+    - Polisses: {cx06}
+
+- Reclamacio a distribuidora CEFACO. TOTAL {len_cefaco}
+    - Polisses: {cefaco}
+
+- Errors de programació. TOTAL {len_errors}
+    - Polisses: {errors}
+============================================================================
+"""
+
+def resum(result):
+    result.update((
+        ('len_'+k, len(result[k]))
+        for k in result.keys()
+        ))
+    print (resum_templ.format(**result))
+
+step('Cerquem totes les polisses que no tenen lectura anterior')
+step('i que no tinguin altres problemes: incompleta, maximetre, tancament ni sobreestimacions')
 search_vals = [('status','like',u'No t\xe9 lectura anterior'),
                             ('status','not like',u'No t\xe9 lectures entrades'),
                             ('status','not like',u'incompleta'),
@@ -87,6 +101,8 @@ pol_ids = sorted(list(set([clot_read['polissa_id'][0] for clot_read in clot_read
 avui_40 = datetime.strftime(datetime.today() - timedelta(40),"%Y-%m-%d")
 pol_ids = pol_obj.search([('id','in',pol_ids),('data_alta','<',avui_40)])
 
+success("Polisses trobades")
+
 #Comptadors visuals
 total = len(pol_ids)
 n = 0
@@ -99,13 +115,13 @@ for pol_id in pol_ids:
     try:
         if es_cefaco(pol_id):
             print "Ja està detectada com a Reclamacio de Distribuidora" 
-            cefaco.append(pol_id)
+            res.cefaco.append(pol_id)
             continue
         sw_ids = sw_obj.search([('cups_id','=',pol_read['cups'][0]),
                                 ('proces_id.name','in',['C1','C2']),
                                 ('step_id.name','=','06')])
         if sw_ids:
-            cx06.append(pol_id)
+            res.cx06.append(pol_id)
             print "Aquest CUPS té un CX06"
             continue
         
@@ -117,13 +133,13 @@ for pol_id in pol_ids:
             print "Nomes te un comptador"
             if len(pol_read['modcontractuals_ids'])>1:
                 print "Te {} modificacions contractuals".format(len(pol_read['modcontractuals_ids']))
-                un_comptador_multiples_mod.append(pol_id)
+                res.un_comptador_multiples_mod.append(pol_id)
                 sw_ids = sw_obj.search([('cups_id','=',pol_read['cups'][0]),
                                 ('state','=','done'),
                                 ('proces_id.name','=','M1'),
                                 ('step_id.name','=','05'),])
                 if not(sw_ids):
-                    sense_m105.append(pol_id)
+                    res.sense_m105.append(pol_id)
                     continue
                 m105_id = m105_obj.search([('sw_id','=',sw_ids[-1])])[0]
                 data_activacio = m105_obj.read(m105_id,['data_activacio'])['data_activacio']
@@ -191,7 +207,7 @@ for pol_id in pol_ids:
                 if not(lectF_tall_ids):
                     print "ALERTA, no te lectura de tall. Tarifa: {}, data {}".format(periode_read[1],data_activacio)
                     #Crear lectura amb la suma de lectura P1 i P2 DH
-                    un_comptador_sense_lectura_tall.append(pol_id)
+                    res.un_comptador_sense_lectura_tall.append(pol_id)
                 #Validem a veure si ja no hi ha el problema
                 validar_canvis([pol_id])
                 clot_ids = clot_obj.search(search_vals)
@@ -199,11 +215,11 @@ for pol_id in pol_ids:
                 pol_ids_v1 = sorted(list(set([clot_read['polissa_id'][0] for clot_read in clot_reads])))
                 if not(pol_id in pol_ids_v1):
                     print "Solucionada"
-                    polisses_resoltes_alinear_dates.append(pol_id)
+                    res.polisses_resoltes_alinear_dates.append(pol_id)
                 else:
-                    m105.append(pol_id)                                
+                    res.m105.append(pol_id)                                
             elif len(pol_read['modcontractuals_ids'])==1:
-                un_comptador_una_mod.append(pol_id)
+                res.un_comptador_una_mod.append(pol_id)
             continue 
         
         #detectem els comptadors de baixa   
@@ -212,19 +228,20 @@ for pol_id in pol_ids:
         #Sense comptador de baixa i amb més d'un comptador
         if not (comp_baixa_ids):
             print "Multiples comptadors actius"
-            for comp_id in comp_ids:
+            #for comp_id in comp_ids:
                 
-            multiples_comptadors_actius.append(pol_id)
+            res.multiples_comptadors_actius.append(pol_id)
             #cas 1: Els que tenen un comptador d'activa i un de reactiva
             #cas 2: Els que tenne un comptador sense lectures
             continue
         if avui_40 < pol_read['data_ultima_lectura']:
             print "Casos nous, nomes fa 40 dies de la ultima lectura"
-            casos_normals_canvi_comptador.append(pol_id)
+            res.casos_normals_canvi_comptador.append(pol_id)
             continue        
-        final.append(pol_id)
+        res.final.append(pol_id)
     except Exception, e:
-        errors.append({pol_id:e})
+        res.errors.append({pol_id:e})
         print e
 
-resum(polisses_resoltes_alinear_dates, errors, cefaco,final, un_comptador_una_mod,         un_comptador_multiples_mod, m105, un_comptador_sense_lectura_tall,         sense_m105, multiples_comptadors_actius, casos_normals_canvi_comptador, cx06)
+resum(res)
+
