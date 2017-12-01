@@ -173,8 +173,8 @@ def open_and_send(O, ids, lang, send_refund=True, send_rectified=True, send_dige
             'send_digest': send_digest,
             'num_contracts': num_contracts,
         }
-    wizard_id = o.wizardinvoiceopenandsend.create(vals, ctx)
-    wizard = o.wizardinvoiceopenandsend.get(wizard_id)
+    wizard_id = O.wizardinvoiceopenandsend.create(vals, ctx)
+    wizard = O.wizardinvoiceopenandsend.get(wizard_id)
     wizard.action_obrir_i_enviar(ctx)
 
 def getPeriodId(period_obj):
