@@ -81,6 +81,9 @@ def resum(result):
         ))
     print (resum_templ.format(**result))
 
+def isodate(adate):
+    return adate and datetime.strptime(adate,'%Y-%m-%d')
+
 step('Cerquem totes les polisses que no tenen lectura anterior')
 step('i que no tinguin altres problemes: incompleta, maximetre, tancament ni sobreestimacions')
 search_vals = [
@@ -188,7 +191,7 @@ for pol_id in pol_ids:
                     print "Hem trobat més d'una modificació inactiva despres de la data dultima lectura"
                     continue
                 mod_obj.write(mod_antiga_ids[0],{'data_final':data_activacio})
-                data_activacio_dt = datetime.strptime(data_activacio,'%Y-%m-%d')
+                data_activacio_dt = isodate(data_activacio)
                 data_activacio_1 = datetime.strftime(
                                     data_activacio_dt + timedelta(1),'%Y-%m-%d')
                 
