@@ -92,14 +92,21 @@ search_vals = [('status','like',u'No t\xe9 lectura anterior'),
                             ('status','not like',u"La lectura actual és inferior a l'anterior"), 
                             ('lot_id','=',lot_id[0])]
 clot_ids = clot_obj.search(search_vals)
-clot_reads = clot_obj.read(clot_ids,['polissa_id'])
+clot_reads = clot_obj.read(clot_ids,
+    ['polissa_id',
+    ])
 pol_ids = sorted(list(set([clot_read['polissa_id'][0] for clot_read in clot_reads])))
 validar_canvis(pol_ids)
 clot_ids = clot_obj.search(search_vals)
-clot_reads = clot_obj.read(clot_ids,['polissa_id'])
+clot_reads = clot_obj.read(clot_ids,
+    ['polissa_id',
+    ])
 pol_ids = sorted(list(set([clot_read['polissa_id'][0] for clot_read in clot_reads])))
 avui_40 = datetime.strftime(datetime.today() - timedelta(40),"%Y-%m-%d")
-pol_ids = pol_obj.search([('id','in',pol_ids),('data_alta','<',avui_40)])
+pol_ids = pol_obj.search([
+    ('id','in',pol_ids),
+    ('data_alta','<',avui_40),
+    ])
 
 success("Polisses trobades")
 
@@ -109,8 +116,16 @@ n = 0
 
 for pol_id in pol_ids:
     n += 1
-    pol_read = pol_obj.read(pol_id,
-        ['name','data_alta','data_ultima_lectura','comptadors','modcontractuals_ids','tarifa','distribuidora','cups'])
+    pol_read = pol_obj.read(pol_id,[
+        'name',
+        'data_alta',
+        'data_ultima_lectura',
+        'comptadors',
+        'modcontractuals_ids',
+        'tarifa',
+        'distribuidora',
+        'cups',
+        ])
     print "\n %s/%s  Polissa %s" % (n, total, pol_read['name'])
     try:
         if es_cefaco(pol_id):
@@ -134,10 +149,12 @@ for pol_id in pol_ids:
             if len(pol_read['modcontractuals_ids'])>1:
                 print "Te {} modificacions contractuals".format(len(pol_read['modcontractuals_ids']))
                 res.un_comptador_multiples_mod.append(pol_id)
-                sw_ids = sw_obj.search([('cups_id','=',pol_read['cups'][0]),
-                                ('state','=','done'),
-                                ('proces_id.name','=','M1'),
-                                ('step_id.name','=','05'),])
+                sw_ids = sw_obj.search([
+                    ('cups_id','=',pol_read['cups'][0]),
+                    ('state','=','done'),
+                    ('proces_id.name','=','M1'),
+                    ('step_id.name','=','05')
+                    ,])
                 if not(sw_ids):
                     res.sense_m105.append(pol_id)
                     continue
@@ -182,28 +199,33 @@ for pol_id in pol_ids:
                 # 1r Anem a buscar la tarifa de la lectura
                 lectF_ref_ids = lectF_obj.search([('comptador','=',comp_ids[0]),
                                             ('name','<',data_activacio)])
-                periode_read = lectF_obj.read(lectF_ref_ids[0],
-                                        ['periode'])['periode']
+                periode_read = lectF_obj.read(lectF_ref_ids[0],['periode'])['periode']
                 #Si es un canvi de Dh a una altra tarifa, no fem re per ara
                 if 'DH' in periode_read[1]:
                     print "Revisar manualment, passa de {} a una altra tarifa".format(periode_read[1])
                     continue
                 # 2n posem la data la nova tarifa acord amb la data inicial mod actual
-                lectF_ids = lectF_obj.search([('comptador','=',comp_ids[0]),
-                                            ('name','=',data_activacio),
-                                            ('periode','!=',periode_read[0])])
+                lectF_ids = lectF_obj.search([
+                    ('comptador','=',comp_ids[0]),
+                    ('name','=',data_activacio),
+                    ('periode','!=',periode_read[0]),
+                    ])
                 lectF_obj.write(lectF_ids,{'name':data_activacio_1})
                            
                 print "Canviem la data de lectura de la nova tarifa"
-                lect_post_ids = lectP_obj.search([('name','>',data_activacio),
-                                        ('comptador','=',comp_ids[0])]) 
+                lect_post_ids = lectP_obj.search([
+                    ('name','>',data_activacio),
+                    ('comptador','=',comp_ids[0]),
+                    ]) 
                 if  lect_post_ids:
                     copiar_lectures(lect_post_ids[-1])
                     print "copiem lectures noves"        
                 # 3r Mirem si te lectura de tall
-                lectF_tall_ids = lectF_obj.search([('comptador','=',comp_ids[0]),
-                                            ('name','=',data_activacio),
-                                            ('periode','=',periode_read[0])])
+                lectF_tall_ids = lectF_obj.search([
+                    ('comptador','=',comp_ids[0]),
+                    ('name','=',data_activacio),
+                    ('periode','=',periode_read[0]),
+                    ])
                 if not(lectF_tall_ids):
                     print "ALERTA, no te lectura de tall. Tarifa: {}, data {}".format(periode_read[1],data_activacio)
                     #Crear lectura amb la suma de lectura P1 i P2 DH
@@ -223,8 +245,10 @@ for pol_id in pol_ids:
             continue 
         
         #detectem els comptadors de baixa   
-        comp_baixa_ids = comp_obj.search([('id','in',comp_ids),
-                                        ('active','=', False)])
+        comp_baixa_ids = comp_obj.search([
+            ('id','in',comp_ids),
+            ('active','=', False),
+            ])
         #Sense comptador de baixa i amb més d'un comptador
         if not (comp_baixa_ids):
             print "Multiples comptadors actius"
