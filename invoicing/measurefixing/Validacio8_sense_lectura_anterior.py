@@ -4,9 +4,17 @@ from erppeek import Client
 from datetime import datetime, timedelta
 from validacio_eines import  es_cefaco, copiar_lectures, validar_canvis
 import configdb
-from consolemsg import step, success
+from consolemsg import step, success, warn, color, printStdError, error
 import sys
 from yamlns import namespace as ns
+
+def bigstep(message):
+    return printStdError(color('32;1',"\n:: "+message))
+
+def info(message):
+    return printStdError(color('36;1',"   "+message))
+
+doit = '--doit' in sys.argv
 
 step("Connectant a l'erp") 
 O = Client(**configdb.erppeek)
@@ -33,6 +41,7 @@ res.errors = []
 res.final = []
 res.un_comptador_una_mod = []
 res.un_comptador_multiples_mod = []
+res.multiples_modificacions_inactives = []
 res.un_comptador_sense_lectura_tall = []
 res.multiples_comptadors_actius = []
 res.casos_normals_canvi_comptador = []
@@ -41,6 +50,9 @@ res.m105 = []
 res.sense_m105 = []
 
 resum_templ = """\
+
+============================================================================
+
 Hem descartat les polisses que fa menys de 40 dies que s'ha activat el contracte
 Polisses amb situació normal. Fa menys de 40 dies d'ultima lectura. TOTAL {len_casos_normals_canvi_comptador}
 
@@ -131,28 +143,38 @@ for pol_id in pol_ids:
         'distribuidora',
         'cups',
         ])
-    print "\n %s/%s  Polissa %s" % (n, total, pol_read['name'])
+
+    bigstep("{}/{}  Polissa {}".format(n, total, pol_read['name']))
+
     try:
         if es_cefaco(pol_id):
-            print "Ja està detectada com a Reclamacio de Distribuidora" 
+            warn("Ja està detectada com a Reclamacio de Distribuidora")
             res.cefaco.append(pol_id)
             continue
-        sw_ids = sw_obj.search([('cups_id','=',pol_read['cups'][0]),
-                                ('proces_id.name','in',['C1','C2']),
-                                ('step_id.name','=','06')])
-        if sw_ids:
+        cx06_ids = sw_obj.search([
+            ('cups_id','=',pol_read['cups'][0]),
+            ('proces_id.name','in',['C1','C2']),
+            ('step_id.name','=','06'),
+            ])
+        if cx06_ids:
             res.cx06.append(pol_id)
-            print "Aquest CUPS té un CX06"
+            warn("Aquest CUPS té un CX06")
             continue
+        
+        if avui_40 < pol_read['data_ultima_lectura']:
+            info("Aquesta polissa nomes fa 40 dies des de que el vem facturar. El descartem de l'estudi")
+            res.casos_normals_canvi_comptador.append(pol_id)
+            continue #next polissa
         
         #Busquem tots els comptadors
         # Hem de buscar si hi ha canvi de comptador! no el número de comptadors
         comp_ids = pol_read['comptadors']
-        #Nomes te un comptador
+
         if len(comp_ids) == 1:
-            print "Nomes te un comptador"
+            info("Aquest contracte nomes te un comptador")
+
             if len(pol_read['modcontractuals_ids'])>1:
-                print "Te {} modificacions contractuals".format(len(pol_read['modcontractuals_ids']))
+                info( "Aquest contracte te {} modificacions contractuals".format(len(pol_read['modcontractuals_ids'])))
                 res.un_comptador_multiples_mod.append(pol_id)
                 sw_ids = sw_obj.search([
                     ('cups_id','=',pol_read['cups'][0]),
@@ -163,34 +185,56 @@ for pol_id in pol_ids:
                 if not(sw_ids):
                     res.sense_m105.append(pol_id)
                     continue
-                m105_id = m105_obj.search([('sw_id','=',sw_ids[-1])])[0]
-                data_activacio = m105_obj.read(m105_id,['data_activacio'])['data_activacio']
-                print "Hem fet {} M1. Data activacio: {}".format(len(sw_ids),
-                                                            data_activacio)
+                m105_id = m105_obj.search([
+                    ('sw_id','=',sw_ids[-1]),
+                    ])[0]
+                data_activacio = m105_obj.read(m105_id,[
+                    'data_activacio',
+                    ])['data_activacio']
 
-                #eliminem totes les lectures de facturacio posteriors a la data de ultima lectura
-                lectF_post_ids = lectF_obj.search([('comptador','=',comp_ids[0]),
-                                            ('name','>',pol_read['data_ultima_lectura'])])
-                lectF_obj.unlink(lectF_post_ids,{})
-                print "Eliminem totes les lectures posteriors a la data_ultima_lectura : {}".format(pol_read['data_ultima_lectura'])
-                
-                #Copiem lectures de pool a facturacio en la data d'activació
-                lect_ids = lectP_obj.search([('name','=',data_activacio),
-                                        ('comptador','=',comp_ids[0])])
-                copiar_lectures(lect_ids[0])
-                print "Lectures copiades de Pool a Factures en la data de tall: {data_activacio}".format(**locals())
-                
+                info("Hem fet {} M1. Data activacio: {}".format(len(sw_ids),data_activacio))
+
+                lectF_post_ids = lectF_obj.search([
+                    ('comptador','=',comp_ids[0]),
+                    ('name','>',pol_read['data_ultima_lectura']),
+                    ])
+
+                if doit:
+                    lectF_obj.unlink(lectF_post_ids,{})
+                    info("S'han eliminat totes les lectures posteriors a la data_ultima_lectura : {}".format(pol_read['data_ultima_lectura']))
+                else:
+                    info("S'haurien eliminat totes les lectures posteriors a la data_ultima_lectura : {}".format(pol_read['data_ultima_lectura']))
+
+                lect_ids = lectP_obj.search([
+                    ('name','=',data_activacio),
+                    ('comptador','=',comp_ids[0]),
+                    ])
+                if doit:
+                    copiar_lectures(lect_ids[0])
+                    info("S'han copiat les lectures de Pool a Facturebles en la data de tall: {data_activacio}".format(**locals()))
+                else:
+                    info("S'haurien copiat les lectures de Pool a Facturebles en la data de tall: {data_activacio}".format(**locals()))
+
                 #Actualitzem data inicial i final de les modificacions
                 # Data final mod antiga = data_activacio
                 # Data inicial mod actual = data_activacio +1
+
                 mod_antiga_ids = mod_obj.search([
-                                    ('id','in',pol_read['modcontractuals_ids']),
-                                    ('active','=',False),
-                                    ('data_final','>=',pol_read['data_ultima_lectura'])])
+                    ('id','in',pol_read['modcontractuals_ids']),
+                    ('active','=',False),
+                    ('data_final','>=',pol_read['data_ultima_lectura']),
+                    ])
+
                 if not(len(mod_antiga_ids) == 1):
-                    print "Hem trobat més d'una modificació inactiva despres de la data dultima lectura"
-                    continue
-                mod_obj.write(mod_antiga_ids[0],{'data_final':data_activacio})
+                    warn("Hem trobat més d'una modificació inactiva despres de la data dultima lectura. No sabem quina triar")
+                    res.multiples_modificacions_inactives.append(pol_id)
+                    continue # next polissa
+                if doit:
+                    mod_obj.write(mod_antiga_ids[0],{'data_final':data_activacio})
+                    info("Hem canviat la data de la modificació antiga al mateix dia que la data d'activacio: {data_activacio}".format(**locals()))
+                else:
+                    info("Hem canviat la data de la modificació antiga al mateix dia que la data d'activacio: {data_activacio}".format(**locals()))                 
+
                 data_activacio_dt = isodate(data_activacio)
                 data_activacio_1 = datetime.strftime(
                                     data_activacio_dt + timedelta(1),'%Y-%m-%d')
@@ -198,7 +242,11 @@ for pol_id in pol_ids:
                 mod_nova_ids = mod_obj.search([
                     ('id','in',pol_read['modcontractuals_ids']),
                     ('data_final','>=',pol_read['data_ultima_lectura'])])
-                mod_obj.write(mod_nova_ids[0],{'data_inici':data_activacio_1})
+                if doit:
+                    mod_obj.write(mod_nova_ids[0],{'data_inici':data_activacio_1})
+                    info("Hem canviat la data de la modificació actual un dia després que la data d'activacio: {data_activacio_1}".format(**locals()))
+                else:
+                    info("Hauríem canviat la data de la modificació actual un dia després que la data d'activacio: {data_activacio_1}".format(**locals()))
                 
                 #Anem a posar les dates correctes a les lectures en funció de les dates de les modificacions
                 # 1r Anem a buscar la tarifa de la lectura
@@ -209,43 +257,56 @@ for pol_id in pol_ids:
                 if 'DH' in periode_read[1]:
                     print "Revisar manualment, passa de {} a una altra tarifa".format(periode_read[1])
                     continue
-                # 2n posem la data la nova tarifa acord amb la data inicial mod actual
+                step(" 2n posem la data la nova tarifa acord amb la data inicial mod actual")
                 lectF_ids = lectF_obj.search([
                     ('comptador','=',comp_ids[0]),
                     ('name','=',data_activacio),
                     ('periode','!=',periode_read[0]),
                     ])
-                lectF_obj.write(lectF_ids,{'name':data_activacio_1})
+                if doit:
+                    lectF_obj.write(lectF_ids,{'name':data_activacio_1})
+                    info("Hem posat les lectures facturables un dia després de la data d'activacio: {data_activacio_1}".format(**locals()))
+                else:
+                    info("Hauriem posat les lectures facturables un dia després de la data d'activacio: {data_activacio_1}".format(**locals()))
                            
-                print "Canviem la data de lectura de la nova tarifa"
+                step("Canviem la data de lectura de la nova tarifa")
                 lect_post_ids = lectP_obj.search([
                     ('name','>',data_activacio),
                     ('comptador','=',comp_ids[0]),
                     ]) 
                 if  lect_post_ids:
-                    copiar_lectures(lect_post_ids[-1])
-                    print "copiem lectures noves"        
-                # 3r Mirem si te lectura de tall
+                    if doit:
+                        copiar_lectures(lect_post_ids[-1])
+                        info("hem copiat les lectures de Pool posteriors a la data d'activació")
+                    else:
+                        info("hauriem copiat les lectures de Pool posteriors a la data d'activació")
+                step("3r Mirem si te lectura de tall")
                 lectF_tall_ids = lectF_obj.search([
                     ('comptador','=',comp_ids[0]),
                     ('name','=',data_activacio),
                     ('periode','=',periode_read[0]),
                     ])
                 if not(lectF_tall_ids):
-                    print "ALERTA, no te lectura de tall. Tarifa: {}, data {}".format(periode_read[1],data_activacio)
+                    warn("ALERTA, no te lectura de tall. Tarifa: {}, data {}".format(periode_read[1],data_activacio))
                     #Crear lectura amb la suma de lectura P1 i P2 DH
                     res.un_comptador_sense_lectura_tall.append(pol_id)
-                #Validem a veure si ja no hi ha el problema
-                validar_canvis([pol_id])
-                clot_ids = clot_obj.search(search_vals)
-                clot_reads = clot_obj.read(clot_ids,['polissa_id'])
-                pol_ids_v1 = sorted(list(set([clot_read['polissa_id'][0] for clot_read in clot_reads])))
-                if not(pol_id in pol_ids_v1):
-                    print "Solucionada"
-                    res.polisses_resoltes_alinear_dates.append(pol_id)
+
+                step("Validem a veure si ja no hi ha el problema")
+                if doit:
+                    validar_canvis([pol_id])
+                    clot_ids = clot_obj.search(search_vals)
+                    clot_reads = clot_obj.read(clot_ids,['polissa_id'])
+                    pol_ids_v1 = sorted(list(set([clot_read['polissa_id'][0] for clot_read in clot_reads])))
+                    if not(pol_id in pol_ids_v1):
+                        success("Solucionada")
+                        res.polisses_resoltes_alinear_dates.append(pol_id)
+                    else:
+                        res.m105.append(pol_id)
                 else:
-                    res.m105.append(pol_id)                                
+                    success("resultat simulat")
+
             elif len(pol_read['modcontractuals_ids'])==1:
+                info("Aquesta polissa nomes te un comptador i una modificacio contractual. Que li passa?")
                 res.un_comptador_una_mod.append(pol_id)
             continue 
         
@@ -256,21 +317,19 @@ for pol_id in pol_ids:
             ])
         #Sense comptador de baixa i amb més d'un comptador
         if not (comp_baixa_ids):
-            print "Multiples comptadors actius"
-            #for comp_id in comp_ids:
-                
+            warn("Multiples comptadors actius") 
             res.multiples_comptadors_actius.append(pol_id)
             #cas 1: Els que tenen un comptador d'activa i un de reactiva
-            #cas 2: Els que tenne un comptador sense lectures
-            continue
-        if avui_40 < pol_read['data_ultima_lectura']:
-            print "Casos nous, nomes fa 40 dies de la ultima lectura"
-            res.casos_normals_canvi_comptador.append(pol_id)
-            continue        
+            #cas 2: Els que tenen un comptador sense lectures
+            continue #next polissa
+
+        error("Cas no considerat")
         res.final.append(pol_id)
-    except Exception, e:
+
+    except Exception as e:
         res.errors.append({pol_id:e})
-        print e
+        raise
+        error(unicode(e))
 
 resum(res)
 

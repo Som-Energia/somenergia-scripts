@@ -40,6 +40,7 @@ imp_obj = O.GiscedataFacturacioImportacioLinia
 mod_obj = O.GiscedataPolissaModcontractual
 
 resum_templ = """\
+
 ============================================================================
 
 # POLISSES RESOLTES
