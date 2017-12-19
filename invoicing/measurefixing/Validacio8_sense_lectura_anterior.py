@@ -10,7 +10,8 @@ from yamlns import namespace as ns
 
 def bigstep(message):
     return printStdError(color('32;1',"\n:: "+message))
-
+def smallstep(message):
+    return printStdError(color('32;1',"   "+message))
 def info(message):
     return printStdError(color('36;1',"   "+message))
 
@@ -39,7 +40,9 @@ res.polisses_resoltes_alinear_dates = []
 res.cefaco= []
 res.errors = []
 res.final = []
-res.un_comptador_una_mod = []
+res.un_comptador_sense_mod_sense_lectura_inicial = []
+res.un_comptador_sense_mod_amb_lectura_inicial = []
+res.un_comptador_sense_mod_sense_lectura_inicial_a_pool = []
 res.un_comptador_multiples_mod = []
 res.multiples_modificacions_inactives = []
 res.un_comptador_sense_lectura_tall = []
@@ -61,8 +64,14 @@ Polisses amb situació normal. Fa menys de 40 dies d'ultima lectura. TOTAL {len_
     - Polisses: {polisses_resoltes_alinear_dates}
 
 # POLISSES NO RESOLTES. Filtrem per casos per facilitar l'anàlisi 
-- Només te un comptador i una modificacio de contracte. TOTAL {len_un_comptador_una_mod}
-    - Polisses: {un_comptador_una_mod}
+- Només te un comptador i una modificacio de contracte. 
+    - Amb lectura inicial del contracte. TOTAL: {len_un_comptador_sense_mod_amb_lectura_inicial}
+        - Polisses: {un_comptador_sense_mod_amb_lectura_inicial}
+    - Amb lectura inicial del contracte a pool pero no s'ha traspassat. TOTAL: {len_un_comptador_sense_mod_sense_lectura_inicial}
+        - Polisses: {un_comptador_sense_mod_sense_lectura_inicial}
+    - Sense lectura inicial del contracte a pool. TOTAL: {len_un_comptador_sense_mod_sense_lectura_inicial_a_pool}
+        - Polisses: {un_comptador_sense_mod_sense_lectura_inicial_a_pool}
+
 
 - Només te un comptador i multiples modificacio de contracte. TOTAL {len_un_comptador_multiples_mod}
     - Tenen un cas M105. TOTAL: {len_m105} Polisses: {m105}
@@ -143,14 +152,17 @@ for pol_id in pol_ids:
         'distribuidora',
         'cups',
         ])
+    data_alta = pol_read['data_alta']
 
-    bigstep("{}/{}  Polissa {}".format(n, total, pol_read['name']))
-
+    bigstep("{}/{}".format(n,total))
+    smallstep("Polissa {}".format(pol_read['name']))
+    smallstep("CUPS: {}".format(pol_read['cups'][1]))
+#   smallstep("Distribuidora: {}".format(pol_read['distribuidora'][1])) --> problemes amb ascii
     try:
         if es_cefaco(pol_id):
             warn("Ja està detectada com a Reclamacio de Distribuidora")
             res.cefaco.append(pol_id)
-            continue
+            continue #next polissa
         cx06_ids = sw_obj.search([
             ('cups_id','=',pol_read['cups'][0]),
             ('proces_id.name','in',['C1','C2']),
@@ -159,7 +171,7 @@ for pol_id in pol_ids:
         if cx06_ids:
             res.cx06.append(pol_id)
             warn("Aquest CUPS té un CX06")
-            continue
+            continue #next polissa
         
         if avui_40 < pol_read['data_ultima_lectura']:
             info("Aquesta polissa nomes fa 40 dies des de que el vem facturar. El descartem de l'estudi")
@@ -172,6 +184,41 @@ for pol_id in pol_ids:
 
         if len(comp_ids) == 1:
             info("Aquest contracte nomes te un comptador")
+            
+            if len(pol_read['modcontractuals_ids'])==1:
+                info("Aquest contracte no té modificacions contractuals")
+                info("Data d'alta: {}".format(data_alta))
+                info("Data ultima factura: {}".format(pol_read['data_ultima_lectura']))
+
+                lectF_ids = lectF_obj.search([
+                    ('comptador','=',comp_ids[0]),
+                    ('name','=',data_alta),
+                    ])
+                if lectF_ids:
+                    info("Te lectura inicial del contracte en les lectures facturables")
+                    step("Hem d'analitzar amb més profunditat aquests casos")
+                    res.un_comptador_sense_mod_amb_lectura_inicial.append(pol_id)
+                    continue #next polissa
+                info("No te lectura inicial del contracte en les lectures facturables")
+
+                lect_pool_ids = lectP_obj.search([
+                    ('comptador','=',comp_ids[0]),
+                    ('name','=',data_alta),
+                    ])
+                if not lect_pool_ids:
+                    info("No te lectura inicial del contracte en les lectures de pool")
+                    step("Hem d'analitzar amb més profunditat aquests casos")
+                    res.un_comptador_sense_mod_sense_lectura_inicial_a_pool.append(pol_id)
+                    continue #next polissa
+                info("Te lectural inicial del contracte en les lectures de pool")
+
+                if doit:
+                    step("Copiem la lectura")
+                    copiar_lectures(lect_pool_ids[0])
+                else:
+                    step("Simulem la copia de la lectura")
+                res.un_comptador_sense_mod_sense_lectura_inicial.append(pol_id)
+                continue #next polissa
 
             if len(pol_read['modcontractuals_ids'])>1:
                 info( "Aquest contracte te {} modificacions contractuals".format(len(pol_read['modcontractuals_ids'])))
@@ -305,9 +352,6 @@ for pol_id in pol_ids:
                 else:
                     success("resultat simulat")
 
-            elif len(pol_read['modcontractuals_ids'])==1:
-                info("Aquesta polissa nomes te un comptador i una modificacio contractual. Que li passa?")
-                res.un_comptador_una_mod.append(pol_id)
             continue 
         
         #detectem els comptadors de baixa   
