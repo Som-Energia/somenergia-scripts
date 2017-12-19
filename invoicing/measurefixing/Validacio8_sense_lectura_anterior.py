@@ -157,6 +157,7 @@ for pol_id in pol_ids:
             warn("Ja està detectada com a Reclamacio de Distribuidora")
             res.cefaco.append(pol_id)
             continue #next polissa
+
         cx06_ids = sw_obj.search([
             ('cups_id','=',pol_read['cups'][0]),
             ('proces_id.name','in',['C1','C2']),
@@ -224,6 +225,7 @@ for pol_id in pol_ids:
             if len(pol_read['modcontractuals_ids'])>1:
                 info( "Aquest contracte te {} modificacions contractuals".format(len(pol_read['modcontractuals_ids'])))
                 res.un_comptador_multiples_mod.append(pol_id)
+
                 sw_ids = sw_obj.search([
                     ('cups_id','=',pol_read['cups'][0]),
                     ('state','=','done'),
@@ -232,7 +234,8 @@ for pol_id in pol_ids:
                     ,])
                 if not(sw_ids):
                     res.sense_m105.append(pol_id)
-                    continue
+                    continue #next polissa
+
                 m105_id = m105_obj.search([
                     ('sw_id','=',sw_ids[-1]),
                     ])[0]
@@ -352,7 +355,7 @@ for pol_id in pol_ids:
                         res.m105.append(pol_id)
                 else:
                     success("resultat simulat")
-
+                    res.polisses_resoltes_alinear_dates.append(pol_id)
             continue 
         
         #detectem els comptadors de baixa   
