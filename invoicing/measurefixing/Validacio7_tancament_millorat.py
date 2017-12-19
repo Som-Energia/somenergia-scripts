@@ -319,7 +319,7 @@ for pol_id in pol_ids:
             info("IMPORTACIONS ERRONIES: {}".format(len(imp_ids)))
             imp_reads = imp_obj.read(imp_ids,['info'])
             for imp_read in imp_reads:
-                info(" ----> " + (imp_read['info']))
+                info(" ----> " + (imp_read['info'].encode('utf-8')))
 
 
         #Mirem quantes modificacions contratuals te
