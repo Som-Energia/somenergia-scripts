@@ -34,9 +34,10 @@ noves_cefaco = []
 lectures_posterior = []
 error_al_comptador_inactiu = []
 
-pol_ids = buscar_errors_lot_ids("La lectura actual és inferior a l'anterior")
+search_vals = [('status','like',"La lectura actual és inferior a l'anterior")]
+pol_ids = buscar_errors_lot_ids(search_vals)
 validar_canvis(pol_ids)
-pol_ids = buscar_errors_lot_ids("La lectura actual és inferior a l'anterior")
+pol_ids = buscar_errors_lot_ids(search_vals)
 pol_ids = sorted(list(set(pol_ids)))
 
 #Comptadors visuals
@@ -96,7 +97,7 @@ for pol_id in pol_ids:
 
                     #Validem a veure si ja no hi ha el problema
                     validar_canvis([pol_id])
-                    pol_ids_v1 = buscar_errors_lot_ids("La lectura actual és inferior a l'anterior")
+                    pol_ids_v1 = buscar_errors_lot_ids(search_vals)
                     if not(pol_id in pol_ids_v1):
                         print "Volta de comptador. Solucionada"
                         polisses_resoltes_volta_comptador.append(pol_read['name'])

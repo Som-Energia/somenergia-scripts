@@ -32,13 +32,12 @@ canvi_comptador =[]
 cc_sense_posteriors = []
 
 
-
-pol_ids = buscar_errors_lot_ids("incompleta")
+search_vals = [('status','like',"incompleta")]
+pol_ids = buscar_errors_lot_ids(search_vals)
 pol_ids = sorted(list(set(pol_ids)))
 #Comptadors visuals
 total = len(pol_ids)
 n = 0
-
 for pol_id in pol_ids:
     n += 1
     polissa_read = pol_obj.read(pol_id,

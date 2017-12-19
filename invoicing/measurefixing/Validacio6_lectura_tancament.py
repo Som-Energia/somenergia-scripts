@@ -38,7 +38,8 @@ sense_lectures_de_tall = []
 
 comptador_diferent_data_alta_baixa = []
 
-pol_ids = buscar_errors_lot_ids('Falta Lectura de tancament amb data')
+search_vals = [('status','like',"Falta Lectura de tancament amb data")]
+pol_ids = buscar_errors_lot_ids(search_vals)
 pol_ids = sorted(list(set(pol_ids)))
 
 

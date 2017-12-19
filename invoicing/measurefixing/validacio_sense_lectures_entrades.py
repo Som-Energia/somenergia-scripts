@@ -27,8 +27,8 @@ no_te_un_comptador = []
 lot_seguent = []
 
 
-
-pol_ids = buscar_errors_lot_ids(u'No t\xe9 lectures entrades')
+search_vals = [('status','like',u'No t\xe9 lectures entrades')]
+pol_ids = buscar_errors_lot_ids(search_vals)
 pol_ids = sorted(list(set(pol_ids)))
 #Comptadors visuals
 total = len(pol_ids)

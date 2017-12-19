@@ -92,17 +92,18 @@ def resum(result):
         ))
     print (resum_templ.format(**result))
 
-def isSolvedByMessage(pol_id, errorMessage):
+def isSolvedByMessage(pol_id, search_vals):
     # TODO: Use single polissa functions to speed up
     validar_canvis([pol_id])
-    polissa_ids = buscar_errors_lot_ids(errorMessage)
+    polissa_ids = buscar_errors_lot_ids(search_vals)
     return pol_id not in polissa_ids
 
 def isSolved(pol_id):
     if not doit:
         warn("Resultat simulat")
         return True
-    return isSolvedByMessage(pol_id, 'Falta Lectura de tancament amb data')
+    search_vals = [('status','like',"Falta Lectura de tancament amb data")]
+    return isSolvedByMessage(pol_id, search_vals)
 
 def isodate(adate):
     return adate and datetime.strptime(adate,'%Y-%m-%d')
@@ -126,9 +127,10 @@ res.cefaco= []
 res.errors = []
 
 step("Validant totes les polisses que tenen l'error")
-pol_ids = buscar_errors_lot_ids('Falta Lectura de tancament amb data')
+search_vals = [('status','like',"Falta Lectura de tancament amb data")]
+pol_ids = buscar_errors_lot_ids(search_vals)
 validar_canvis(pol_ids)
-pol_ids = buscar_errors_lot_ids('Falta Lectura de tancament amb data')
+pol_ids = buscar_errors_lot_ids(search_vals)
 pol_ids = sorted(list(set(pol_ids)))
 
 #Comptadors visuals

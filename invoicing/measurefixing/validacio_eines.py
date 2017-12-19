@@ -10,10 +10,10 @@ O = OOOP(**configdb.ooop)
 #Constants
 MIN_DIES_FACT = 25
 
-def buscar_errors_lot_ids(text):
+def buscar_errors_lot_ids(search_vals):
     clot_obj = O.GiscedataFacturacioContracte_lot
     lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])[0]
-    search_vals = [('status','like',text),('lot_id','=',lot_id)]
+    search_vals += [('lot_id','=',lot_id)]
     clot_ids = clot_obj.search(search_vals)
     clot_reads = clot_obj.read(clot_ids,['polissa_id'])
     pol_ids = sorted(list(set([clot_read['polissa_id'][0] for clot_read in clot_reads])))
