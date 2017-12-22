@@ -79,6 +79,33 @@ def wizardFacturesARemesa(invoices_gisce, order_id):
     wizard_po = O.WizardAfegirFacturesRemesa.get(wizard_id_po)
     wizard_po.action_afegir_factures(ctx_po)
 
+def conciliarFactures(ai, ap, aj, invoices_gisce):
+    period_id = getPeriodId(ap)
+    pay_journal_id = 5 #Jornal Client invoices "Factures Energia"
+    journal = aj.read(pay_journal_id)
+    pay_account_id = journal['default_credit_account_id'][0]
+    writeoff_acc_id = False
+    writeoff_journal_id = False
+    writeoff_period_id = False
+    context = {}
+    name = 'Pagament de factures conciliades'
+
+    for inv_id in invoices_gisce:
+        inv = ai.read(inv_id)
+        pay_amount = inv['amount_total']
+        pay_account_id = inv['account_id'][0]
+        print "Cridem al pay and reconcile: ", inv_id, pay_amount, pay_account_id, period_id, pay_journal_id, writeoff_acc_id, writeoff_period_id, writeoff_journal_id, context, name
+        ai.pay_and_reconcile([inv_id],
+                 pay_amount,
+                 pay_account_id,
+                 period_id,
+                 pay_journal_id,
+                 writeoff_acc_id,
+                 writeoff_period_id,
+                 writeoff_journal_id,
+                 context,
+                 name)
+
 def fixIBANInvoice(gp, ai, polissa_id, invoices_ids):
     polissa = gp.get(polissa_id)
     for invoice_id in invoices_ids:
@@ -137,7 +164,7 @@ if __name__ == "__main__":
         raise Exception("Cal 'Pagar grup de factures' a mà")
 
     wizardAgruparFactures(invoices_gisce, total)
-    fixIBANInvoice(gp, ai, contract_id, invoices_gisce)
+    #fixIBANInvoice(gp, ai, contract_id, invoices_gisce)
 
     wizardFacturesARemesa(invoices_gisce, order_id)
     fixIBANPaymentOrder(gp, pl, contract_id, order_id)
