@@ -11,7 +11,7 @@ import decimal
 
 '''
     Busca entre els moviments comptables els que són del tipus "títols participatius" (1714X) entre 
-    el 01/01/2012 (data títols 5 anys) i la data entrada per paràmetre amb format DD-MM-AAAA. El segon
+    el 01/10/2012 (data títols 5 anys) i la data entrada per paràmetre amb format DD-MM-AAAA. El segon
     paràmetre és l'id de la remesa que s'ha creat prèviament
 
     python admin/crear_remesa_aportacions.py 2012-10-09 2313
@@ -21,14 +21,15 @@ def accountBalanceTitols(db):
     sql_query = """
         SELECT min(date), account_id, sum(debit) as debe, sum(credit) as haber,  ( sum(debit) -  sum(credit) ) as balance
         FROM public.account_move_line
-        WHERE account_id IN  (
+        WHERE state = 'valid'
+        AND reconcile_id is null
+        AND account_id IN  (
             SELECT id
             FROM public.account_account
             WHERE code ilike '17140%'
             )
-            AND state = 'valid'
         GROUP BY account_id
-        HAVING ( sum(debit) -  sum(credit) ) < 0 
+        HAVING ( sum(debit) -  sum(credit) ) < 0 AND count(*) = 1
         AND min(date) > '2012-09-30'
         ORDER BY account_id;
         """
@@ -46,6 +47,9 @@ def accountBalanceTitols(db):
 
     return (extra_data)
 
+
+def getAmountToReturn(db, account_id, date_from, date_to):
+    return 0
 
 def numSociToString(nsoci):
     nsoci_str = str(nsoci)
