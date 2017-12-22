@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from erppeek import Client
 from datetime import datetime, timedelta
-from validacio_eines import  es_cefaco, copiar_lectures, validar_canvis
+from validacio_eines import  es_cefaco, copiar_lectures, validar_canvis, buscar_errors_lot_ids
 import configdb
 from consolemsg import step, success, warn, color, printStdError, error
 import sys
@@ -37,11 +37,12 @@ lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])
 #Inicicialitzadors
 res = ns()
 res.polisses_resoltes_alinear_dates = []
+res.resolta_un_comptador_sense_mod_lectura_copiada = []
 res.cefaco= []
 res.errors = []
 res.final = []
-res.un_comptador_sense_mod_sense_lectura_inicial = []
-res.un_comptador_sense_mod_amb_lectura_inicial = []
+res.un_comptador_sense_mod_amb_lectura_inicial_a_pool_no_resolta = []
+res.un_comptador_sense_mod_amb_lectura_inicial_facturable = []
 res.un_comptador_sense_mod_sense_lectura_inicial_a_pool = []
 res.un_comptador_multiples_mod = []
 res.multiples_modificacions_inactives = []
@@ -62,15 +63,17 @@ Polisses amb situació normal. Fa menys de 40 dies d'ultima lectura. TOTAL {len_
 # POLISSES RESOLTES
 - Alinear dates lectures modificacions/M1/lectures. TOTAL: {len_polisses_resoltes_alinear_dates}
     - Polisses: {polisses_resoltes_alinear_dates}
+- No tenia la lectura inicial copiada a les lectures facturables. S'ha copiat des de les lectures de pool. TOTAL {len_resolta_un_comptador_sense_mod_lectura_copiada}
+    - Polisses: {resolta_un_comptador_sense_mod_lectura_copiada}
 
 # POLISSES NO RESOLTES. Filtrem per casos per facilitar l'anàlisi 
 - Només te un comptador i una modificacio de contracte. 
-    - Amb lectura inicial del contracte. TOTAL: {len_un_comptador_sense_mod_amb_lectura_inicial}
-        - Polisses: {un_comptador_sense_mod_amb_lectura_inicial}
-    - Amb lectura inicial del contracte a pool pero no s'ha traspassat. TOTAL: {len_un_comptador_sense_mod_sense_lectura_inicial}
-        - Polisses: {un_comptador_sense_mod_sense_lectura_inicial}
     - Sense lectura inicial del contracte a pool. TOTAL: {len_un_comptador_sense_mod_sense_lectura_inicial_a_pool}
         - Polisses: {un_comptador_sense_mod_sense_lectura_inicial_a_pool}
+    - Amb lectura inicial del contracte a lectures facturables. TOTAL: {len_un_comptador_sense_mod_amb_lectura_inicial_facturable}
+        - Polisses: {un_comptador_sense_mod_amb_lectura_inicial_facturable}
+    - Amb lectura inicial del contracte a pool pero no s'ha traspassat. TOTAL: {len_un_comptador_sense_mod_amb_lectura_inicial_a_pool_no_resolta}
+        - Polisses: {un_comptador_sense_mod_amb_lectura_inicial_a_pool_no_resolta}
 
 
 - Només te un comptador i multiples modificacio de contracte. TOTAL {len_un_comptador_multiples_mod}
@@ -115,19 +118,10 @@ search_vals = [
     ('status','not like',u'Falta Lectura de tancament'),
     ('status','not like',u'maxímetre'),
     ('status','not like',u"La lectura actual és inferior a l'anterior"), 
-    ('lot_id','=',lot_id[0]),
     ]
-clot_ids = clot_obj.search(search_vals)
-clot_reads = clot_obj.read(clot_ids,[
-    'polissa_id',
-    ])
-pol_ids = sorted(list(set([clot_read['polissa_id'][0] for clot_read in clot_reads])))
+pol_ids = buscar_errors_lot_ids(search_vals)
 validar_canvis(pol_ids)
-clot_ids = clot_obj.search(search_vals)
-clot_reads = clot_obj.read(clot_ids,[
-    'polissa_id',
-    ])
-pol_ids = sorted(list(set([clot_read['polissa_id'][0] for clot_read in clot_reads])))
+pol_ids = buscar_errors_lot_ids(search_vals)
 avui_40 = datetime.strftime(datetime.today() - timedelta(40),"%Y-%m-%d")
 pol_ids = pol_obj.search([
     ('id','in',pol_ids),
@@ -163,6 +157,7 @@ for pol_id in pol_ids:
             warn("Ja està detectada com a Reclamacio de Distribuidora")
             res.cefaco.append(pol_id)
             continue #next polissa
+
         cx06_ids = sw_obj.search([
             ('cups_id','=',pol_read['cups'][0]),
             ('proces_id.name','in',['C1','C2']),
@@ -197,7 +192,7 @@ for pol_id in pol_ids:
                 if lectF_ids:
                     info("Te lectura inicial del contracte en les lectures facturables")
                     step("Hem d'analitzar amb més profunditat aquests casos")
-                    res.un_comptador_sense_mod_amb_lectura_inicial.append(pol_id)
+                    res.un_comptador_sense_mod_amb_lectura_inicial_facturable.append(pol_id)
                     continue #next polissa
                 info("No te lectura inicial del contracte en les lectures facturables")
 
@@ -215,14 +210,22 @@ for pol_id in pol_ids:
                 if doit:
                     step("Copiem la lectura")
                     copiar_lectures(lect_pool_ids[0])
+                    if isSolved(pol_id):
+                        success("Polissa validada. Copiant la lectura hem resolt el problema")
+                        res.resolta_un_comptador_sense_mod_lectura_copiada.append(pol_id)
+                        continue #next polissa
+                    else:
+                        error("Copiant la lectura no s'ha resolt l'error")
+                        res.un_comptador_sense_mod_amb_lectura_inicial_a_pool_no_resolta.append(pol_id)
                 else:
                     step("Simulem la copia de la lectura")
-                res.un_comptador_sense_mod_sense_lectura_inicial.append(pol_id)
-                continue #next polissa
+                    res.resolta_un_comptador_sense_mod_lectura_copiada.append(pol_id)
+                    continue #next polissa
 
             if len(pol_read['modcontractuals_ids'])>1:
                 info( "Aquest contracte te {} modificacions contractuals".format(len(pol_read['modcontractuals_ids'])))
                 res.un_comptador_multiples_mod.append(pol_id)
+
                 sw_ids = sw_obj.search([
                     ('cups_id','=',pol_read['cups'][0]),
                     ('state','=','done'),
@@ -231,7 +234,8 @@ for pol_id in pol_ids:
                     ,])
                 if not(sw_ids):
                     res.sense_m105.append(pol_id)
-                    continue
+                    continue #next polissa
+
                 m105_id = m105_obj.search([
                     ('sw_id','=',sw_ids[-1]),
                     ])[0]
@@ -351,7 +355,7 @@ for pol_id in pol_ids:
                         res.m105.append(pol_id)
                 else:
                     success("resultat simulat")
-
+                    res.polisses_resoltes_alinear_dates.append(pol_id)
             continue 
         
         #detectem els comptadors de baixa   
