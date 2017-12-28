@@ -31,6 +31,35 @@ def paymentOrderId(po, po_name, po_type):
     except:
         raise Exception("La remesa no existeix o no es del tipus ", po_type)
 
+def getPaymentOrder(po, po_type):
+      """
+        Searches an existing payment order (remesa)
+        with the proper payment mode and still in draft.
+        """
+        if po_type == 'payable':
+            mode_name = 'AGRUPACIONS pagar'
+        else:
+            mode_name = 'AGRUPACIONS cobrar'
+
+        PaymentMode = self.pool.get('payment.mode')
+        payment_mode_ids = PaymentMode.search(cursor, uid, [
+            ('name', '=', mode_name),
+            ])
+
+        if not payment_mode_ids:
+            raise Exception("La remesa d'agrupació tipus '", po_tytpe, "' no existeix")
+
+        PaymentOrder = self.pool.get('payment.order')
+        payment_orders = PaymentOrder.search(cursor, uid, [
+            ('mode', '=', payment_mode_ids[0]),
+            ('state', '=', 'draft'),
+            ])
+        if payment_orders:
+            return payment_orders[0]
+
+        raise Exception("La remesa d'agrupacions no està creada")
+        #TODO: Futur get_or_create_payment_order
+
 def facturesObertesDelContracte(ai, gff, contract_name):
     invoices = ai.search([('name', '=', contract_name),('state','=','open')])
     invoices_gisce = []
@@ -125,8 +154,6 @@ def fixIBANPaymentOrder(gp, pl, polissa_id, order_id):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='Grouping invoices')
-    parser.add_argument('-rp', '--remesa-pagament')
-    parser.add_argument('-rc', '--remesa-cobrament')
     parser.add_argument('-c', '--contracte')
     args = vars(parser.parse_args())
     contract_name = args['contracte']
