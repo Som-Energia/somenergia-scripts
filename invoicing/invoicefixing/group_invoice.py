@@ -78,7 +78,7 @@ def facturesObertesDelContracte(ai, gff, contract_name):
 
     return invoices_gisce, total
 
-def wizardAgruparFactures(invoices_gisce, total):
+def wizardAgruparFactures(O, invoices_gisce, total):
     ctx = {
             'model': 'giscedata.facturacio.factura',
             'active_id': invoices_gisce[0],
@@ -91,7 +91,7 @@ def wizardAgruparFactures(invoices_gisce, total):
     wizard = O.WizardGroupInvoicesPayment.get(wizard_id)
     wizard.group_invoices(ctx)
 
-def wizardFacturesARemesa(invoices_gisce, order_id):
+def wizardFacturesARemesa(O, invoices_gisce, order_id):
     ctx_po = {
             'model':'giscedata.facturacio.factura',
             'active_id': invoices_gisce[0],
@@ -174,10 +174,10 @@ def do(O, contract_name):
     elif total == 0:
         raise Exception("Cal 'Pagar grup de factures' a mà")
 
-    wizardAgruparFactures(invoices_gisce, total)
+    wizardAgruparFactures(O, invoices_gisce, total)
     #fixIBANInvoice(gp, ai, contract_id, invoices_gisce)
 
-    wizardFacturesARemesa(invoices_gisce, order_id)
+    wizardFacturesARemesa(O, invoices_gisce, order_id)
     fixIBANPaymentOrder(gp, pl, contract_id, order_id)
 
 if __name__ == "__main__":

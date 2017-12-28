@@ -175,10 +175,18 @@ def fix_contract(O, polissa_id, quarantine, start_date=None, end_date=None):
                                               ('data_final', '=', invoice_date_end),
                                               ('data_inici', '=', invoice_date_start)]
                             invoice_rectified_id = get_invoices(O, search_pattern, None, True)
-
+                            #print "Factura rectificada 2: ", invoice_rectified_id
+                        #print ">>>Busquem error:"
+                        #print invoice_rectified_id
                         #abonem i rectifiquem les factures de periodes afectats per les noves lectures
                         if invoice_rectified_id:
-                            invoices_id = pay_invoice(O, invoice_rectified_id[0], True)
+                            #print invoice_rectified_id[0]
+                            try:
+                                invoices_id = pay_invoice(O, invoice_rectified_id[0], True)
+                            except Exception, e:
+                                print e
+                                raise Exception("La polissa no esta al lot: ",invoice_date_start, " - ",  invoice_date_end )
+                            #print "Pay invoices: ", invoices_id
                             if invoices_id:
                                 fields_to_read= ['invoice_id',
                                                  'data_inici',

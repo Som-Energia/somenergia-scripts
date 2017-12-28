@@ -8,6 +8,7 @@ import sys
 from validacio_eines import *
 from fix_invoice import *
 from utils import *
+import group_invoice
 
 O = OOOP(**configdb.ooop)
 
@@ -244,10 +245,15 @@ def openAndSend(contract_id):
     contract_name = O.GiscedataPolissa.read(contract_id,['name'])['name']
 
     open_and_send(O, invoices_ids, lang,
-            send_refund=True,
-            send_rectified=True,
+            send_refund=False,
+            send_rectified=False,
             send_digest=True,
             num_contracts=1)
+    return invoices_ids
+
+def groupInvoices(O, contract_name):
+    group_invoice.do(O, contract_name)
+
     return True
 
 print 'Reading contracts ...'
@@ -256,7 +262,6 @@ print 'Pending contracts ', len(contracts)
 n=0
 print contracts
 # Fix contracts
-contracts_fixed = []
 for contract_name in contracts:
     start_date = None
     end_date = None
@@ -347,7 +352,11 @@ for contract_name in contracts:
     sent = openAndSend(contract_id)
     if sent:
         print "Factures de la polissa %s enviades" % contract_name
-
+        try:#Group invoices and put it in a payment_order
+            groupInvoices(O, contract_name)
+        except Exception as e:
+            print "No s'ha pogut agrupar la factura ni posar-la a la remesa", contract_name, "Error: ", e
+            continue
 
 show_param_conf(contracts_max,invoices_max,
                     dif_maxima,
