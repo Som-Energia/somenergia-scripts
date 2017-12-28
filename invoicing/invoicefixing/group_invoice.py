@@ -31,7 +31,7 @@ def paymentOrderId(po, po_name, po_type):
     except:
         raise Exception("La remesa no existeix o no es del tipus ", po_type)
 
-def getPaymentOrder(po, po_type):
+def getPaymentOrder(po, pm, po_type):
     """
     Searches an existing payment order (remesa)
     with the proper payment mode and still in draft.
@@ -41,16 +41,14 @@ def getPaymentOrder(po, po_type):
     else:
         mode_name = 'AGRUPACIONS cobrar'
 
-    PaymentMode = self.pool.get('payment.mode')
-    payment_mode_ids = PaymentMode.search(cursor, uid, [
+    payment_mode_ids = pm.search([
         ('name', '=', mode_name),
         ])
 
     if not payment_mode_ids:
         raise Exception("La remesa d'agrupació tipus '", po_tytpe, "' no existeix")
 
-    PaymentOrder = self.pool.get('payment.order')
-    payment_orders = PaymentOrder.search(cursor, uid, [
+    payment_orders = po.search([
         ('mode', '=', payment_mode_ids[0]),
         ('state', '=', 'draft'),
         ])
@@ -69,8 +67,6 @@ def facturesObertesDelContracte(ai, gff, contract_name):
         invoices_gisce.append(gff_id[0])
         gff_obj = gff.read(gff_id[0])
         ai_obj = ai.read(i)
-        #print "Factura %s de %s a %s del tipus %s amb un import de %s." % (str(ai_obj['number']), str(gff_obj['data_inici']), str(gff_obj['data_final']), str(gff_obj['tipo_rectificadora']), str(ai_obj['amount_total']))
-        #print "Compara " , ai_obj['account_id'][0], " amb ",ACC_DEVOLUTIONS
         if ai_obj['account_id'][0] == ACC_DEVOLUTIONS:
             raise Exception("Hi ha almenys una factura amb el compte devolucions")
         if gff_obj['tipo_rectificadora'] == 'B':
@@ -159,10 +155,11 @@ def do(O, contract_name):
     ap = O.AccountPeriod
     pl = O.PaymentLine
     po = O.PaymentOrder
+    pm = O.PaymentMode
 
     contract_id = contractId(gp, contract_name)
-    remesa_pagament = paymentOrderId(po, args['remesa_pagament'], 'payable')
-    remesa_cobrament = paymentOrderId(po, args['remesa_cobrament'], 'receivable')
+    remesa_pagament = getPaymentOrder(po, pm, 'payable')
+    remesa_cobrament = getPaymentOrder(po, pm, 'receivable')
 
     invoices_gisce, total = facturesObertesDelContracte(ai, gff, contract_name)
 
