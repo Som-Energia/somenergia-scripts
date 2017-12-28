@@ -105,7 +105,7 @@ for pol_id in pol_ids:
             
             #Validem a veure si ja no hi ha el problema
             validar_canvis([pol_id])
-            pol_ids_v1 = buscar_errors_lot_ids("incompleta")
+            pol_ids_v1 = buscar_errors_lot_ids([('status','like',"incompleta")])
             if not(pol_id in pol_ids_v1):
                 print "S'ha resolt. Posant una lectura mes en el comptador d'alta"
                 canvi_comptador.append(pol_id)

@@ -45,7 +45,7 @@ def get_detained():
     lectures_massa_diferencia = []
     error_al_comptador_inactiu = []
 
-    pol_ids = buscar_errors_lot_ids("La lectura actual és inferior a l'anterior")
+    pol_ids = buscar_errors_lot_ids([('status','like',"La lectura actual és inferior a l'anterior")])
     pol_ids = sorted(list(set(pol_ids)))
 
     #Comptadors visuals
