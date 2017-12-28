@@ -32,33 +32,33 @@ def paymentOrderId(po, po_name, po_type):
         raise Exception("La remesa no existeix o no es del tipus ", po_type)
 
 def getPaymentOrder(po, po_type):
-      """
-        Searches an existing payment order (remesa)
-        with the proper payment mode and still in draft.
-        """
-        if po_type == 'payable':
-            mode_name = 'AGRUPACIONS pagar'
-        else:
-            mode_name = 'AGRUPACIONS cobrar'
+    """
+    Searches an existing payment order (remesa)
+    with the proper payment mode and still in draft.
+    """
+    if po_type == 'payable':
+        mode_name = 'AGRUPACIONS pagar'
+    else:
+        mode_name = 'AGRUPACIONS cobrar'
 
-        PaymentMode = self.pool.get('payment.mode')
-        payment_mode_ids = PaymentMode.search(cursor, uid, [
-            ('name', '=', mode_name),
-            ])
+    PaymentMode = self.pool.get('payment.mode')
+    payment_mode_ids = PaymentMode.search(cursor, uid, [
+        ('name', '=', mode_name),
+        ])
 
-        if not payment_mode_ids:
-            raise Exception("La remesa d'agrupació tipus '", po_tytpe, "' no existeix")
+    if not payment_mode_ids:
+        raise Exception("La remesa d'agrupació tipus '", po_tytpe, "' no existeix")
 
-        PaymentOrder = self.pool.get('payment.order')
-        payment_orders = PaymentOrder.search(cursor, uid, [
-            ('mode', '=', payment_mode_ids[0]),
-            ('state', '=', 'draft'),
-            ])
-        if payment_orders:
-            return payment_orders[0]
+    PaymentOrder = self.pool.get('payment.order')
+    payment_orders = PaymentOrder.search(cursor, uid, [
+        ('mode', '=', payment_mode_ids[0]),
+        ('state', '=', 'draft'),
+        ])
+    if payment_orders:
+        return payment_orders[0]
 
-        raise Exception("La remesa d'agrupacions no està creada")
-        #TODO: Futur get_or_create_payment_order
+    raise Exception("La remesa d'agrupacions no està creada")
+    #TODO: Futur get_or_create_payment_order
 
 def facturesObertesDelContracte(ai, gff, contract_name):
     invoices = ai.search([('name', '=', contract_name),('state','=','open')])
@@ -151,20 +151,7 @@ def fixIBANPaymentOrder(gp, pl, polissa_id, order_id):
             if polissa.bank.id != line.bank_id.id:
                 pl.write(line_id, {'bank_id': polissa.bank.id})
 
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description='Grouping invoices')
-    parser.add_argument('-c', '--contracte')
-    args = vars(parser.parse_args())
-    contract_name = args['contracte']
-
-    O = None
-    try:
-        O = OOOP(**configdb.ooop)
-    except:
-        error("Unable to connect to ERP")
-        raise
-
+def do(O, contract_name):
     ai = O.AccountInvoice
     gp = O.GiscedataPolissa
     gff = O.GiscedataFacturacioFactura
@@ -195,5 +182,22 @@ if __name__ == "__main__":
 
     wizardFacturesARemesa(invoices_gisce, order_id)
     fixIBANPaymentOrder(gp, pl, contract_id, order_id)
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description='Grouping invoices')
+    parser.add_argument('-c', '--contracte')
+    args = vars(parser.parse_args())
+    contract_name = args['contracte']
+
+    O = None
+    try:
+        O = OOOP(**configdb.ooop)
+    except:
+        error("Unable to connect to ERP")
+        raise
+
+    do(O, contract_name)
+
 
 # vim: et ts=4 sw=4
