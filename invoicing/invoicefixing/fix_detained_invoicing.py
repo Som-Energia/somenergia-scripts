@@ -22,7 +22,7 @@ cups_obj = O.GiscedataCupsPs
 partner_obj = O.ResPartner
 
 contracts_max = 5
-invoices_max = 6
+invoices_max = 16
 
 dif_maxima = 55
 euro_max = 1000
@@ -262,7 +262,10 @@ print 'Pending contracts ', len(contracts)
 n=0
 print contracts
 # Fix contracts
+contracts_ko = []
+contracts_ok = []
 for contract_name in contracts:
+    contracts_ko.append(contract_name)
     start_date = None
     end_date = None
 
@@ -350,13 +353,26 @@ for contract_name in contracts:
 
     # Deliver invoices
     sent = openAndSend(contract_id)
+    grouped = False
     if sent:
         print "Factures de la polissa %s enviades" % contract_name
         try:#Group invoices and put it in a payment_order
-            groupInvoices(O, contract_name)
+            grouped = groupInvoices(O, contract_name)
         except Exception as e:
             print "No s'ha pogut agrupar la factura ni posar-la a la remesa", contract_name, "Error: ", e
             continue
+
+    if sent and grouped and o:
+        print ">Resultat ok"
+        contracts_ok.append(contract_name)
+        contracts_ko.remove(contract_name)
+    else:
+        print ">Resultat ko"
+
+print "Polisses que hem acabat la refacturació correctament:"
+print contracts_ok
+print "Polisses que no s'han arreglat:"
+print contracts_ko
 
 show_param_conf(contracts_max,invoices_max,
                     dif_maxima,
