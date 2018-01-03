@@ -2,6 +2,7 @@ import sys
 import getopt
 from ooop import OOOP
 import configdb
+from datetime import timedelta, date
 
 O=OOOP(**configdb.ooop)
 
@@ -34,6 +35,8 @@ def main(argv):
         # Update cups with previous history based calculation
         cups_search = [('conany_origen','=','lectures')]
     cups_search += [('id','in',contracts_cups_id)]
+    year_ago = (date.today()-timedelta(days=100)).strftime("%Y-%m-%d")
+    cups_search += [('conany_data','<',year_ago)]
     toupdate_cups_id=O.GiscedataCupsPs.search(cups_search)
 
     print "CUPS to be updated", len(toupdate_cups_id)
@@ -41,7 +44,8 @@ def main(argv):
         try:
             O.GiscedataCupsPs.omple_consum_anual_xmlrpc(cups_id)
         except Exception as e:
-            failed.append(('cupsupdate',cups_id,str(e)))
+            failed.append(('cupsupdate',cups_id,e))#str(e)))
+            continue
 
     print "Failed ", failed
 
