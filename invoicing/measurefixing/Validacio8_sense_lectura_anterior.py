@@ -82,7 +82,9 @@ Polisses amb situació normal. Fa menys de 40 dies d'ultima lectura. TOTAL {len_
         - D'aquests, un quants no lectura de tall. TOTAL:  {len_un_comptador_sense_lectura_tall}. Polisses: {un_comptador_sense_lectura_tall}
     - Casos que NO tenen M105.TOTAL: {len_sense_m105}. Polisses: {sense_m105}
 
-- Sense comptador de baixa. TOTAL {len_multiples_comptadors_actius}
+- Múltiples comptador actius. TOTAL {len_multiples_comptadors_actius}
+    - #cas 1: Els que tenen un comptador d'activa i un de reactiva
+    - #cas 2: Els que tenen un comptador sense lectures
     - Polisses: {multiples_comptadors_actius}
 
 - S'han d'analitzar més. TOTAL {len_final}
