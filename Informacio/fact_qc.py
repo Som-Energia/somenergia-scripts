@@ -281,12 +281,5 @@ print "\nFactures" + "_"*76
 
 print "\nReclamacions" + "_"*76
 
-print "\nValidacio" + "_"*76
-validacio_facturacio(lot_id_actual)
-
-print "\nImportacions F1" + "_"*76
-data_carrega = '2010-01-01'
-importacions_f1(data_carrega)
-
 
 

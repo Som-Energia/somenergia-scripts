@@ -191,7 +191,7 @@ for pol_id in pol_ids:
                     ])
                 if lectF_ids:
                     info("Te lectura inicial del contracte en les lectures facturables")
-                    step("Hem d'analitzar amb més profunditat aquests casos")
+                    step("--> Hem d'analitzar amb més profunditat aquests casos")
                     res.un_comptador_sense_mod_amb_lectura_inicial_facturable.append(pol_id)
                     continue #next polissa
                 info("No te lectura inicial del contracte en les lectures facturables")
@@ -202,7 +202,7 @@ for pol_id in pol_ids:
                     ])
                 if not lect_pool_ids:
                     info("No te lectura inicial del contracte en les lectures de pool")
-                    step("Hem d'analitzar amb més profunditat aquests casos")
+                    step("--> Hem d'analitzar amb més profunditat aquests casos")
                     res.un_comptador_sense_mod_sense_lectura_inicial_a_pool.append(pol_id)
                     continue #next polissa
                 info("Te lectural inicial del contracte en les lectures de pool")

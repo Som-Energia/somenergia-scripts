@@ -2,15 +2,20 @@
 # -*- coding: utf-8 -*-
 from ooop import OOOP
 import configdb
-from datetime import datetime,timedelta
- 
-O = OOOP(**configdb.ooop)
+from datetime import datetime,timedelta,date
 
+O = None
+
+def lazyOOOP():
+    global O
+    if O: return
+    O = OOOP(**configdb.ooop)
 
 #Constants
 MIN_DIES_FACT = 25
 
 def buscar_errors_lot_ids(search_vals):
+    lazyOOOP()
     clot_obj = O.GiscedataFacturacioContracte_lot
     lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])[0]
     search_vals += [('lot_id','=',lot_id)]
@@ -19,7 +24,21 @@ def buscar_errors_lot_ids(search_vals):
     pol_ids = sorted(list(set([clot_read['polissa_id'][0] for clot_read in clot_reads])))
     return pol_ids
 
+def polissaHasError(pol_id, text):
+    # TODO: test and use it instead buscar_errors_lot_ids with single polissa
+    lazyOOOP()
+    clot_obj = O.GiscedataFacturacioContracte_lot
+    lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])[0]
+    search_vals = [
+        ('status','like',text),
+        ('lot_id','=',lot_id),
+        ('polissa_id','=',pol_id),
+        ]
+    clot_ids = clot_obj.search(search_vals)
+    return bool(clot_ids)
+
 def validar_canvis(pol_ids):
+    lazyOOOP()
     clot_obj = O.GiscedataFacturacioContracte_lot
     lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])[0]
     search_vals = [('polissa_id','in',pol_ids),('lot_id','=',lot_id)]
@@ -27,6 +46,7 @@ def validar_canvis(pol_ids):
     clot_obj.wkf_obert(clot_ids,{})
 
 def endarrerides(clot_ids):
+    lazyOOOP()
     clot_obj = O.GiscedataFacturacioContracte_lot
     pol_obj = O.GiscedataPolissa
     pol_ids = [a['polissa_id'][0] for a in clot_obj.read(clot_ids,['polissa_id'])]
@@ -34,6 +54,7 @@ def endarrerides(clot_ids):
     return endarrerides
 
 def facturar_manual(pol_ids):
+    lazyOOOP()
     #Objectes
     facturador_obj = O.GiscedataFacturacioFacturador
     factura_obj = O.GiscedataFacturacioFactura
@@ -84,6 +105,7 @@ def facturar_manual(pol_ids):
     return data_fi
     
 def carregar_lectures_from_pool(pol_ids):
+    lazyOOOP()
     for pol_id in pol_ids:
         comptadors_ids = O.GiscedataLecturesComptador.search([('polissa','=',pol_id)])
         if comptadors_ids == []: #Evitar error no té lectures
@@ -95,9 +117,13 @@ def carregar_lectures_from_pool(pol_ids):
     return 
     
 def adelantar_polissa_endarerida(pol_ids):
+    lazyOOOP()
     polissa_endarerida = []
     for pol_id in pol_ids:
+        print "[-] Carregant lectures a pool", pol_id
         carregar_lectures_from_pool([pol_id])
+
+        print "[-] Facturant manualment"
         data_ultima_lectura_futura = facturar_manual([pol_id])
         if not data_ultima_lectura_futura: continue
         data_limit_facturacio = datetime.strftime((datetime.today() - timedelta(MIN_DIES_FACT)),"%Y-%m-%d")
@@ -107,7 +133,8 @@ def adelantar_polissa_endarerida(pol_ids):
     return
 
 def enviar_correu(pol_id, template_id, from_id, src_model):
-    print "mail enviat a la polissa{pol_id}".format(**locals())
+    lazyOOOP()
+    print "mail enviat a la polissa: {pol_id}".format(**locals())
     ctx = {'active_ids': [pol_id],'active_id': pol_id,
             'template_id': template_id, 'src_model': src_model,
             'src_rec_ids': [pol_id], 'from': from_id}
@@ -115,11 +142,32 @@ def enviar_correu(pol_id, template_id, from_id, src_model):
     wz_id = O.PoweremailSendWizard.create(params, ctx)
     O.PoweremailSendWizard.send_mail([wz_id], ctx)
 
+def enviar_correu_actualitzacio_facturacio_endarrerida(pol_ids):
+    lazyOOOP()
+    pol_obj = O.GiscedataPolissa
+    days = 50
+    for pol_id in pol_ids:
+        pol_read = pol_obj.read(pol_id,
+            ['data_ultima_lectura',
+            'data_alta',
+            ])
+        print pol_id
+        data_pol = pol_read['data_ultima_lectura'] or pol_read['data_alta']
+        data_ref = str(date.today()-timedelta(days=days))
+        if data_pol < data_ref:
+            #TODO: not id references, search for name?
+            enviar_correu(pol_id,71,8,'giscedata.polissa')
+        else:
+            print "No cal enviar el correu de facturació endarrerida"
+    return
+ 
 def es_cefaco(pol_id):
+    lazyOOOP()
     pol_read = O.GiscedataPolissa.read(pol_id,['category_id'])
     return bool(set(pol_read['category_id']) & set([1,3,5,6,7,8,9,14,15,21,]))
     
 def copiar_lectures(lectura_id):
+    lazyOOOP()
     ctx = {'active_id': lectura_id}
     wiz_id = O.WizardCopiarLecturaPoolAFact.create({},ctx)
     O.WizardCopiarLecturaPoolAFact.action_copia_lectura([wiz_id], ctx)
@@ -135,6 +183,7 @@ def activar_modcon(pol_id, data_final):
     :param password: Password to connect
     :return:
     '''
+    lazyOOOP()
     search = [('polissa_id', '=', pol_id)]
     modcon_obj = O.GiscedataPolissaModcontractual
     mod_contractuals = modcon_obj.search(
@@ -169,6 +218,7 @@ def activar_modcon(pol_id, data_final):
         
                 
 def reimportar_ok(linia_id):
+    lazyOOOP()
     import time
     lin_obj = O.GiscedataFacturacioImportacioLinia
     info_inicial = lin_obj.read([linia_id],['info'])[0]['info']
