@@ -203,12 +203,16 @@ for pol_id in pol_ids:
                     ('comptador','=',comp_ids[0]),
                     ('name','=',data_alta),
                     ])
+                lect_pool_read = lectP_obj.read(lect_pool_ids,['origen_id'])
                 if not lect_pool_ids:
                     info("No te lectura inicial del contracte en les lectures de pool")
                     step("--> Hem d'analitzar amb més profunditat aquests casos")
                     res.un_comptador_sense_mod_sense_lectura_inicial_a_pool.append(pol_id)
                     continue #next polissa
-                info("Te lectural inicial del contracte en les lectures de pool")
+                _, origen = lect_pool_read[0].get('origen_id',(False, 'Sin origen' ))
+                info("Te lectural inicial del contracte en les lectures de pool. Origen: {}".format(origen))
+                if origen.lower() == "estimada":
+                    warn("Lectura Estimada!!!!")
 
                 if doit:
                     step("Copiem la lectura")
