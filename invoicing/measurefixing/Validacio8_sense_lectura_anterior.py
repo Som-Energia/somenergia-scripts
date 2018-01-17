@@ -34,6 +34,15 @@ m105_obj = O.model('giscedata.switching.m1.05')
 #constants:
 lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])
 avui_40 = datetime.strftime(datetime.today() - timedelta(40),"%Y-%m-%d")
+search_vals = [
+    ('status','like',u'No t\xe9 lectura anterior'),
+    ('status','not like',u'No t\xe9 lectures entrades'),
+    ('status','not like',u'incompleta'),
+    ('status','not like',u'volta de comptador'),
+    ('status','not like',u'Falta Lectura de tancament'),
+    ('status','not like',u'maxímetre'),
+    ('status','not like',u"La lectura actual és inferior a l'anterior"),
+    ]
 
 #Inicicialitzadors
 res = ns()
@@ -100,6 +109,17 @@ Polisses amb situació normal. Fa menys de 40 dies d'ultima lectura. TOTAL {len_
     - Polisses: {errors}
 ============================================================================
 """
+def isSolved(pol_id, search_vals):
+    if not doit:
+        warn("Resultat simulat")
+        return True
+    return isSolvedByMessage(pol_id, search_vals)
+
+def isSolvedByMessage(pol_id, search_vals):
+    # TODO: Use single polissa functions to speed up
+    validar_canvis([pol_id])
+    polissa_ids = buscar_errors_lot_ids(search_vals)
+    return pol_id not in polissa_ids
 
 def resum(result):
     result.update((
@@ -217,7 +237,7 @@ for pol_id in pol_ids:
                 if doit:
                     step("Copiem la lectura")
                     copiar_lectures(lect_pool_ids[0])
-                    if isSolved(pol_id):
+                    if isSolved(pol_id, search_vals):
                         success("Polissa validada. Copiant la lectura hem resolt el problema")
                         res.resolta_un_comptador_sense_mod_lectura_copiada.append(pol_id)
                         continue #next polissa
