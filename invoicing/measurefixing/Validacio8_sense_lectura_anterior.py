@@ -33,6 +33,7 @@ m105_obj = O.model('giscedata.switching.m1.05')
 
 #constants:
 lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])
+avui_40 = datetime.strftime(datetime.today() - timedelta(40),"%Y-%m-%d")
 
 #Inicicialitzadors
 res = ns()
