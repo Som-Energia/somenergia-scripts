@@ -269,7 +269,7 @@ for pol_id in pol_ids:
                 data_activacio = m105_obj.read(m105_id,[
                     'data_activacio',
                     ])['data_activacio']
-
+                #TODO: If multiple M1, stop
                 info("Hem fet {} M1. Data activacio: {}".format(len(sw_ids),data_activacio))
 
                 lectF_post_ids = lectF_obj.search([
