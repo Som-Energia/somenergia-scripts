@@ -145,7 +145,6 @@ search_vals = [
 pol_ids = buscar_errors_lot_ids(search_vals)
 validar_canvis(pol_ids)
 pol_ids = buscar_errors_lot_ids(search_vals)
-avui_40 = datetime.strftime(datetime.today() - timedelta(40),"%Y-%m-%d")
 pol_ids = pol_obj.search([
     ('id','in',pol_ids),
     ('data_alta','<',avui_40),
@@ -223,14 +222,14 @@ for pol_id in pol_ids:
                     ('comptador','=',comp_ids[0]),
                     ('name','=',data_alta),
                     ])
-                lect_pool_read = lectP_obj.read(lect_pool_ids,['origen_id'])
                 if not lect_pool_ids:
                     info("No te lectura inicial del contracte en les lectures de pool")
                     step("--> Hem d'analitzar amb més profunditat aquests casos")
                     res.un_comptador_sense_mod_sense_lectura_inicial_a_pool.append(pol_id)
                     continue #next polissa
+                lect_pool_read = lectP_obj.read(lect_pool_ids,['origen_id'])
                 _, origen = lect_pool_read[0].get('origen_id',(False, 'Sin origen' ))
-                info("Te lectural inicial del contracte en les lectures de pool. Origen: {}".format(origen))
+                info("Te lectural inicial del contracte en les lectures de pool. ")
                 if origen.lower() == "estimada":
                     warn("Lectura Estimada!!!!")
 
