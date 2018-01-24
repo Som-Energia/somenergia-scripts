@@ -249,8 +249,10 @@ for pol_id in pol_ids:
                     continue #next polissa
 
             if len(pol_read['modcontractuals_ids'])>1:
+                #TODO: we have to re-think it. The code doesn't do that we want
                 info( "Aquest contracte te {} modificacions contractuals".format(len(pol_read['modcontractuals_ids'])))
                 res.un_comptador_multiples_mod.append(pol_id)
+                continue
 
                 sw_ids = sw_obj.search([
                     ('cups_id','=',pol_read['cups'][0]),
