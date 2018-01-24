@@ -252,7 +252,6 @@ for pol_id in pol_ids:
                 #TODO: we have to re-think it. The code doesn't do that we want
                 info( "Aquest contracte te {} modificacions contractuals".format(len(pol_read['modcontractuals_ids'])))
                 res.un_comptador_multiples_mod.append(pol_id)
-                continue
 
                 sw_ids = sw_obj.search([
                     ('cups_id','=',pol_read['cups'][0]),
@@ -272,6 +271,7 @@ for pol_id in pol_ids:
                     ])['data_activacio']
                 #TODO: If multiple M1, stop
                 info("Hem fet {} M1. Data activacio: {}".format(len(sw_ids),data_activacio))
+                continue #TODO: remove it, when we code well
 
                 lectF_post_ids = lectF_obj.search([
                     ('comptador','=',comp_ids[0]),
