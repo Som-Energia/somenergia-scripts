@@ -117,7 +117,7 @@ measurefixing:
       description: 
 
     cierremejorado:
-      script: SOME_SRC/somenergia-scripts/invoicing/measurefixing/Validacio7_tancament_millorat.py
+      script: SOME_SRC/somenergia-scripts/invoicing/measurefixing/Validacio7_tancament_millorat.py --doit
       title: Corregir lectures de tancament de comptadors (millorat)
       description: 
 
