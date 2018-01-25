@@ -111,14 +111,9 @@ measurefixing:
       title: Corregir lectures que estan incompletes
       description: 
 
-    lecturacierre:
-      script: SOME_SRC/somenergia-scripts/invoicing/measurefixing/Validacio6_lectura_tancament.py
-      title: Corregir lectures de tancament de comptadors (passar-lo fins que no l'ajuntem amb l'altre)
-      description: 
-
     cierremejorado:
       script: SOME_SRC/somenergia-scripts/invoicing/measurefixing/Validacio7_tancament_millorat.py --doit
-      title: Corregir lectures de tancament de comptadors (millorat)
+      title: Corregir lectures de tancament de comptadors
       description: 
 
     senselectureanterior:
