@@ -52,6 +52,8 @@ res.cefaco= []
 res.errors = []
 res.final = []
 res.un_comptador_sense_mod_amb_lectura_inicial_a_pool_no_resolta = []
+res.data_alta_un_dia_despres_de_primera_lectura = []
+res.data_alta_un_dia_abans_de_primera_lectura = []
 res.un_comptador_sense_mod_amb_lectura_inicial_facturable = []
 res.un_comptador_sense_mod_sense_lectura_inicial_a_pool = []
 res.un_comptador_multiples_mod = []
@@ -78,8 +80,13 @@ Polisses amb situació normal. Fa menys de 40 dies d'ultima lectura. TOTAL {len_
 
 # POLISSES NO RESOLTES. Filtrem per casos per facilitar l'anàlisi 
 - Només te un comptador i una modificacio de contracte. 
-    - Sense lectura inicial del contracte a pool. TOTAL: {len_un_comptador_sense_mod_sense_lectura_inicial_a_pool}
-        - Polisses: {un_comptador_sense_mod_sense_lectura_inicial_a_pool}
+    - Sense lectura inicial del contracte a pool en la data d'alta.
+        - Data alta un dia després de la primera lectura que tenim a pool. {len_data_alta_un_dia_despres_de_primera_lectura}
+            - Polisses: {data_alta_un_dia_despres_de_primera_lectura}
+        - Data alta un dia abans de la primera lectura que tenim a pool. {len_data_alta_un_dia_abans_de_primera_lectura}
+            - Polisses: {data_alta_un_dia_abans_de_primera_lectura}
+        - Per analitzar. TOTAL: {len_un_comptador_sense_mod_sense_lectura_inicial_a_pool}
+            - Polisses: {un_comptador_sense_mod_sense_lectura_inicial_a_pool}
     - Amb lectura inicial del contracte a lectures facturables. TOTAL: {len_un_comptador_sense_mod_amb_lectura_inicial_facturable}
         - Polisses: {un_comptador_sense_mod_amb_lectura_inicial_facturable}
     - Amb lectura inicial del contracte a pool pero no s'ha traspassat. TOTAL: {len_un_comptador_sense_mod_amb_lectura_inicial_a_pool_no_resolta}
@@ -224,6 +231,25 @@ for pol_id in pol_ids:
                     ])
                 if not lect_pool_ids:
                     info("No te lectura inicial del contracte en les lectures de pool")
+                    data_alta_menys_un_dia = str(isodate(data_alta)-timedelta(days=1))[:10]
+                    lect_pool_menys_un_dia_ids = lectP_obj.search([
+                        ('comptador','=',comp_ids[0]),
+                        ('name','=',data_alta_menys_un_dia),
+                        ])
+                    if lect_pool_menys_un_dia_ids:
+                        warn("La data d'alta és un dia més que la primera lectura")
+                        res.data_alta_un_dia_despres_de_primera_lectura.append(pol_id)
+                        continue #next polissa
+                    data_alta_mes_un_dia = str(isodate(data_alta)+timedelta(days=1))[:10]
+                    lect_pool_mes_un_dia_ids = lectP_obj.search([
+                        ('comptador','=',comp_ids[0]),
+                        ('name','=',data_alta_mes_un_dia),
+                        ])
+                    if lect_pool_mes_un_dia_ids:
+                        warn("La data d'alta és un dia abans que la primera lectura")
+                        res.data_alta_un_dia_abans_de_primera_lectura.append(pol_id)
+                        continue #next polissa
+
                     step("--> Hem d'analitzar amb més profunditat aquests casos")
                     res.un_comptador_sense_mod_sense_lectura_inicial_a_pool.append(pol_id)
                     continue #next polissa
