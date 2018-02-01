@@ -94,6 +94,7 @@ Polisses amb situació normal. Fa menys de 40 dies d'ultima lectura. TOTAL {len_
 
 
 - Només te un comptador i multiples modificacio de contracte. TOTAL {len_un_comptador_multiples_mod}
+    - Polisses: {un_comptador_multiples_mod}
     - Tenen un cas M105. TOTAL: {len_m105} Polisses: {m105}
         - D'aquests, un quants no lectura de tall. TOTAL:  {len_un_comptador_sense_lectura_tall}. Polisses: {un_comptador_sense_lectura_tall}
     - Casos que NO tenen M105.TOTAL: {len_sense_m105}. Polisses: {sense_m105}
