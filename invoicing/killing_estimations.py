@@ -6,11 +6,17 @@ from yamlns import namespace as ns
 from consolemsg import step, success, error, warn, color, printStdError
 from datetime import datetime, timedelta
 import random
+import sys
 
 step("Connectant a l'erp")
 O = Client(**configdb.erppeek)
 
 success("Connectat")
+
+doit = '--doit' in sys.argv
+success("l'estat del doit es {}".format(doit))
+
+per_round = 200
 
 
 #Objectes
@@ -64,8 +70,8 @@ def search_candidates_to_tg(distributors,measure_origins,days):
     random.shuffle(pol_ids)
     for counter,pol_id in enumerate(pol_ids):
 
-        if counter > 10:
-            break
+        if counter > per_round:
+            break;
 
         polissa = ns(pol_obj.read(pol_id,[
             "data_ultima_lectura",
@@ -130,7 +136,18 @@ def change_to_tg(pol_ids):
             "no_estimable":True,
         }
         res[pol_id] = changes
-        pol_obj.write(pol_id,changes)
+        if doit:
+            pol_obj.write(pol_id,changes)
+            warn("changed")
     return res
+
+def candidates_to_tg():
+    res = search_candidates_to_tg_default()
+    pol_ids = res.candidates
+    ret = change_to_tg(pol_ids)
+    return ret
+
+if __name__=='__main__':
+   res = candidates_to_tg()
 
 # vim: et ts=4 sw=4
