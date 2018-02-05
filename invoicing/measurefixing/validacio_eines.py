@@ -63,7 +63,6 @@ def facturar_manual(pol_ids):
     
     #Inicialitzadors
     polisses_names=[]
-    factures_ids = []
     factures_dobles = []
     err = []
     
@@ -77,6 +76,7 @@ def facturar_manual(pol_ids):
     
     for polissa_id in polissa_ids:
         data_fi = False
+        fact_ids = []
         try:
             polissa = pol_obj.get(polissa_id)
             #Només polisses amb un comptador actiu
@@ -92,8 +92,6 @@ def facturar_manual(pol_ids):
                         'journal_id': 5} #Diari d'energia (code=ENERGIA de AccountJournal)
                 fact_ids = facturador_obj.fact_via_lectures(polissa.id, False, context)
                 factura_obj.write(fact_ids,{'date_invoice': avui})
-                for fact_id in fact_ids:
-                    factures_ids.append(fact_id)
                 polisses_names.append(polissa.name)
                 if len(fact_ids)>1:
                     factures_dobles.append(dict(polissa_id,fact_ids))
@@ -102,7 +100,7 @@ def facturar_manual(pol_ids):
         except:
             print "polissa_id %d" % polissa_id
             err.append(polissa_id)
-    return data_fi
+    return data_fi, fact_ids
     
 def carregar_lectures_from_pool(pol_ids):
     lazyOOOP()
@@ -119,13 +117,16 @@ def carregar_lectures_from_pool(pol_ids):
 def adelantar_polissa_endarerida(pol_ids):
     lazyOOOP()
     polissa_endarerida = []
+    factures_ids = []
     try:
         for pol_id in pol_ids:
             print "[-] Carregant lectures a pool", pol_id
             carregar_lectures_from_pool([pol_id])
 
             print "[-] Facturant manualment"
-            data_ultima_lectura_futura = facturar_manual([pol_id])
+            data_ultima_lectura_futura, fact_ids = facturar_manual([pol_id])
+            if fact_ids:
+                factures_ids.extend(fact_ids)
             if not data_ultima_lectura_futura: continue
             data_limit_facturacio = datetime.strftime((datetime.today() - timedelta(MIN_DIES_FACT)),"%Y-%m-%d")
             if data_ultima_lectura_futura < data_limit_facturacio:
@@ -133,6 +134,7 @@ def adelantar_polissa_endarerida(pol_ids):
     except Exception, e:
         print str(e)
     print "polisses encara endarerides %s" % polissa_endarerida
+    print "Factures Generades. Total {}. Factures_ids: {}".format(len(factures_ids), factures_ids)
     return
 
 def enviar_correu(pol_id, template_id, from_id, src_model):
