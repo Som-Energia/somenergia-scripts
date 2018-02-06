@@ -113,6 +113,19 @@ def carregar_lectures_from_pool(pol_ids):
         wiz_id = O.GiscedataLecturesPoolWizard.create({},ctx)
         O.GiscedataLecturesPoolWizard.action_carrega_lectures([wiz_id], ctx)
     return 
+
+
+def polisses_de_factures(factura_ids):
+    factures = O.GiscedataFacturacioFactura.read(factura_ids, [
+        'polissa_id'
+        ])
+
+    return [
+        fact['polissa_id'][0]
+        for fact in factures
+        if fact['polissa_id']
+        ]
+
     
 def adelantar_polissa_endarerida(pol_ids):
     lazyOOOP()
@@ -135,7 +148,7 @@ def adelantar_polissa_endarerida(pol_ids):
         print str(e)
     print "polisses encara endarerides %s" % polissa_endarerida
     print "Factures Generades. Total {}. Factures_ids: {}".format(len(factures_ids), factures_ids)
-    return
+    return factures_ids
 
 def enviar_correu(pol_id, template_id, from_id, src_model):
     lazyOOOP()
