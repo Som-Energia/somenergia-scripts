@@ -16,7 +16,7 @@ success("Connectat")
 doit = '--doit' in sys.argv
 success("l'estat del doit es {}".format(doit))
 
-per_round = 200
+per_round = 500
 
 
 #Objectes
@@ -70,7 +70,7 @@ def search_candidates_to_tg(distributors,measure_origins,days):
     random.shuffle(pol_ids)
     for counter,pol_id in enumerate(pol_ids):
 
-        if counter > per_round:
+        if len(candidates) >= per_round:
             break;
 
         polissa = ns(pol_obj.read(pol_id,[
