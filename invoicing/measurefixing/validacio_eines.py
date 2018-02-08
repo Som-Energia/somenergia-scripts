@@ -8,20 +8,22 @@ O = None
 
 def lazyOOOP():
     global O
-    if O: return
+    if O: return O
     O = OOOP(**configdb.ooop)
+    return O
 
 #Constants
 MIN_DIES_FACT = 25
 
-def nextBatch():
+def currentBatch():
     lazyOOOP()
     Batch = O.GiscedataFacturacioLot
-    return Batch.search([
-        ('state','=','esborrany'),
-        ],
-        0, 1, 'data_inici')
+    return Batch.search([('state','=','obert')])[0]
 
+def delayedInvoicing():
+    batch_id = currentBatch()
+    invoiceInBatch_id = O.GiscedataFacturacioContracte_lot.search([('lot_id','=',batch_id)])
+    return endarrerides(invoiceInBatch_id)
 
 def buscar_errors_lot_ids(search_vals):
     lazyOOOP()

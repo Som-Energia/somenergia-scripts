@@ -2,28 +2,43 @@
 # -*- coding: utf8 -*-
 
 from validacio_eines import (
-    endarrerides,
     adelantar_polissa_endarerida,
     polisses_de_factures,
-    nextBatch,
+    delayedInvoicing,
+    lazyOOOP,
 )
-
 from consolemsg import step, fail, success
+from yamlns import namespace as ns
+
+# definitions
+O = lazyOOOP()
+Contract = O.GiscedataPolissa
+
+step("Cercant polisses endarrerides")
+polissaEndarrerida_ids = delayedInvoicing()
+
+polissaEndarrerida_ids_len = len(polissaEndarrerida_ids)
+step("Adelantant {} polisses",polissaEndarrerida_ids_len)
+for counter,pol_id in enumerate(polissaEndarrerida_ids):
+    polissa = ns(Contract.read(pol_id,[
+        'name',
+        'data_alta',
+        'tarifa',
+        'comptadors',
+        'data_ultima_lectura',
+        'lot_facturacio',
+        ]))
+
+    step("{}/{} polissa {} ",counter, polissaEndarrerida_ids_len, polissa.name)
 
 
-lots = [] # TODO: Cercar el seguent lot al obert
 
-lots = nextBatch()
-
-success("El Batch es {}", lots)
 
 
 fail("Este script no esta ni provado, revisa antes de ejecutar")
 
-step("Detectant polisses endarrerides")
-polissaEnraderida_ids = endarerides(lots)
-step("Adelantant {} polisses",len(polissaEnraderida_ids))
-factura_ids = adelantar_polissa_endarerida(polissaEnraderida_ids)
+factura_ids = adelantar_polissa_endarerida(polissaEndarrerida_ids)
+
 polissaFacturada_ids = polisses_de_factures(polissaFacturada_ids)
 step("Detectant sospitoses")
 
