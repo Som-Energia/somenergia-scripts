@@ -25,6 +25,12 @@ def delayedInvoicing():
     invoiceInBatch_id = O.GiscedataFacturacioContracte_lot.search([('lot_id','=',batch_id)])
     return endarrerides(invoiceInBatch_id)
 
+def draftContractInvoices(contract_id):
+    return O.GiscedataFacturacioFactura.search([
+        ('state','=','draft'),
+        ('polissa_id','=',contract_id),
+        ])
+
 def buscar_errors_lot_ids(search_vals):
     lazyOOOP()
     clot_obj = O.GiscedataFacturacioContracte_lot

@@ -6,8 +6,9 @@ from validacio_eines import (
     polisses_de_factures,
     delayedInvoicing,
     lazyOOOP,
+    draftContractInvoices,
 )
-from consolemsg import step, fail, success
+from consolemsg import step, fail, success, warn
 from yamlns import namespace as ns
 
 # definitions
@@ -29,13 +30,59 @@ polisses = Contract.read(polissaEndarrerida_ids,[
     'lot_facturacio',
     ])
 
+result = ns()
+result.contractsWithPreviousDraftInvoices=[]
+
 for counter,polissa in enumerate(polisses):
     polissa = ns(polissa)
     step("{}/{} polissa {} ",counter, polissaEndarrerida_ids_len, polissa.name)
 
+    # TODO: If existing draft invoices notify and continue
+    drafInvoice_ids = draftContractInvoices(polissa.id)
+    if drafInvoice_ids:
+        # TODO: Ask Johny whether to do something with them, may they are not such bad people
+        warn("El contracte {id} ja tenia {n} factures en esborrany", n=len(drafInvoice_ids), **polissa)
+        result.contractsWithPreviousDraftInvoices.append(polissa.id)
+
+    Wizard = O.WizardAvancarFacturacio
+    wizard_id = Wizard.create(dict(),
+        dict(
+            active_id = polissa.id,
+#            id = polissa.id,
+#            ids = [polissa.id],
+        ))
+    aWizard = Wizard.get(wizard_id)
+    print wizard_id
+    print aWizard
+
+    fail("Este script no esta ni provado, revisa antes de ejecutar")
+
+    print aWizard.data_inici
+    print aWizard.polissa_id
+    print aWizard.data_factura
+    print aWizard.data_ultima_lectura_original
+    print aWizard.journal_id
+    print aWizard.state
+    print aWizard.info
 
 
+    fail("Este script no esta ni provado, revisa antes de ejecutar")
 
+    aWizard.action_generar_factura()
+
+    drafInvoice_ids = draftContractInvoices(polissa.id)
+    print drafInvoice_ids
+
+    break
+    # TODO: Iteratively call the wizard
+    # TODO: Recover created draft invoice ids
+    # TODO: Draft invoice review
+    # TODO: If ko; notify, remove invoices?, and continue
+    # TODO: Send warning mail to user
+    # TODO: Open and send invoices
+
+
+success(result.dump())
 
 fail("Este script no esta ni provado, revisa antes de ejecutar")
 
