@@ -44,6 +44,7 @@ for counter,polissa in enumerate(polisses):
         warn("El contracte {id} ja tenia {n} factures en esborrany", n=len(drafInvoice_ids), **polissa)
         result.contractsWithPreviousDraftInvoices.append(polissa.id)
 
+    step("\tInstantiate wizard")
     Wizard = O.WizardAvancarFacturacio
     wizard_id = Wizard.create(dict(),
         dict(
@@ -68,16 +69,16 @@ for counter,polissa in enumerate(polisses):
 
     fail("Este script no esta ni provado, revisa antes de ejecutar")
 
+    step("\tThis should be a loop until no more invoices are created or failed")
     aWizard.action_generar_factura()
-
+    # TODO: If ko; notify, remove invoices?, and continue
+    
+    step("\tRecover created invoices")
     drafInvoice_ids = draftContractInvoices(polissa.id)
     print drafInvoice_ids
 
     break
-    # TODO: Iteratively call the wizard
-    # TODO: Recover created draft invoice ids
     # TODO: Draft invoice review
-    # TODO: If ko; notify, remove invoices?, and continue
     # TODO: Send warning mail to user
     # TODO: Open and send invoices
 
