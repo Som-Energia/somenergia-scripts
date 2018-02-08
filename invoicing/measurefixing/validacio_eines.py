@@ -14,6 +14,15 @@ def lazyOOOP():
 #Constants
 MIN_DIES_FACT = 25
 
+def nextBatch():
+    lazyOOOP()
+    Batch = O.GiscedataFacturacioLot
+    return Batch.search([
+        ('state','=','esborrany'),
+        ],
+        0, 1, 'data_inici')
+
+
 def buscar_errors_lot_ids(search_vals):
     lazyOOOP()
     clot_obj = O.GiscedataFacturacioContracte_lot

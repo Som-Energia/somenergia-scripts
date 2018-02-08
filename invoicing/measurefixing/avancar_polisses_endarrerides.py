@@ -2,24 +2,23 @@
 # -*- coding: utf8 -*-
 
 from validacio_eines import (
-    endarerides,
+    endarrerides,
     adelantar_polissa_endarerida,
     polisses_de_factures,
+    nextBatch,
 )
 
-from consolemsg import step as oldstep
-
-def step(msg, *args, **kwds):
-    oldstep(msg.format(*args, **kwds)
+from consolemsg import step, fail, success
 
 
-def fail(msg, *args, **kwds):
-    oldfail(msg.format(*args,**kwds)
+lots = [] # TODO: Cercar el seguent lot al obert
+
+lots = nextBatch()
+
+success("El Batch es {}", lots)
 
 
 fail("Este script no esta ni provado, revisa antes de ejecutar")
-
-lots = [] # TODO: Cercar el seguent lot al obert
 
 step("Detectant polisses endarrerides")
 polissaEnraderida_ids = endarerides(lots)
