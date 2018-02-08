@@ -19,16 +19,18 @@ polissaEndarrerida_ids = delayedInvoicing()
 
 polissaEndarrerida_ids_len = len(polissaEndarrerida_ids)
 step("Adelantant {} polisses",polissaEndarrerida_ids_len)
-for counter,pol_id in enumerate(polissaEndarrerida_ids):
-    polissa = ns(Contract.read(pol_id,[
-        'name',
-        'data_alta',
-        'tarifa',
-        'comptadors',
-        'data_ultima_lectura',
-        'lot_facturacio',
-        ]))
 
+polisses = Contract.read(polissaEndarrerida_ids,[
+    'name',
+    'data_alta',
+    'tarifa',
+    'comptadors',
+    'data_ultima_lectura',
+    'lot_facturacio',
+    ])
+
+for counter,polissa in enumerate(polisses):
+    polissa = ns(polissa)
     step("{}/{} polissa {} ",counter, polissaEndarrerida_ids_len, polissa.name)
 
 
