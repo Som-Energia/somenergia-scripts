@@ -1,21 +1,17 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-from ooop import OOOP
-import configdb
+from validacio_eines import (
+    lazyOOOP,
+    currentBatch,
+    endarrerides,
+)
 
-O = OOOP(**configdb.ooop)
-
-def endarrerides(clot_ids):
-    pol_ids = [a['polissa_id'][0] for a in clot_obj.read(clot_ids,['polissa_id'])]
-    endarrerides = pol_obj.search([('facturacio_endarrerida','=',True),('id','in',pol_ids)])
-    return endarrerides
+O = lazyOOOP()
 
 #Objectes
 clot_obj = O.GiscedataFacturacioContracte_lot
-lot_obj = O.GiscedataFacturacioLot
-pol_obj = O.GiscedataPolissa
 
-lot_id = lot_obj.search([('state','=','obert')])
+lot_id = currentBatch()
 
 total = clot_obj.search([('lot_id','=',lot_id)])
 finalitzats = clot_obj.search([('state','like','finalitzat'),

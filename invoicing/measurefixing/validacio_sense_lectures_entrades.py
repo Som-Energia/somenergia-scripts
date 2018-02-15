@@ -3,9 +3,15 @@
 from ooop import OOOP
 from datetime import datetime
 import configdb
-from validacio_eines import buscar_errors_lot_ids, es_cefaco
- 
-O = OOOP(**configdb.ooop)
+from validacio_eines import (
+    buscar_errors_lot_ids,
+    es_cefaco,
+    currentBatch,
+    lazyOOOP,
+    )
+
+
+O = lazyOOOP()
 
 #objectes
 clot_obj = O.GiscedataFacturacioContracte_lot
@@ -16,7 +22,7 @@ lectF_obj = O.GiscedataLecturesLectura
 mod_obj = O.GiscedataPolissaModcontractual
 
 #constants
-lot_id =  O.GiscedataFacturacioLot.search([('state','=','obert')])[0]
+lot_id = currentBatch()
 MIN_DIES_FACTURAR = 20
 
 #Taules

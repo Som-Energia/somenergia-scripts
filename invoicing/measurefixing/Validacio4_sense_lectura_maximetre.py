@@ -1,18 +1,18 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-from ooop import OOOP
-import configdb
 from datetime import datetime, timedelta
+from validacio_eines import (
+    currentBatch,
+    lazyOOOP,
+    )
 
-O = OOOP(**configdb.ooop)
+O = lazyOOOP()
 
 #Objectes
 pol_obj = O.GiscedataPolissa
 clot_obj = O.GiscedataFacturacioContracte_lot
-comp_obj = O.GiscedataLecturesComptador
 lect_fact_obj = O.GiscedataLecturesLectura
 mod_obj = O.GiscedataPolissaModcontractual
-imp_obj = O.GiscedataFacturacioImportacioLinia
 
 #Inicicialitzadors
 errors = []
@@ -20,14 +20,16 @@ tarifa_3_canviats = []
 tarifa_domestica = []
 domestica_iberdrola = []
 
-lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])[0]
+lot_id = currentBatch()
 
 
-clot_ids = clot_obj.search([('status','like',u'No t\xe9 lectura de max\xedmetre'),
-                            ('status','not like',u'No t\xe9 lectures entrades'),
-                            ('status','not like',u'No t\xe9 lectura anterior'),
-                            ('state','=','obert'),
-                            ('lot_id','=',lot_id)])
+clot_ids = clot_obj.search([
+    ('status','like',u'No t\xe9 lectura de max\xedmetre'),
+    ('status','not like',u'No t\xe9 lectures entrades'),
+    ('status','not like',u'No t\xe9 lectura anterior'),
+    ('state','=','obert'),
+    ('lot_id','=',lot_id),
+    ])
 clot_reads = clot_obj.read(clot_ids,['polissa_id'])
 pol_ids = [clot_read['polissa_id'][0] for clot_read in clot_reads]
 pol_ids = sorted(list(set(pol_ids)))

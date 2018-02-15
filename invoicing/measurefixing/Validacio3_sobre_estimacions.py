@@ -1,10 +1,14 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-from ooop import OOOP
-import configdb
-from validacio_eines import es_cefaco, validar_canvis, buscar_errors_lot_ids, copiar_lectures
+from validacio_eines import (
+    es_cefaco,
+    validar_canvis,
+    buscar_errors_lot_ids,
+    copiar_lectures,
+    lazyOOOP,
+    )
 
-O = OOOP(**configdb.ooop)
+O = lazyOOOP()
 
 #Objectes
 pol_obj = O.GiscedataPolissa

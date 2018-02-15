@@ -4,12 +4,12 @@ import os
 import signal
 from datetime import datetime, timedelta
 
-import configdb
-
-from ooop import OOOP
-from consolemsg import error
+from consolemsg import fail
 from utils import *
-from validacio_eines import adelantar_polissa_endarerida
+from validacio_eines import (
+    adelantar_polissa_endarerida,
+    lazyOOP,
+    )
 from display import *
 
 def check_contract(O, polissa_id, lects):
@@ -231,16 +231,10 @@ if __name__ == "__main__":
         return True
 
 
-    O = None
-    try:
-        O = OOOP(**configdb.ooop)
-    except:
-        error("Unable to connect to ERP")
-        raise
+    O = lazyOOP()
 
     if not contract_name:
-        error("Contracte name missing")
-        raise
+        fail("Contracte name missing")
 
     start_date = start_date if start_date and valid_date(start_date) else None
 
@@ -251,8 +245,7 @@ if __name__ == "__main__":
 
     old_measures = get_measures_by_contract(O, contract_id, range(1,12))
     if old_measures == []:
-        error("El compatador actiu no té mesures")
-        raise
+        fail("El compatador actiu no té mesures")
 
     new_measures = load_new_measures(O, contract_id)
     if old_measures[0]['origen_id'][0] not in [7,10,11]:

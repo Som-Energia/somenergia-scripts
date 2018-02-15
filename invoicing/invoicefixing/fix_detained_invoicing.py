@@ -1,7 +1,5 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-from ooop import OOOP
-import configdb
 from datetime import datetime,timedelta
 import sys
 
@@ -10,7 +8,7 @@ from fix_invoice import *
 from utils import *
 import group_invoice
 
-O = OOOP(**configdb.ooop)
+O = lazyOOOP()
 
 pol_obj = O.GiscedataPolissa
 clot_obj = O.GiscedataFacturacioContracte_lot

@@ -1,11 +1,16 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-from ooop import OOOP
-import configdb
 from datetime import datetime,timedelta
-from validacio_eines import buscar_errors_lot_ids, es_cefaco, validar_canvis, copiar_lectures
+from validacio_eines import (
+    buscar_errors_lot_ids,
+    es_cefaco,
+    validar_canvis,
+    copiar_lectures,
+    lazyOOOP,
+    currentBatch,
+    )
  
-O = OOOP(**configdb.ooop)
+O = lazyOOOP()
 
 #objectes
 comp_obj = O.GiscedataLecturesComptador
@@ -16,7 +21,7 @@ clot_obj = O.GiscedataFacturacioContracte_lot
 mod_obj = O.GiscedataPolissaModcontractual
 
 #constants
-lot_id =  O.GiscedataFacturacioLot.search([('state','=','obert')])[0]
+lot_id =  currentBatch()
 MIN_DIES_FACTURAR = 20
 
 #Taules

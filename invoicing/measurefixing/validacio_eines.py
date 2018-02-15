@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
+from erppeek import Client
 from ooop import OOOP
 import configdb
 from datetime import datetime,timedelta,date
@@ -32,9 +33,8 @@ def draftContractInvoices(contract_id):
         ])
 
 def buscar_errors_lot_ids(search_vals):
-    lazyOOOP()
+    lot_id = currentBatch()
     clot_obj = O.GiscedataFacturacioContracte_lot
-    lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])[0]
     search_vals += [('lot_id','=',lot_id)]
     clot_ids = clot_obj.search(search_vals)
     clot_reads = clot_obj.read(clot_ids,['polissa_id'])
@@ -45,7 +45,7 @@ def polissaHasError(pol_id, text):
     # TODO: test and use it instead buscar_errors_lot_ids with single polissa
     lazyOOOP()
     clot_obj = O.GiscedataFacturacioContracte_lot
-    lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])[0]
+    lot_id = currentBatch()
     search_vals = [
         ('status','like',text),
         ('lot_id','=',lot_id),
@@ -57,7 +57,7 @@ def polissaHasError(pol_id, text):
 def validar_canvis(pol_ids):
     lazyOOOP()
     clot_obj = O.GiscedataFacturacioContracte_lot
-    lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])[0]
+    lot_id = currentBatch()
     search_vals = [('polissa_id','in',pol_ids),('lot_id','=',lot_id)]
     clot_ids = clot_obj.search(search_vals)
     clot_obj.wkf_obert(clot_ids,{})
@@ -67,7 +67,10 @@ def endarrerides(clot_ids):
     clot_obj = O.GiscedataFacturacioContracte_lot
     pol_obj = O.GiscedataPolissa
     pol_ids = [a['polissa_id'][0] for a in clot_obj.read(clot_ids,['polissa_id'])]
-    endarrerides = pol_obj.search([('facturacio_endarrerida','=',True),('id','in',pol_ids)])
+    endarrerides = pol_obj.search([
+        ('facturacio_endarrerida','=',True),
+        ('id','in',pol_ids),
+        ])
     return endarrerides
 
 def facturar_manual(pol_ids):

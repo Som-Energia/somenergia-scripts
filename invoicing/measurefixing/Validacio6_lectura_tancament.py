@@ -3,25 +3,23 @@
 from ooop import OOOP
 import configdb
 from datetime import datetime, timedelta
-from validacio_eines import buscar_errors_lot_ids, es_cefaco
+from validacio_eines import (
+    buscar_errors_lot_ids,
+    es_cefaco,
+    lazyOOOP,
+    )
 
 #SCRIPT QUE SERVEIX PER DESBLOQUEJAR CASOS QUE NO TENEN LECTURA DE
 # TANCAMENT DEL COMPTADOR DE BAIXA
 
-O = OOOP(**configdb.ooop)
+O = lazyOOOP()
 
 #Objectes
 pol_obj = O.GiscedataPolissa
-clot_obj = O.GiscedataFacturacioContracte_lot
 comp_obj = O.GiscedataLecturesComptador
 lect_fact_obj = O.GiscedataLecturesLectura
 lect_pool_obj = O.GiscedataLecturesLecturaPool
-fact_obj = O.GiscedataFacturacioFactura
-cups_obj = O.GiscedataCupsPs
 mod_obj = O.GiscedataPolissaModcontractual
-
-#constants:
-
 
 #Inicicialitzadors
 cefaco= []
@@ -35,7 +33,6 @@ sense_lectures = []
 altres_casos = []
 sense_comptador_baixa = []
 sense_lectures_de_tall = []
-
 comptador_diferent_data_alta_baixa = []
 
 search_vals = [('status','like',"Falta Lectura de tancament amb data")]

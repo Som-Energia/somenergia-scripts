@@ -4,12 +4,12 @@ import os
 import signal
 from datetime import datetime, timedelta
 
-import configdb
-
-from ooop import OOOP
 from consolemsg import error
 from utils import *
-from validacio_eines import adelantar_polissa_endarerida
+from validacio_eines import (
+    adelantar_polissa_endarerida,
+    lazyOOOP,
+    )
 from display import *
 
 '''
@@ -187,12 +187,7 @@ if __name__ == "__main__":
     args = vars(parser.parse_args())
     contract_name = args['contracte']
 
-    O = None
-    try:
-        O = OOOP(**configdb.ooop)
-    except:
-        error("Unable to connect to ERP")
-        raise
+    O = lazyOOOP()
 
     do(O, contract_name)
 

@@ -2,8 +2,13 @@
 # -*- coding: utf-8 -*-
 from erppeek import Client
 from datetime import datetime, timedelta
-from validacio_eines import buscar_errors_lot_ids, es_cefaco, validar_canvis, copiar_lectures
-import configdb
+from validacio_eines import (
+    buscar_errors_lot_ids,
+    es_cefaco,
+    validar_canvis,
+    copiar_lectures,
+    lazyOOOP,
+    )
 from yamlns import namespace as ns
 from consolemsg import step, success, error, warn, color, printStdError
 import sys
@@ -23,17 +28,15 @@ def bigstep(message):
 doit = '--doit' in sys.argv
 
 step("Connectant a l'erp")
-O = Client(**configdb.erppeek)
+O = lazyOOOP()
 
 success("Connectat")
 
 
 #Objectes
 pol_obj = O.GiscedataPolissa
-clot_obj = O.GiscedataFacturacioContracte_lot
 comp_obj = O.GiscedataLecturesComptador
 sw_obj = O.GiscedataSwitching
-m105_obj = O.model('giscedata.switching.m1.05')
 lectF_obj = O.GiscedataLecturesLectura
 lectP_obj = O.GiscedataLecturesLecturaPool
 imp_obj = O.GiscedataFacturacioImportacioLinia

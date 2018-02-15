@@ -1,15 +1,16 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-from ooop import OOOP
-import configdb
 from datetime import datetime, timedelta
-from validacio_eines import copiar_lectures
+from validacio_eines import (
+    copiar_lectures,
+    lazyOOOP,
+    currentBatch,
+    )
 
-O = OOOP(**configdb.ooop)
+O = lazyOOOP()
 
 #Objectes
 clot_obj = O.GiscedataFacturacioContracte_lot
-lot_obj = O.GiscedataFacturacioLot
 pol_obj = O.GiscedataPolissa
 lectP_obj = O.GiscedataLecturesLecturaPool
 lectF_obj = O.GiscedataLecturesLectura
@@ -18,7 +19,7 @@ comp_obj = O.GiscedataLecturesComptador
 control = []
 nomes_te_un_comptador = []
 
-lot_id = lot_obj.search([('state','=','obert')])[0]
+lot_id = currentBatch()
 
 
 comptador_inactius = clot_obj.search([('status','like','cap comptador actiu'),('lot_id','=',lot_id)])

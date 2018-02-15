@@ -1,18 +1,16 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-from ooop import OOOP
-import configdb
 from datetime import datetime
 from validacio_eines import buscar_errors_lot_ids, validar_canvis
 
 
-O = OOOP(**configdb.ooop)
+O = lazyOOOP()
 
 #Objectes
 pol_obj = O.GiscedataPolissa
 clot_obj = O.GiscedataFacturacioContracte_lot
 
-lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])[0]
+lot_id = currentBatch()
 
 def arreglar_31A(pol_ids):
     for pol_id in pol_ids:
@@ -29,7 +27,7 @@ def arreglar_baixes(pol_ids):
         if not(pol_read['active']) and pol_read['data_baixa']:
             print "Data de baixa: %s" % pol_read['data_baixa']
             clot_obj = O.GiscedataFacturacioContracte_lot
-            lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])[0]
+            lot_id = currentBatch()
             clot_id = clot_obj.search([('polissa_id','=',pol_id),
                                         ('lot_id','=',lot_id)])
             clot_obj.unlink(clot_id)

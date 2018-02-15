@@ -1,9 +1,15 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-from erppeek import Client
-from datetime import datetime, timedelta
-from validacio_eines import  es_cefaco, copiar_lectures, validar_canvis, buscar_errors_lot_ids
-import configdb
+from validacio_eines import (
+    es_cefaco,
+    copiar_lectures,
+    validar_canvis,
+    buscar_errors_lot_ids,
+    lazyOOOP,
+    currentBatch,
+    daysAgo,
+    daysAfter,
+    )
 from consolemsg import step, success, warn, color, printStdError, error
 import sys
 from yamlns import namespace as ns
@@ -18,7 +24,7 @@ def info(message):
 doit = '--doit' in sys.argv
 
 step("Connectant a l'erp") 
-O = Client(**configdb.erppeek)
+O = lazyOOOP()
 success("Connectat")
 
 #Objectes
