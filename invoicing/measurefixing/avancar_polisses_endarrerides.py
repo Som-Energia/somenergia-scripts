@@ -4,9 +4,10 @@
 from validacio_eines import (
     adelantar_polissa_endarerida,
     polisses_de_factures,
-    delayedInvoicing,
+    contractOutOfBatchDate,
     lazyOOOP,
     draftContractInvoices,
+    showContract,
 )
 from consolemsg import step, fail, success, warn
 from yamlns import namespace as ns
@@ -16,10 +17,12 @@ O = lazyOOOP()
 Contract = O.GiscedataPolissa
 
 step("Cercant polisses endarrerides")
-polissaEndarrerida_ids = delayedInvoicing()
+polissaEndarrerida_ids = contractOutOfBatchDate()
 
 polissaEndarrerida_ids_len = len(polissaEndarrerida_ids)
 step("Adelantant {} polisses",polissaEndarrerida_ids_len)
+
+polissaEndarrerida_ids = [6435]
 
 polisses = Contract.read(polissaEndarrerida_ids,[
     'name',
@@ -32,55 +35,65 @@ polisses = Contract.read(polissaEndarrerida_ids,[
 
 result = ns()
 result.contractsWithPreviousDraftInvoices=[]
+result.contractsWithError=[]
+
 
 for counter,polissa in enumerate(polisses):
     polissa = ns(polissa)
     step("{}/{} polissa {} ",counter, polissaEndarrerida_ids_len, polissa.name)
+    showContract(polissa.id)
 
-    # TODO: If existing draft invoices notify and continue
     drafInvoice_ids = draftContractInvoices(polissa.id)
     if drafInvoice_ids:
-        # TODO: Ask Johny whether to do something with them, may they are not such bad people
-        warn("El contracte {id} ja tenia {n} factures en esborrany", n=len(drafInvoice_ids), **polissa)
+        warn("El contracte {id} ja tenia {n} factures en esborrany",
+            n=len(drafInvoice_ids), **polissa)
         result.contractsWithPreviousDraftInvoices.append(polissa.id)
+        continue
 
     step("\tInstantiate wizard")
     Wizard = O.WizardAvancarFacturacio
-    wizard_id = Wizard.create(dict(),
-        dict(
-            active_id = polissa.id,
-#            id = polissa.id,
-#            ids = [polissa.id],
-        ))
-    aWizard = Wizard.get(wizard_id)
-    print wizard_id
-    print aWizard
+    wizcontext = dict(active_id = polissa.id)
+    aWizard = Wizard.create({}, wizcontext)
+
+    def debugWizard():
+        print 'polissa_id', aWizard.polissa_id
+        print 'data_inici', aWizard.data_inici
+        print 'data_factura', aWizard.data_factura
+        print 'data_ultima_lectura_original', aWizard.data_ultima_lectura_original
+        print 'state:', aWizard.state
+        print 'info:', aWizard.info
+
+    data_inici_anterior = None
+
+    while aWizard.data_inici != data_inici_anterior:
+
+        debugWizard()
+        data_inici_anterior = aWizard.data_inici
+
+        step("\tThis should be a loop until no more invoices are created or failed")
+        result = aWizard.action_generar_factura()
+
+        debugWizard()
+        ignoreme = raw_input("Pulsa return para seguir")
+
+    generatedInvoice_ids = draftContractInvoices(polissa.id)
+    success("\tGenerated: {}", generatedInvoice_ids)
+    Invoice = O.GiscedataFacturacioFactura
+
+    ko = True
+    step("TODO: Call the custom search for each invoice and set 'ko' if any fails" 
+
+    if ko:
+        step("\tRemoving created invoices")
+        Invoice.unlink(generatedInvoice_ids)
+        step("TODO: Anotate it as a failing case")
+    else:
+        step("TODO: if more than one send the warning email")
+        step("TODO: open and send all the invoices")
 
     fail("Este script no esta ni provado, revisa antes de ejecutar")
-
-    print aWizard.data_inici
-    print aWizard.polissa_id
-    print aWizard.data_factura
-    print aWizard.data_ultima_lectura_original
-    print aWizard.journal_id
-    print aWizard.state
-    print aWizard.info
-
-
-    fail("Este script no esta ni provado, revisa antes de ejecutar")
-
-    step("\tThis should be a loop until no more invoices are created or failed")
-    aWizard.action_generar_factura()
-    # TODO: If ko; notify, remove invoices?, and continue
-    
-    step("\tRecover created invoices")
-    drafInvoice_ids = draftContractInvoices(polissa.id)
-    print drafInvoice_ids
 
     break
-    # TODO: Draft invoice review
-    # TODO: Send warning mail to user
-    # TODO: Open and send invoices
 
 
 success(result.dump())

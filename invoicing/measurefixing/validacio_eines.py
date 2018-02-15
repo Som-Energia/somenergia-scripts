@@ -3,6 +3,7 @@
 from erppeek import Client
 import configdb
 from datetime import datetime,timedelta,date
+from consolemsg import fail, success
 
 O = None
 
@@ -21,7 +22,7 @@ def daysAgo(days, date=None):
         date = isodate(date)
     else:
         date = datetime.today()
-    return str(date - timedelta(days).date())
+    return str((date - timedelta(days)).date())
 
 def daysAfter(days, date=None):
     return daysAgo(-days, date)
@@ -34,10 +35,54 @@ def currentBatch():
     Batch = O.GiscedataFacturacioLot
     return Batch.search([('state','=','obert')])[0]
 
-def delayedInvoicing():
-    batch_id = currentBatch()
-    invoiceInBatch_id = O.GiscedataFacturacioContracte_lot.search([('lot_id','=',batch_id)])
-    return endarrerides(invoiceInBatch_id)
+def nextBatch():
+    lazyOOOP()
+    Batch = O.GiscedataFacturacioLot
+    found = Batch.search([
+        ('state','=','esborrany'),
+        ],
+        0, 1, 'data_inici')
+    if not found:
+        fail("No hi ha seguent lot creat")
+    return found[0]
+
+def showContract(pol_id):
+    lazyOOOP()
+    Contract = O.GiscedataPolissa
+    pol_read = Contract.read(pol_id,[
+        'name',
+        'data_alta',
+        'data_ultima_lectura',
+        'comptadors',
+        'modcontractuals_ids',
+        'tarifa',
+        'distribuidora',
+        'cups',
+        ])
+    success("""
+    Polissa: {name}
+    CUPS: {cups[1]}
+    Data ultima lectura: {data_ultima_lectura}
+""", **pol_read)
+
+
+def contractOutOfBatchDate():
+    """
+    Returns the contracts in the next batch
+    having data_ultima_lectura before the start of
+    the current batch (indeed with 6 days of buffer).
+    """
+    Batch = O.GiscedataFacturacioLot
+    batchStartDate = Batch.read(currentBatch(), ['data_inici'])['data_inici']
+    Contract = O.GiscedataPolissa
+    print "Batch start date", batchStartDate
+    print "Limit date", daysAgo(6,batchStartDate)
+    contract_ids = Contract.search([
+        ('lot_facturacio','=',nextBatch()),
+        ('data_ultima_lectura', '<', daysAgo(6,batchStartDate)),
+    ])
+    return contract_ids
+
 
 def draftContractInvoices(contract_id):
     return O.GiscedataFacturacioFactura.search([
