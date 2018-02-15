@@ -15,6 +15,20 @@ def lazyOOOP():
 #Constants
 MIN_DIES_FACT = 25
 
+
+def daysAgo(days, date=None):
+    if date:
+        date = isodate(date)
+    else:
+        date = datetime.today()
+    return str(date - timedelta(days).date())
+
+def daysAfter(days, date=None):
+    return daysAgo(-days, date)
+
+def isodate(adate):
+    return adate and datetime.strptime(adate,'%Y-%m-%d')
+
 def currentBatch():
     lazyOOOP()
     Batch = O.GiscedataFacturacioLot

@@ -38,8 +38,6 @@ sw_obj = O.GiscedataSwitching
 m105_obj = O.model('giscedata.switching.m1.05')
 
 #constants:
-lot_id = O.GiscedataFacturacioLot.search([('state','=','obert')])
-avui_40 = datetime.strftime(datetime.today() - timedelta(40),"%Y-%m-%d")
 search_vals = [
     ('status','like',u'No t\xe9 lectura anterior'),
     ('status','not like',u'No t\xe9 lectures entrades'),
@@ -142,9 +140,6 @@ def resum(result):
         ))
     print (resum_templ.format(**result))
 
-def isodate(adate):
-    return adate and datetime.strptime(adate,'%Y-%m-%d')
-
 step('Cerquem totes les polisses que no tenen lectura anterior')
 step('i que no tinguin altres problemes: incompleta, maximetre, tancament ni sobreestimacions')
 search_vals = [
@@ -161,7 +156,7 @@ validar_canvis(pol_ids)
 pol_ids = buscar_errors_lot_ids(search_vals)
 pol_ids = pol_obj.search([
     ('id','in',pol_ids),
-    ('data_alta','<',avui_40),
+    ('data_alta','<',daysAgo(40)),
     ])
 
 success("Polisses trobades")
@@ -204,7 +199,7 @@ for pol_id in pol_ids:
             warn("Aquest CUPS té un CX06")
             continue #next polissa
         
-        if avui_40 < pol_read['data_ultima_lectura']:
+        if daysAgo(40) < pol_read['data_ultima_lectura']:
             info("Aquesta polissa nomes fa 40 dies des de que el vem facturar. El descartem de l'estudi")
             res.casos_normals_canvi_comptador.append(pol_id)
             continue #next polissa
@@ -238,19 +233,17 @@ for pol_id in pol_ids:
                     ])
                 if not lect_pool_ids:
                     info("No te lectura inicial del contracte en les lectures de pool")
-                    data_alta_menys_un_dia = str(isodate(data_alta)-timedelta(days=1))[:10]
                     lect_pool_menys_un_dia_ids = lectP_obj.search([
                         ('comptador','=',comp_ids[0]),
-                        ('name','=',data_alta_menys_un_dia),
+                        ('name','=',daysAgo(1,data_alta)),
                         ])
                     if lect_pool_menys_un_dia_ids:
                         warn("La data d'alta és un dia més que la primera lectura")
                         res.data_alta_un_dia_despres_de_primera_lectura.append(pol_id)
                         continue #next polissa
-                    data_alta_mes_un_dia = str(isodate(data_alta)+timedelta(days=1))[:10]
                     lect_pool_mes_un_dia_ids = lectP_obj.search([
                         ('comptador','=',comp_ids[0]),
-                        ('name','=',data_alta_mes_un_dia),
+                        ('name','=',daysAfter(1,data_alta)),
                         ])
                     if lect_pool_mes_un_dia_ids:
                         warn("La data d'alta és un dia abans que la primera lectura")
@@ -347,9 +340,7 @@ for pol_id in pol_ids:
                 else:
                     info("Hem canviat la data de la modificació antiga al mateix dia que la data d'activacio: {data_activacio}".format(**locals()))                 
 
-                data_activacio_dt = isodate(data_activacio)
-                data_activacio_1 = datetime.strftime(
-                                    data_activacio_dt + timedelta(1),'%Y-%m-%d')
+                data_activacio_1 = daysAfter(1, data_activacio)
                 
                 mod_nova_ids = mod_obj.search([
                     ('id','in',pol_read['modcontractuals_ids']),
