@@ -1,7 +1,6 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 from erppeek import Client
-from ooop import OOOP
 import configdb
 from datetime import datetime,timedelta,date
 
@@ -10,7 +9,7 @@ O = None
 def lazyOOOP():
     global O
     if O: return O
-    O = OOOP(**configdb.ooop)
+    O = Client(**configdb.erppeek)
     return O
 
 #Constants
