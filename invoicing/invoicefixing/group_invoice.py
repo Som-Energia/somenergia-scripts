@@ -89,7 +89,7 @@ def wizardAgruparFactures(O, invoices_gisce, total):
            }
     wizard_id = O.WizardGroupInvoicesPayment.create({'amount_total': total , 'number_of_invoices': len(invoices_gisce),},ctx)
     wizard = O.WizardGroupInvoicesPayment.get(wizard_id)
-    wizard.group_invoices(ctx)
+    return wizard.group_invoices(ctx)
 
 def wizardFacturesARemesa(O, invoices_gisce, order_id):
     ctx_po = {
@@ -102,7 +102,7 @@ def wizardFacturesARemesa(O, invoices_gisce, order_id):
 
     wizard_id_po = O.WizardAfegirFacturesRemesa.create({'order': order_id},ctx_po)#TODO:Get or create remesa de pagament o cobrament
     wizard_po = O.WizardAfegirFacturesRemesa.get(wizard_id_po)
-    wizard_po.action_afegir_factures(ctx_po)
+    return wizard_po.action_afegir_factures(ctx_po)
 
 def conciliarFactures(ai, ap, aj, invoices_gisce):
     period_id = getPeriodId(ap)
@@ -146,6 +146,7 @@ def fixIBANPaymentOrder(gp, pl, polissa_id, order_id):
         if polissa.pagador.id == line.partner_id.id:
             if polissa.bank.id != line.bank_id.id:
                 pl.write(line_id, {'bank_id': polissa.bank.id})
+    return True
 
 def do(O, contract_name):
     ai = O.AccountInvoice
@@ -163,7 +164,7 @@ def do(O, contract_name):
 
     invoices_gisce, total = facturesObertesDelContracte(ai, gff, contract_name)
 
-    print "Total de factures agrupades: ", len(invoices_gisce)
+    print "Total de factures per agrupar: ", len(invoices_gisce)
     print "Balanç import total: ", total
 
     order_id = 0
@@ -174,11 +175,15 @@ def do(O, contract_name):
     elif total == 0:
         raise Exception("Cal 'Pagar grup de factures' a mà")
 
-    wizardAgruparFactures(O, invoices_gisce, total)
+    agrupades = wizardAgruparFactures(O, invoices_gisce, total)
     #fixIBANInvoice(gp, ai, contract_id, invoices_gisce)
+    print "Factures agrupades: ", invoices_gisce
 
-    wizardFacturesARemesa(O, invoices_gisce, order_id)
-    fixIBANPaymentOrder(gp, pl, contract_id, order_id)
+    remesades = wizardFacturesARemesa(O, invoices_gisce, order_id)
+    print "Factures afegides a la remesa ", order_id
+
+    output = fixIBANPaymentOrder(gp, pl, contract_id, order_id)
+    print "Result: ", output
 
 if __name__ == "__main__":
     import argparse
