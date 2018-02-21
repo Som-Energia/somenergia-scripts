@@ -26,7 +26,7 @@ comp_obj = O.GiscedataLecturesComptador
 
 #constants de modificació
 dies = 40
-versio = "v1.0"
+versio = "v1.1"
 distris = [
     '0021', # iberdrola
     #'0031', # endesa
