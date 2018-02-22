@@ -58,22 +58,43 @@ def getPaymentOrder(po, pm, po_type):
     raise Exception("La remesa d'agrupacions no està creada")
     #TODO: Futur get_or_create_payment_order
 
-def facturesObertesDelContracte(ai, gff, contract_name):
+def canviCompteDevolucions(ai, ai_obj):
+    rp = O.ResPartner
+    partner_id = ai_obj['partner_id'][0]
+    rp_obj = rp.read(partner_id)
+    aa = O.AccountAccount
+    ai.write(ai_obj['id'], {'account_id': rp_obj['property_account_receivable'][0]})
+
+def checkNotAllNormal(gff, gp, invoices, contract_name):
+    contract_id = contractId(gp, contract_name)
+    normal_invoices = gff.search([('state','=','open'), ('polissa_id','=',136154), ('tipo_rectificadora','=','N'), ('type','=','out_invoice')])
+    if len(normal_invoices) == len(invoices):
+        return False
+    else:
+        return True
+
+def facturesObertesDelContracte(ai, gff, contract_name, gp):
     invoices = ai.search([('name', '=', contract_name),('state','=','open')])
+
+    if not checkNotAllNormal(gff, gp, invoices, contract_name):
+        raise Exception("No hi ha abonadores o rectifidadores, s'ha d'agrupar a mà")
+
     invoices_gisce = []
     total = 0
     for i in invoices:
         gff_id = gff.search([('invoice_id','=',i)])
         invoices_gisce.append(gff_id[0])
-        gff_obj = gff.read(gff_id[0])
-        ai_obj = ai.read(i)
+        gff_obj = gff.read(gff_id[0], ['tipo_rectificadora'])
+        ai_obj = ai.read(i, ['account_id','amount_total','partner_id'])
         if ai_obj['account_id'][0] == ACC_DEVOLUTIONS:
-            raise Exception("Hi ha almenys una factura amb el compte devolucions")
-        if gff_obj['tipo_rectificadora'] == 'B':
+            canviCompteDevolucions(ai, ai_obj)
+        if gff_obj['tipo_rectificadora'] == 'B': #Anuladora amb substitució
             total = total - ai_obj['amount_total']
-        if gff_obj['tipo_rectificadora'] == 'R':
+        if gff_obj['tipo_rectificadora'] == 'A': #Anuladora abono
+            total = total - ai_obj['amount_total']
+        if gff_obj['tipo_rectificadora'] == 'R': #Rectificadora
             total = total + ai_obj['amount_total']
-        if gff_obj['tipo_rectificadora'] == 'N':
+        if gff_obj['tipo_rectificadora'] == 'N': #Normal
             total = total + ai_obj['amount_total']
 
     return invoices_gisce, total
@@ -88,8 +109,8 @@ def wizardAgruparFactures(O, invoices_gisce, total):
             'number_of_invoices': len(invoices_gisce),
            }
     wizard_id = O.WizardGroupInvoicesPayment.create({'amount_total': total , 'number_of_invoices': len(invoices_gisce),},ctx)
-    wizard = O.WizardGroupInvoicesPayment.get(wizard_id)
-    return wizard.group_invoices(ctx)
+    #wizard = O.WizardGroupInvoicesPayment.get(wizard_id) #Create return the wizard itself, not the ID
+    return wizard_id.group_invoices()
 
 def wizardFacturesARemesa(O, invoices_gisce, order_id):
     ctx_po = {
@@ -100,9 +121,9 @@ def wizardFacturesARemesa(O, invoices_gisce, order_id):
             'domain': [],
             }
 
-    wizard_id_po = O.WizardAfegirFacturesRemesa.create({'order': order_id},ctx_po)#TODO:Get or create remesa de pagament o cobrament
-    wizard_po = O.WizardAfegirFacturesRemesa.get(wizard_id_po)
-    return wizard_po.action_afegir_factures(ctx_po)
+    wizard_id = O.WizardAfegirFacturesRemesa.create({'order': order_id},ctx_po)#TODO:Get or create remesa de pagament o cobrament
+    #wizard_po = O.WizardAfegirFacturesRemesa.get(wizard_id) #Create return the wizard itself, not the ID
+    return wizard_id.action_afegir_factures()
 
 def conciliarFactures(ai, ap, aj, invoices_gisce):
     period_id = getPeriodId(ap)
@@ -162,7 +183,7 @@ def do(O, contract_name):
     remesa_pagament = getPaymentOrder(po, pm, 'payable')
     remesa_cobrament = getPaymentOrder(po, pm, 'receivable')
 
-    invoices_gisce, total = facturesObertesDelContracte(ai, gff, contract_name)
+    invoices_gisce, total = facturesObertesDelContracte(ai, gff, contract_name, gp)
 
     print "Total de factures per agrupar: ", len(invoices_gisce)
     print "Balanç import total: ", total
