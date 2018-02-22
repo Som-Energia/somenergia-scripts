@@ -8,7 +8,7 @@ from consolemsg import fail
 from utils import *
 from validacio_eines import (
     adelantar_polissa_endarerida,
-    lazyOOP,
+    lazyOOOP,
     )
 from display import *
 
@@ -231,7 +231,7 @@ if __name__ == "__main__":
         return True
 
 
-    O = lazyOOP()
+    O = lazyOOOP()
 
     if not contract_name:
         fail("Contracte name missing")
