@@ -9,7 +9,7 @@ from validacio_eines import (
     draftContractInvoices,
     showContract,
 )
-from consolemsg import step, fail, success, warn
+from consolemsg import step, fail, success, warn, error
 from yamlns import namespace as ns
 
 # definitions
@@ -23,7 +23,10 @@ polissaEndarrerida_ids = contractOutOfBatchDate()
 polissaEndarrerida_ids_len = len(polissaEndarrerida_ids)
 step("Adelantant {} polisses",polissaEndarrerida_ids_len)
 
-polissaEndarrerida_ids = [6435]
+polissaEndarrerida_ids = [
+    6435,
+    2017,
+]
 
 polisses = Contract.read(polissaEndarrerida_ids,[
     'name',
@@ -73,28 +76,33 @@ for counter,polissa in enumerate(polisses):
 
         step("\tGenerando factura para {}", aWizard.data_inici)
         aWizard.action_generar_factura()
-        step("\t\tState: {0.state}\n\t\tInfo: {0.info}",
+        step("State: {0.state}\nInfo:\n{0.info}",
             aWizard)
 
         if aWizard.state != 'init': break
-        ignoreme = raw_input("Pulsa return para siguiente factura")
 
     generatedInvoice_ids = draftContractInvoices(polissa.id)
-    success("\tGenerated: {}", generatedInvoice_ids)
+    success("\tFacturas generadas: {}", generatedInvoice_ids)
     Invoice = O.GiscedataFacturacioFactura
 
-    step("TODO: Call giscedata factura validation validator") 
+    #step("TODO: Call giscedata factura validation validator") 
+    Validator = O.GiscedataFacturacioValidationValidator
+    step("\tValidando facturas...")
+    validation_errors = [
+        Validator.validate_invoice(invoice_id) 
+        for invoice_id in generatedInvoice_ids
+        ]
+    step("\tValidation result {}", validation_errors)
+    ko = parame = any(validation_errors)
+    if ko:
+        error("Polissa que falla: {}", polissa.id)
     ko = True
-    step("\tTODO: Buscar en configuracion los validadores activos")
-    step("\tTODO: Pasarlos como parametro a la funcion que los pasa todos")
- 
-    ignoreme = raw_input("Pulsa return para seguir")
 
     if ko:
         step("\tAnotate it as a failing case")
         result.contractsWithError.append(polissa.id)
-        step("\tRemoving created invoices")
-        Invoice.unlink(generatedInvoice_ids)
+        step("\tRemoving created invoices {}", generatedInvoice_ids)
+        Invoice.unlink(generatedInvoice_ids, {})
         measures_ids = Measures.search([
             ('comptador','in', polissa.comptadors),
             ('name', '>', str(aWizard.data_ultima_lectura_original)),
@@ -105,13 +113,25 @@ for counter,polissa in enumerate(polisses):
     else:
         step("\tAnotate it as a forwarded case")
         result.contractsForwarded.append(polissa.id)
-        step("TODO: if more than one send the warning email")
-        step("TODO: open and send all the invoices in groups of 10")
+        #step("TODO: if more than one send the warning email")
+        #step("TODO: open and send all the invoices in groups of 10")
 
+    if parame:
+        ignoreme = raw_input("Pulsa return para siguiente contrato")
 
 success(result.dump())
 
-fail("Este script no esta ni provado, revisa antes de ejecutar")
+success(u"""\
+- Polisses avançades a data de lot:
+    - {contractsForwarded} 
+
+- Polisses que ja tenien factures en esborrany i s'han deixat
+    - {contractsWithPreviousDraftInvoices}
+
+- Polisses que no s'ha pogut validar les factures generades:
+    - {contractsWithError}
+""", **result)
+
 
 
 
