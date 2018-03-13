@@ -320,12 +320,9 @@ admin:
         id_remesa:
           description: Id remesa on posar el retorn dels títol (ex. 2349)
     assentamentsInterventors:
-      script: python SOME_SRC/somenergia-scripts/admin/descarregar_assentaments_comptables.py {year}
+      script: python SOME_SRC/somenergia-scripts/admin/descarregar_assentaments_comptables.py
       title: Puja al Drive els assentaments pels interventors
       description:
-      parameters:
-          year:
-            description: Any dels assentaments
 
 generation:
   description: Generació
