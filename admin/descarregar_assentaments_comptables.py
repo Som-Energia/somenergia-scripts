@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
-import StringIO
+import sys
 import psycopg2
 import psycopg2.extras
-import sys
 import csv
 import configdb
 import codecs
 import driveUtils
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 ## SYNTAX
 # descarregar_assentaments_comptables.py
 
-class MunicipalTaxesInvoicingReport:
+class MoveReport:
     def __init__(self, cursor):
         self.cursor = cursor
         pass
@@ -56,16 +57,31 @@ class MunicipalTaxesInvoicingReport:
                 haber = record[5]
                 writer.writerow([number, date, account, code, debe, haber])
 
-reload(sys)  
-sys.setdefaultencoding('utf8')
 
-try:
-    dbconn=psycopg2.connect(**configdb.psycopg)
-except Exception, ex:
-    print "Unable to connect to database " + configdb['DB_NAME']
-    raise ex
+def main(year):
+    reload(sys)  
+    sys.setdefaultencoding('utf8')
 
-m = MunicipalTaxesInvoicingReport(dbconn.cursor())
-m.move_by_month('2017-01-01', '2017-02-01')
+    try:
+        dbconn=psycopg2.connect(**configdb.psycopg)
+    except Exception, ex:
+        print "Unable to connect to database " + configdb['DB_NAME']
+        raise ex
+
+    m = MoveReport(dbconn.cursor())
+
+
+    start_date = datetime.strptime(year, '%Y')
+    end_date = start_date
+
+    for i in range(12):
+        start_date = end_date
+        end_date = start_date + relativedelta(months=1) - relativedelta(days=1)
+
+        #m.move_by_month(start_date, end_date)
+
+        end_date = end_date + relativedelta(days=1)
+
+main(sys.argv[1])
 
 # vim: et ts=4 sw=4
