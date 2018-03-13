@@ -5,19 +5,18 @@ import configdb
 from yamlns import namespace as ns
 from consolemsg import step, success, error, warn, color, printStdError
 from datetime import datetime, timedelta
-import random
 import sys
 
 step("Connectant a l'erp")
 O = Client(**configdb.erppeek)
-
 success("Connectat")
 
-doit = '--doit' in sys.argv
-success("l'estat del doit es {}".format(doit))
-
-per_round = 500
-
+doit = 'si' in sys.argv or '--doit' in sys.argv
+success('')
+if doit:
+    success("Es faran canvis a les polisses (doit=True)")
+else:
+    success("No es faran canvis a les polisses (doit=False)")
 
 #Objectes
 pol_obj = O.GiscedataPolissa
@@ -26,7 +25,7 @@ comp_obj = O.GiscedataLecturesComptador
 
 #constants de modificació
 dies = 40
-versio = "v1.1"
+versio = "v1.2"
 distris = [
     '0021', # iberdrola
     #'0031', # endesa
@@ -49,7 +48,6 @@ filtres = "tg=1, distris {} , origens {}".format(distris, allowed_origins)
 missatge = "Desactivem el sistema d'estimació ja que té telegestió "
 missatge += "-- [{versio}][{filtres}]".format(**locals())
 
-
 def today_minus_days(days):
     return datetime.strftime(datetime.today() - timedelta(days = days),"%Y-%m-%d")
 
@@ -67,11 +65,10 @@ def search_candidates_to_tg(distributors,measure_origins,days):
         ('no_estimable','=',False), # estimable
         ]) 
     totals = len(pol_ids)
-    random.shuffle(pol_ids)
-    for counter,pol_id in enumerate(pol_ids):
 
-        if len(candidates) >= per_round:
-            break;
+    success('')
+    success('Cercant candiats a passar a no estimable:')
+    for counter,pol_id in enumerate(pol_ids):
 
         polissa = ns(pol_obj.read(pol_id,[
             "data_ultima_lectura",
@@ -79,8 +76,7 @@ def search_candidates_to_tg(distributors,measure_origins,days):
             "name",
             "observacions_estimacio",
             ]))
-        step("{}/{} polissa {}".format(counter,totals,polissa.name))
-
+        step("{}/{} polissa {}".format(counter+1,totals,polissa.name))
 
         metter_ids = comp_obj.search([('polissa','=',pol_id)])
         if len(metter_ids) != 1:
@@ -101,7 +97,8 @@ def search_candidates_to_tg(distributors,measure_origins,days):
 
         candidates.append(pol_id)
 
-    warn("candiates ... {}".format(len(candidates)))
+    success('')
+    success("Candiats ... {}",len(candidates))
     return ns({
         'candidates':candidates,
         'bad_metters':bad_metters,
@@ -113,7 +110,8 @@ def search_candidates_to_tg_default():
     return search_candidates_to_tg(distris,allowed_origins,dies)
 
 def change_to_tg(pol_ids):
-
+    success('')
+    success('Modificant polisses:')
     res = ns()
     totals = len(pol_ids)
     for counter,pol_id in enumerate(pol_ids):
@@ -124,7 +122,7 @@ def change_to_tg(pol_ids):
             "observacions",
             "observacions_estimacio",
             ]))
-        step("{}/{} polissa {}".format(counter,totals,polissa.name))
+        step("{}/{} polissa {}".format(counter+1,totals,polissa.name))
 
         header = "[{}] ".format(str(datetime.today())[:19])
 
@@ -138,7 +136,7 @@ def change_to_tg(pol_ids):
         res[pol_id] = changes
         if doit:
             pol_obj.write(pol_id,changes)
-            warn("changed")
+            warn("modificat")
     return res
 
 def candidates_to_tg():
@@ -148,6 +146,8 @@ def candidates_to_tg():
     return ret
 
 if __name__=='__main__':
-   res = candidates_to_tg()
+    res = candidates_to_tg()
+    success('')
+    success("S'han modificat {} polisses",len(res))
 
 # vim: et ts=4 sw=4

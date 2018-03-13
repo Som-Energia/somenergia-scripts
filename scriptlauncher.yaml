@@ -274,6 +274,13 @@ gestiocontractes:
             description: Data dels contractes més antics 'YYYY-mm-dd'
           date_to:
             description: Data dels contractes més nous 'YYYY-mm-dd'
+      killingEstimation:
+        script: python SOME_SRC/somenergia-scripts/invoicing/killing_estimations.py {doit}
+        title: Posar a no estimable als telegestionats
+        description: Marcar com a no estimables els contractes que compleixen una serie de condicions i tenen telegestió activada.
+        parameters:
+          doit:
+            description: Vols fer els canvis? (escriu 'si' per aplicar-ho)
 
 admin:
   description: Administració
@@ -350,7 +357,7 @@ validation:
           description: CUPS
     checkcnae:
       title: Check CNAE
-      script: python SOME_SRC/somenergia-api-validators/check_cnae.py {cups}
+      script: python SOME_SRC/somenergia-api-validators/check_cnae.py {cnae}
       parameters:
         cnae:
           description: CNAE
