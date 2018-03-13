@@ -11,12 +11,6 @@ from oauth2client import tools
 from oauth2client.file import Storage
 from apiclient.http import MediaFileUpload
 
-try:
-    import argparse
-    flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
-except ImportError:
-    flags = None
-
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/drive-python-quickstart.json
 SCOPES = 'https://www.googleapis.com/auth/drive'
@@ -55,14 +49,13 @@ def get_credentials():
     return credentials
 
 
-def upload(path):
+def upload(path, folder_id):
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('drive', 'v3', http=http)
 
     file_name = re.split("/", path)
     
-    folder_id = '18f1DXG8V5QmCBKivozHldvcob6opldN1'
     file_metadata = {
         'name': file_name[2],
         'parents': [folder_id]

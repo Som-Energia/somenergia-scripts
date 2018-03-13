@@ -319,6 +319,13 @@ admin:
           description: Data final titols a retornar (ex. 2012-10-31)
         id_remesa:
           description: Id remesa on posar el retorn dels títol (ex. 2349)
+    assentamentsInterventors:
+      script: python SOME_SRC/somenergia-scripts/admin/descarregar_assentaments_comptables.py {year}
+      title: Puja al Drive els assentaments pels interventors
+      description:
+      parameters:
+          year:
+            description: Any dels assentaments
 
 generation:
   description: Generació

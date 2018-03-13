@@ -38,9 +38,9 @@ class MoveReport:
         self.cursor.execute(sql, {'start_date': start_date,
                                   'end_date': end_date})
 
-        file_name = '/tmp/assent_interv_' + start_date + '.csv'
+        file_name = '/tmp/assent_interv_' + start_date.strftime("%Y-%m-%d") + '.csv'
         self.build_report(self.cursor.fetchall(), file_name)
-        driveUtils.upload(file_name)
+        driveUtils.upload(file_name, '18f1DXG8V5QmCBKivozHldvcob6opldN1')
 
     def build_report(self, records, filename):
 
@@ -78,7 +78,7 @@ def main(year):
         start_date = end_date
         end_date = start_date + relativedelta(months=1) - relativedelta(days=1)
 
-        #m.move_by_month(start_date, end_date)
+        m.move_by_month(start_date, end_date)
 
         end_date = end_date + relativedelta(days=1)
 
