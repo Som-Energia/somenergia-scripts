@@ -68,6 +68,8 @@ def update_measures(O, measures_id, values, pool=False):
 
 
 def read_meters(O, meters_id, fields):
+    if meters_id is []:
+        return []
     return O.GiscedataLecturesComptador.read(meters_id, fields)
 
 
@@ -80,6 +82,8 @@ def get_meters(O, search_pattern, fields, active_test=True):
 
 
 def read_invoices(O, invoices_id, fields):
+    if invoices_id == []:
+        return []
     return O.GiscedataFacturacioFactura.read(invoices_id, fields)
 
 
@@ -98,6 +102,8 @@ def get_measures_by_meter(O, meter_id, mtype, pool=False, start_date=None):
     if start_date:
         fields_to_search.append(('name', '>', start_date))
     measures_id = obj.search(fields_to_search)
+    if not measures_id:
+        return []
     return obj.read(measures_id, ['id', 'name'])
 
 
@@ -108,13 +114,15 @@ def get_measures_by_contract(O, contract_id, mtype, pool=False, start_date=None)
     if start_date:
         fields_to_search.append(('name', '>', start_date))
     measures_id = obj.search(fields_to_search)
+    if not measures_id:
+        return []
     return obj.read(measures_id, ['id', 'name', 'origen_id'])
 
 
 def load_new_measure(O, measure_id):
     ctx = {'active_id': measure_id}
     wiz_id = O.WizardCopiarLecturaPoolAFact.create({},ctx)
-    O.WizardCopiarLecturaPoolAFact.action_copia_lectura([wiz_id], ctx)
+    O.WizardCopiarLecturaPoolAFact.action_copia_lectura([wiz_id.id], ctx)
     return
 
 
@@ -123,12 +131,14 @@ def load_new_measures(O, contract_id, mtype=range(1,7)+[8], start_date=None):
     new_measures = []
     for meter_id in meters_id:
         invoice_measures = get_measures_by_meter(O, meter_id, range(1,12), pool=False)
-	if not invoice_measures:
+        if not invoice_measures:
             print "Sense lectures a comptador id: "+str(meter_id)
             continue
         new_measures += get_measures_by_meter(O, meter_id, mtype, True, invoice_measures[0]['name'])
+
     for new_measure in new_measures:
         load_new_measure(O, new_measure['id'])
+
     return new_measures
 
 
