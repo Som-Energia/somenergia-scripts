@@ -58,7 +58,7 @@ class MoveReport:
                 writer.writerow([number, date, account, code, debe, haber])
 
 
-def main(year):
+def main():
     reload(sys)  
     sys.setdefaultencoding('utf8')
 
@@ -70,8 +70,9 @@ def main(year):
 
     m = MoveReport(dbconn.cursor())
 
-
-    start_date = datetime.strptime(year, '%Y')
+    today = datetime.now()
+    year = int(today.strftime('%Y'))-1
+    start_date = datetime.strptime(str(year), '%Y')
     end_date = start_date
 
     for i in range(12):
@@ -82,6 +83,6 @@ def main(year):
 
         end_date = end_date + relativedelta(days=1)
 
-main(sys.argv[1])
-
+if __name__ == '__main__':
+    main()
 # vim: et ts=4 sw=4

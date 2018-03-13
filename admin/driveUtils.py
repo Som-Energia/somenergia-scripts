@@ -11,6 +11,13 @@ from oauth2client import tools
 from oauth2client.file import Storage
 from apiclient.http import MediaFileUpload
 
+
+try:
+    import argparse
+    flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
+except ImportError:
+    flags = None
+
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/drive-python-quickstart.json
 SCOPES = 'https://www.googleapis.com/auth/drive'
@@ -34,7 +41,7 @@ def get_credentials():
     if not os.path.exists(credential_dir):
         os.makedirs(credential_dir)
     credential_path = os.path.join(credential_dir,
-                                   'drive-python-quickstart.json')
+                                   'drive-upload-files.json')
 
     store = Storage(credential_path)
     credentials = store.get()
