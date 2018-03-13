@@ -3,3 +3,4 @@ scripts_crontab.sh
 configdb.py
 *.pyc
 *.swp
+admin/client_secret.json
