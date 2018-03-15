@@ -21,7 +21,9 @@ def smallstep(message):
 def info(message):
     return printStdError(color('36;1',"   "+message))
 
-doit = '--doit' in sys.argv
+doitDmenys1 = '--doitDmenys1' in sys.argv
+doitDEstimada = '--doitDEstimada' in sys.argv
+doit = doitDmenys1 or doitDEstimada
 
 step("Connectant a l'erp") 
 O = lazyOOOP()
@@ -235,7 +237,7 @@ for pol_id in pol_ids:
                     if lect_pool_menys_un_dia_ids:
                         info("La data d'alta és un dia després que la primera lectura")
                         #TODO: codi repetit mes a sota. Refactor
-                        if doit:
+                        if doitDmenys1:
                             step("Reescrivim la data alta, li restem un dia")
                             pol_obj.write(pol_id,{'data_alta':data_alta_menys_un_dia})
                             step("Copiem la lectura")
@@ -270,7 +272,7 @@ for pol_id in pol_ids:
                 if origen.lower() == "estimada":
                     warn("Lectura Estimada!!!!")
 
-                if doit:
+                if doitDEstimada:
                     step("Copiem la lectura")
                     copiar_lectures(lect_pool_ids[0])
                     if isSolved(pol_id, search_vals):
