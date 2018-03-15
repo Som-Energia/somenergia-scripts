@@ -19,7 +19,7 @@ fact_obj = O.GiscedataFacturacioFactura
 cups_obj = O.GiscedataCupsPs
 partner_obj = O.ResPartner
 
-contracts_max = 5
+contracts_max = 200
 invoices_max = 16
 
 dif_maxima = 55

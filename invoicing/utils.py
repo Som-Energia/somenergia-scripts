@@ -7,9 +7,7 @@ DAYS_PER_MONTH=30.0
 
 
 def pay_invoice(O, invoice_id, rectificar):
-    #action = 'rectificar' if rectificar else 'anullar'
-    wiz_id = O.WizardRanas.create({},{'active_ids': [invoice_id]})
-    wiz = O.WizardRanas.get(wiz_id)
+    wiz = O.WizardRanas.create({},{'active_ids': [invoice_id]})
     if rectificar:
         return wiz.action_rectificar({'active_ids': [invoice_id]})
     return wiz.action_anullar({'active_ids': [invoice_id]})
@@ -37,6 +35,8 @@ def get_contract_amount_mean(O, polissa_id):
 
 
 def read_contracts(O, contracts_id, fields):
+    if contracts_id == []:
+        return []
     return O.GiscedataPolissa.read(contracts_id, fields)
 
 
@@ -50,6 +50,8 @@ def get_contracts(O, search_pattern, fields, active_test=True):
 
 def read_measures(O, measures_id, fields, pool=False):
     obj = O.GiscedataLecturesLecturaPool if pool else O.GiscedataLecturesLectura
+    if measures_id == []:
+        return []
     return obj.read(measures_id, fields)
 
 
@@ -68,13 +70,17 @@ def update_measures(O, measures_id, values, pool=False):
 
 
 def read_meters(O, meters_id, fields):
-    if meters_id is []:
+    if meters_id == []:
         return []
     return O.GiscedataLecturesComptador.read(meters_id, fields)
 
 
 def get_meters(O, search_pattern, fields, active_test=True):
+    if search_pattern == []:
+        return []
+
     meters_id = O.GiscedataLecturesComptador.search(search_pattern, 0, 0, False, {'active_test': active_test})
+
     if fields is None:
         return meters_id
 
@@ -88,6 +94,9 @@ def read_invoices(O, invoices_id, fields):
 
 
 def get_invoices(O ,search_pattern, fields, active_test=True):
+    if search_pattern == []:
+        return []
+
     invoices_id = O.GiscedataFacturacioFactura.search(search_pattern, 0, 0, False, {'active_test': active_test})
     if fields is None:
         return invoices_id
@@ -121,8 +130,8 @@ def get_measures_by_contract(O, contract_id, mtype, pool=False, start_date=None)
 
 def load_new_measure(O, measure_id):
     ctx = {'active_id': measure_id}
-    wiz_id = O.WizardCopiarLecturaPoolAFact.create({},ctx)
-    O.WizardCopiarLecturaPoolAFact.action_copia_lectura([wiz_id.id], ctx)
+    wiz = O.WizardCopiarLecturaPoolAFact.create({},ctx)
+    O.WizardCopiarLecturaPoolAFact.action_copia_lectura([wiz.id], ctx)
     return
 
 
@@ -183,8 +192,7 @@ def open_and_send(O, ids, lang, send_refund=True, send_rectified=True, send_dige
             'send_digest': send_digest,
             'num_contracts': num_contracts,
         }
-    wizard_id = O.WizardInvoiceOpenAndSend.create(vals, ctx)
-    wizard = O.WizardInvoiceOpenAndSend.get(wizard_id)
+    wizard = O.WizardInvoiceOpenAndSend.create(vals, ctx)
     wizard.action_obrir_i_enviar(ctx)
 
 def getPeriodId(period_obj):
