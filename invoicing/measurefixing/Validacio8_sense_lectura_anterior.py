@@ -238,21 +238,26 @@ for pol_id in pol_ids:
                         info("La data d'alta és un dia després que la primera lectura")
                         #TODO: codi repetit mes a sota. Refactor
                         if doitDmenys1:
-                            step("Reescrivim la data alta, li restem un dia")
-                            pol_obj.write(pol_id,{'data_alta':data_alta_menys_un_dia})
                             step("Copiem la lectura")
                             copiar_lectures(lect_pool_menys_un_dia_ids[0])
+                            step("cerquem la lectura copiada del pool")
+                            lectF_ids = lectF_obj.search([
+                                ('comptador','=',comp_ids[0]),
+                                ('name','=',daysAgo(1,data_alta)),
+                                ])
+                            step("Modifiquem la data de la lectura copiada del pool, sumem 1 dia")
+                            lectF_obj.write(lectF_ids,{'name':data_alta})
                             if isSolved(pol_id, search_vals):
                                 success("Polissa validada. Copiant la lectura hem resolt el problema")
                                 res.resolta_data_alta_un_dia_despres_de_primera_lectura.append(pol_id)
                             else:
-                                error("Copiant la lectura no s'ha resolt l'error")
+                                error("Copiant i modificant la lectura no s'ha resolt l'error")
                                 res.no_resolta_data_alta_un_dia_despres_de_primera_lectura.append(pol_id)
                         else:
                             step("Simulem la copia de la lectura")
-                            res.resolta_data_alta_un_dia_despres_de_primera_lectura.append(pol_id)                   
+                            res.resolta_data_alta_un_dia_despres_de_primera_lectura.append(pol_id)
                         continue #next polissa
-                    
+
                     data_alta_mes_un_dia = str(isodate(data_alta)+timedelta(days=1))[:10]
                     lect_pool_mes_un_dia_ids = lectP_obj.search([
                         ('comptador','=',comp_ids[0]),
