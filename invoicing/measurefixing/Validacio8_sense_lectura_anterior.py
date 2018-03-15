@@ -52,12 +52,13 @@ search_vals = [
 res = ns()
 res.polisses_resoltes_alinear_dates = []
 res.resolta_un_comptador_sense_mod_lectura_copiada = []
+res.resolta_data_alta_un_dia_despres_de_primera_lectura = []
 res.cefaco= []
 res.errors = []
 res.final = []
 res.un_comptador_sense_mod_amb_lectura_inicial_a_pool_no_resolta = []
-res.data_alta_un_dia_despres_de_primera_lectura = []
-res.data_alta_un_dia_abans_de_primera_lectura = []
+res.no_resolta_data_alta_un_dia_despres_de_primera_lectura = []
+res.data_alta_un_dia_abans_de_primera_lectura=[]
 res.un_comptador_sense_mod_amb_lectura_inicial_facturable = []
 res.un_comptador_sense_mod_sense_lectura_inicial_a_pool = []
 res.un_comptador_multiples_mod = []
@@ -81,12 +82,14 @@ Polisses amb situació normal. Fa menys de 40 dies d'ultima lectura. TOTAL {len_
     - Polisses: {polisses_resoltes_alinear_dates}
 - No tenia la lectura inicial copiada a les lectures facturables. S'ha copiat des de les lectures de pool. TOTAL {len_resolta_un_comptador_sense_mod_lectura_copiada}
     - Polisses: {resolta_un_comptador_sense_mod_lectura_copiada}
+- No tenia lectura a Pool a la data d'alta del contracte. S'ha modificat la data d'alta. TOTAL {len_resolta_data_alta_un_dia_despres_de_primera_lectura}
+    - Polisses: {resolta_data_alta_un_dia_despres_de_primera_lectura}
 
 # POLISSES NO RESOLTES. Filtrem per casos per facilitar l'anàlisi 
 - Només te un comptador i una modificacio de contracte. 
     - Sense lectura inicial del contracte a pool en la data d'alta.
-        - Data alta un dia després de la primera lectura que tenim a pool. {len_data_alta_un_dia_despres_de_primera_lectura}
-            - Polisses: {data_alta_un_dia_despres_de_primera_lectura}
+        - Data alta un dia després de la primera lectura que tenim a pool. {len_no_resolta_data_alta_un_dia_despres_de_primera_lectura}
+            - Polisses: {no_resolta_data_alta_un_dia_despres_de_primera_lectura}
         - Data alta un dia abans de la primera lectura que tenim a pool. {len_data_alta_un_dia_abans_de_primera_lectura}
             - Polisses: {data_alta_un_dia_abans_de_primera_lectura}
         - Per analitzar. TOTAL: {len_un_comptador_sense_mod_sense_lectura_inicial_a_pool}
@@ -151,6 +154,7 @@ search_vals = [
     ('status','not like',u'maxímetre'),
     ('status','not like',u"La lectura actual és inferior a l'anterior"), 
     ]
+
 pol_ids = buscar_errors_lot_ids(search_vals)
 validar_canvis(pol_ids)
 pol_ids = buscar_errors_lot_ids(search_vals)
@@ -238,9 +242,25 @@ for pol_id in pol_ids:
                         ('name','=',daysAgo(1,data_alta)),
                         ])
                     if lect_pool_menys_un_dia_ids:
-                        warn("La data d'alta és un dia més que la primera lectura")
-                        res.data_alta_un_dia_despres_de_primera_lectura.append(pol_id)
+                        info("La data d'alta és un dia després que la primera lectura")
+                        #TODO: codi repetit mes a sota. Refactor
+                        if doit:
+                            step("Reescrivim la data alta, li restem un dia")
+                            pol_obj.write(pol_id,{'data_alta':data_alta_menys_un_dia})
+                            step("Copiem la lectura")
+                            copiar_lectures(lect_pool_menys_un_dia_ids[0])
+                            if isSolved(pol_id, search_vals):
+                                success("Polissa validada. Copiant la lectura hem resolt el problema")
+                                res.resolta_data_alta_un_dia_despres_de_primera_lectura.append(pol_id)
+                            else:
+                                error("Copiant la lectura no s'ha resolt l'error")
+                                res.no_resolta_data_alta_un_dia_despres_de_primera_lectura.append(pol_id)
+                        else:
+                            step("Simulem la copia de la lectura")
+                            res.resolta_data_alta_un_dia_despres_de_primera_lectura.append(pol_id)                   
                         continue #next polissa
+                    
+                    data_alta_mes_un_dia = str(isodate(data_alta)+timedelta(days=1))[:10]
                     lect_pool_mes_un_dia_ids = lectP_obj.search([
                         ('comptador','=',comp_ids[0]),
                         ('name','=',daysAfter(1,data_alta)),

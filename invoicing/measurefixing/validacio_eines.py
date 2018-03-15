@@ -163,7 +163,11 @@ def facturar_manual(pol_ids):
                 comptador =  [meter for meter in polissa.comptadors if meter.active][0]
                 lectures = comptador.get_lectures_per_facturar(polissa.tarifa.id)
                 data_fi = max(l['actual']['name'] for l in [p for p in lectures.values()] if l)
-                data_inici = (datetime.strptime(polissa.data_ultima_lectura, '%Y-%m-%d') + timedelta(days=1)).strftime( '%Y-%m-%d')
+                if not polissa.data_ultima_lectura:
+                    data_inici = polissa.data_alta
+                else:
+                    data_inici = (datetime.strptime(polissa.data_ultima_lectura, '%Y-%m-%d') + timedelta(days=1)).strftime( '%Y-%m-%d')
+                
                 context = {'factura_manual': True,
                         'data_inici_factura': data_inici,
                         'data_final_factura': data_fi,
