@@ -192,8 +192,8 @@ def carregar_lectures_from_pool(pol_ids):
             print "La polissa %s no te lectures" % pol_id
             continue
         ctx = {'active_ids': comptadors_ids}
-        wiz_id = O.GiscedataLecturesPoolWizard.create({},ctx)
-        O.GiscedataLecturesPoolWizard.action_carrega_lectures([wiz_id], ctx)
+        wiz = O.GiscedataLecturesPoolWizard.create({},ctx)
+        O.GiscedataLecturesPoolWizard.action_carrega_lectures([wiz.id], ctx)
     return 
 
 
@@ -269,8 +269,8 @@ def es_cefaco(pol_id):
 def copiar_lectures(lectura_id):
     lazyOOOP()
     ctx = {'active_id': lectura_id}
-    wiz_id = O.WizardCopiarLecturaPoolAFact.create({},ctx)
-    O.WizardCopiarLecturaPoolAFact.action_copia_lectura([wiz_id], ctx)
+    wiz = O.WizardCopiarLecturaPoolAFact.create({},ctx)
+    O.WizardCopiarLecturaPoolAFact.action_copia_lectura([wiz.id], ctx)
     return
 
 def activar_modcon(pol_id, data_final):
