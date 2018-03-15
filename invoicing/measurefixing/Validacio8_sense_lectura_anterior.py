@@ -145,15 +145,6 @@ def resum(result):
 
 step('Cerquem totes les polisses que no tenen lectura anterior')
 step('i que no tinguin altres problemes: incompleta, maximetre, tancament ni sobreestimacions')
-search_vals = [
-    ('status','like',u'No t\xe9 lectura anterior'),
-    ('status','not like',u'No t\xe9 lectures entrades'),
-    ('status','not like',u'incompleta'),
-    ('status','not like',u'volta de comptador'),
-    ('status','not like',u'Falta Lectura de tancament'),
-    ('status','not like',u'maxímetre'),
-    ('status','not like',u"La lectura actual és inferior a l'anterior"), 
-    ]
 
 pol_ids = buscar_errors_lot_ids(search_vals)
 validar_canvis(pol_ids)
