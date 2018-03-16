@@ -9,8 +9,8 @@ DAYS_PER_MONTH=30.0
 def pay_invoice(O, invoice_id, rectificar):
     wiz = O.WizardRanas.create({},{'active_ids': [invoice_id]})
     if rectificar:
-        return wiz.action_rectificar({'active_ids': [invoice_id]})
-    return wiz.action_anullar({'active_ids': [invoice_id]})
+        return wiz.action_rectificar()
+    return wiz.action_anullar()
 
 
 def get_contract_daily_consumption(O, contract_id):
