@@ -9,9 +9,11 @@ from validacio_eines import (
     currentBatch,
     daysAgo,
     daysAfter,
+    isodate,
     )
 from consolemsg import step, success, warn, color, printStdError, error
 import sys
+from datetime import timedelta
 from yamlns import namespace as ns
 
 def bigstep(message):
@@ -164,16 +166,20 @@ n = 0
 
 for pol_id in pol_ids:
     n += 1
-    pol_read = pol_obj.read(pol_id,[
-        'name',
-        'data_alta',
-        'data_ultima_lectura',
-        'comptadors',
-        'modcontractuals_ids',
-        'tarifa',
-        'distribuidora',
-        'cups',
-        ])
+    try:
+        pol_read = pol_obj.read(pol_id,[
+            'name',
+            'data_alta',
+            'data_ultima_lectura',
+            'comptadors',
+            'modcontractuals_ids',
+            'tarifa',
+            'distribuidora',
+            'cups',
+            ])
+    except Exception as e:
+        error(unicode(e))
+        break
     data_alta = pol_read['data_alta']
 
     bigstep("{}/{}".format(n,total))
@@ -283,14 +289,13 @@ for pol_id in pol_ids:
                     if isSolved(pol_id, search_vals):
                         success("Polissa validada. Copiant la lectura hem resolt el problema")
                         res.resolta_un_comptador_sense_mod_lectura_copiada.append(pol_id)
-                        continue #next polissa
                     else:
                         error("Copiant la lectura no s'ha resolt l'error")
                         res.un_comptador_sense_mod_amb_lectura_inicial_a_pool_no_resolta.append(pol_id)
                 else:
                     step("Simulem la copia de la lectura")
                     res.resolta_un_comptador_sense_mod_lectura_copiada.append(pol_id)
-                    continue #next polissa
+                continue #next polissa
 
             if len(pol_read['modcontractuals_ids'])>1:
                 #TODO: we have to re-think it. The code doesn't do that we want
@@ -446,7 +451,7 @@ for pol_id in pol_ids:
 
     except Exception as e:
         res.errors.append({pol_id:e})
-        raise
+        #raise
         error(unicode(e))
 
 resum(res)
