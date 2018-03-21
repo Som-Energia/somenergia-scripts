@@ -246,6 +246,7 @@ def enviar_correu_actualitzacio_facturacio_endarrerida(pol_ids):
     lazyOOOP()
     pol_obj = O.GiscedataPolissa
     days = 50
+    sent_email = []
     for pol_id in pol_ids:
         pol_read = pol_obj.read(pol_id,
             ['data_ultima_lectura',
@@ -257,9 +258,10 @@ def enviar_correu_actualitzacio_facturacio_endarrerida(pol_ids):
         if data_pol < data_ref:
             #TODO: not id references, search for name?
             enviar_correu(pol_id,71,8,'giscedata.polissa')
+            sent_email.append(pol_id)
         else:
             print "No cal enviar el correu de facturació endarrerida"
-    return
+    return sent_email
  
 def es_cefaco(pol_id):
     lazyOOOP()
