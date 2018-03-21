@@ -239,8 +239,8 @@ def enviar_correu(pol_id, template_id, from_id, src_model):
             'template_id': template_id, 'src_model': src_model,
             'src_rec_ids': [pol_id], 'from': from_id}
     params = {'state': 'single', 'priority':0, 'from': ctx['from']}           
-    wz_id = O.PoweremailSendWizard.create(params, ctx)
-    O.PoweremailSendWizard.send_mail([wz_id], ctx)
+    wiz = O.PoweremailSendWizard.create(params, ctx)
+    O.PoweremailSendWizard.send_mail([wiz.id], ctx)
 
 def enviar_correu_actualitzacio_facturacio_endarrerida(pol_ids):
     lazyOOOP()
