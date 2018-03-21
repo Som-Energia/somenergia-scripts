@@ -3,7 +3,7 @@
 from erppeek import Client
 import configdb
 from datetime import datetime,timedelta,date
-from consolemsg import fail, success
+from consolemsg import fail, success , step
 
 O = None
 
@@ -208,17 +208,18 @@ def polisses_de_factures(factura_ids):
         if fact['polissa_id']
         ]
 
-    
 def adelantar_polissa_endarerida(pol_ids):
     lazyOOOP()
     polissa_endarerida = []
     factures_ids = []
+    step("Adelantarem {} polisses",len(pol_ids))
     try:
-        for pol_id in pol_ids:
-            print "[-] Carregant lectures a pool", pol_id
+        for counter,pol_id in enumerate(pol_ids):
+            step("{}/{} adelantant polissa {}",counter+1,len(pol_ids),pol_id)
+            step("[-] Carregant lectures a pool")
             carregar_lectures_from_pool([pol_id])
 
-            print "[-] Facturant manualment"
+            step("[-] Facturant manualment")
             data_ultima_lectura_futura, fact_ids = facturar_manual([pol_id])
             if fact_ids:
                 factures_ids.extend(fact_ids)
@@ -228,8 +229,8 @@ def adelantar_polissa_endarerida(pol_ids):
                 polissa_endarerida.append(pol_id)
     except Exception, e:
         print str(e)
-    print "polisses encara endarerides %s" % polissa_endarerida
-    print "Factures Generades. Total {}. Factures_ids: {}".format(len(factures_ids), factures_ids)
+    success("Polisses encara endarerides. Total {}. Polisses_ids {}",len(polissa_endarerida),polissa_endarerida)
+    success("Factures Generades. Total {}. Factures_ids: {}",len(factures_ids), factures_ids)
     return factures_ids
 
 def enviar_correu(pol_id, template_id, from_id, src_model):
