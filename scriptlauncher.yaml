@@ -282,6 +282,18 @@ gestiocontractes:
           doit:
             description: Vols fer els canvis? (escriu 'si' per aplicar-ho)
 
+      mailofcontractowners:
+        script: sql2csv.py SOME_SRC/somenergia-scripts/Informes/mailofcontractowners.sql {file}
+        title: Correus dels titulars de contractes
+        description: >
+            Donat un fitxer csv amb els ids dels contractes, retorna un csv amb la
+            info per poder fer un enviament de correus als titulars.
+        parameters:
+          file:
+            type: FILE 
+            description: >
+              Fitxer csv amb els ids de contracte
+
 admin:
   description: Administració
   scripts:

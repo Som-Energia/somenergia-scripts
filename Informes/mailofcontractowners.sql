@@ -1,3 +1,4 @@
+-- Returns the info to mail the owners of the provided contract ids
 select 
     distinct on (sample.id)
     sample.id as pol_id,
