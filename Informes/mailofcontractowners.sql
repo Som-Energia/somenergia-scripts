@@ -2,9 +2,9 @@ select
     distinct on (sample.id)
     sample.id as pol_id,
     pol.name as contract,
-    titular.name as titular,
+    titular.lang as lang,
     address.email as email,
-    true
+    titular.name as titular
 from
     giscedata_polissa as pol
 left join
