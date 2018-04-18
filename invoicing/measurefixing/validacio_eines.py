@@ -248,21 +248,24 @@ def enviar_correu_actualitzacio_facturacio_endarrerida(pol_ids):
     pol_obj = O.GiscedataPolissa
     days = 50
     sent_email = []
-    for pol_id in pol_ids:
-        pol_read = pol_obj.read(pol_id,
-            ['data_ultima_lectura',
-            'data_alta',
-            ])
-        print pol_id
-        data_pol = pol_read['data_ultima_lectura'] or pol_read['data_alta']
-        data_ref = str(date.today()-timedelta(days=days))
-        if data_pol < data_ref:
-            #TODO: not id references, search for name?
-            #TODO: change magic number 23 for factura@somenegia.coop id's
-            enviar_correu(pol_id,71,23,'giscedata.polissa')
-            sent_email.append(pol_id)
-        else:
-            print "No cal enviar el correu de facturació endarrerida"
+    try:
+        for pol_id in pol_ids:
+            pol_read = pol_obj.read(pol_id,
+                ['data_ultima_lectura',
+                'data_alta',
+                ])
+            print pol_id
+            data_pol = pol_read['data_ultima_lectura'] or pol_read['data_alta']
+            data_ref = str(date.today()-timedelta(days=days))
+            if data_pol < data_ref:
+                #TODO: not id references, search for name?
+                #TODO: change magic number 23 for factura@somenegia.coop id's
+                enviar_correu(pol_id,71,23,'giscedata.polissa')
+                sent_email.append(pol_id)
+            else:
+                print "No cal enviar el correu de facturació endarrerida"
+    except Exception, e:
+        print str(e)
     return sent_email
  
 def es_cefaco(pol_id):
