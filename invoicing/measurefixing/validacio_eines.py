@@ -258,7 +258,8 @@ def enviar_correu_actualitzacio_facturacio_endarrerida(pol_ids):
         data_ref = str(date.today()-timedelta(days=days))
         if data_pol < data_ref:
             #TODO: not id references, search for name?
-            enviar_correu(pol_id,71,8,'giscedata.polissa')
+            #TODO: change magic number 23 for factura@somenegia.coop id's
+            enviar_correu(pol_id,71,23,'giscedata.polissa')
             sent_email.append(pol_id)
         else:
             print "No cal enviar el correu de facturació endarrerida"
