@@ -156,6 +156,8 @@ for sw_id in sw_ids:
         print "treiem el no estimable i observacions no estimable. Canviem Data Alta, titular i personada pagadora"
         pol_obj.send_signal([pol_nova_id],['validar', 'contracte'])
         print "Hem activat el contracte"
+        pol_obj.write(pol_nova_id, {'lot_facturacio': lot_id})
+        print "Hem posat la polissa al lot actual"
         mandate_obj.create({'reference': 'giscedata.polissa,%s' % pol_nova_id,'date': data_distri})
         print "Creat mandato"
         print "---------CAS ATR---------"
@@ -176,3 +178,4 @@ if not(sw_ids):
     print "No hi ha casos a fer"
 else:
     resum_canvis_titular(total, realitats, sense_dul, ab_error, sense_lectura_distri,sense_canvi_pagador, errors)
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
