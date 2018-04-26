@@ -147,9 +147,7 @@ for sw_id in sw_ids:
             sense_lectura_distri.append(sw_obj.read(sw_id,['cups_id'])['cups_id'][1])
             print "No trobem cap lectura de distribuidora anterior a la data de l'ultima lectura"
             continue
-        lect_distri_read = lectP_obj.read(lect_distri_id[0],['name'])
-        data_distri = lect_distri_read['name']
-        vals_new.update({'data_alta':data_distri})
+        vals_new.update({'data_alta':data_ultima_lectura})
         pagador_id = pol_obj.read(pol_nova_id,['pagador'])['pagador'][0]
         vals_new.update({'titular':pagador_id})
         pol_obj.write(pol_nova_id,vals_new)
@@ -158,7 +156,7 @@ for sw_id in sw_ids:
         print "Hem activat el contracte"
         pol_obj.write(pol_nova_id, {'lot_facturacio': lot_id[0]})
         print "Hem posat la polissa al lot actual"
-        mandate_obj.create({'reference': 'giscedata.polissa,%s' % pol_nova_id,'date': data_distri})
+        mandate_obj.create({'reference': 'giscedata.polissa,%s' % pol_nova_id,'date': data_ultima_lectura})
         print "Creat mandato"
         print "---------CAS ATR---------"
         sw_id = sw_obj.search([('cups_id','=',cups_id),
