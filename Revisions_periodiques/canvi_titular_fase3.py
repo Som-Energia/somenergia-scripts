@@ -78,7 +78,7 @@ for sw_id in sw_ids:
     cups_id = sw_obj.read(sw_id,['cups_id'])['cups_id'][0]
     pol_antiga_id = pol_obj.search([('cups','=',cups_id)])[0]
     pol_antiga_read = pol_obj.read(pol_antiga_id,
-        ['name','cups','data_alta','data_ultima_lectura','pagador','titular'])
+        ['name','cups','data_alta','data_ultima_lectura','pagador','titular', 'ref_dist'])
     print "\nCUPS: {}".format(pol_antiga_read['cups'][1])
     print "%s/%s  POLISSA >> %s " % (n, total, pol_antiga_read['name'])
     if pol_antiga_read['titular'] == pol_antiga_read['pagador']:
@@ -148,6 +148,8 @@ for sw_id in sw_ids:
             print "No trobem cap lectura de distribuidora anterior a la data de l'ultima lectura"
             continue
         vals_new.update({'data_alta':data_ultima_lectura})
+        vals_new.update({'data_firma_contracte': data_ultima_lectura})
+        vals_new.update({'ref_dist': pol_antiga_read['ref_dist']})
         pagador_id = pol_obj.read(pol_nova_id,['pagador'])['pagador'][0]
         vals_new.update({'titular':pagador_id})
         pol_obj.write(pol_nova_id,vals_new)
