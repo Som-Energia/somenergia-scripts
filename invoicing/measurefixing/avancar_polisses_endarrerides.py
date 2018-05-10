@@ -7,7 +7,9 @@ from validacio_eines import (
     contractOutOfBatchDate,
     lazyOOOP,
     draftContractInvoices,
+    enviar_correu,
     showContract,
+    open_and_send,
 )
 from consolemsg import step, fail, success, warn, error
 from yamlns import namespace as ns
@@ -19,13 +21,12 @@ Measures = O.GiscedataLecturesLectura
 
 step("Cercant polisses endarrerides")
 polissaEndarrerida_ids = contractOutOfBatchDate()
-
 polissaEndarrerida_ids_len = len(polissaEndarrerida_ids)
 step("Adelantant {} polisses",polissaEndarrerida_ids_len)
 
-polissaEndarrerida_ids = [
-    6435,
-    2017,
+_polissaEndarrerida_ids = [
+    153397,
+    154667,
 ]
 
 polisses = Contract.read(polissaEndarrerida_ids,[
@@ -96,25 +97,35 @@ for counter,polissa in enumerate(polisses):
     ko = parame = any(validation_errors)
     if ko:
         error("Polissa que falla: {}", polissa.id)
-    ko = True
 
-    if ko:
-        step("\tAnotate it as a failing case")
-        result.contractsWithError.append(polissa.id)
-        step("\tRemoving created invoices {}", generatedInvoice_ids)
-        Invoice.unlink(generatedInvoice_ids, {})
+    def clearDraftInvoices(polissa, invoice_ids, data_ultima_lectura_original):
+        step("\tRemoving created invoices {}", invoice_ids)
+        Invoice.unlink(invoice_ids, {})
         measures_ids = Measures.search([
             ('comptador','in', polissa.comptadors),
-            ('name', '>', str(aWizard.data_ultima_lectura_original)),
+            ('name', '>', str(data_ultima_lectura_original)),
         ])
         step("\tRemoving created measures {}", measures_ids)
         if measures_ids:
             Measures.unlink(measures_ids, {})
-    else:
-        step("\tAnotate it as a forwarded case")
-        result.contractsForwarded.append(polissa.id)
-        #step("TODO: if more than one send the warning email")
-        #step("TODO: open and send all the invoices in groups of 10")
+
+    if ko or True:
+        step("\tAnotate it as a failing case")
+        result.contractsWithError.append(polissa.id)
+        clearDraftInvoices(polissa, generatedInvoice_ids, Wizard.data_ultima_lectura_original)
+        if parame:
+            ignoreme = raw_input("Pulsa return para siguiente contrato")
+        continue
+
+    step("\tAnotate it as a forwarded case")
+    result.contractsForwarded.append(polissa.id)
+    if len(generatedInvoice_ids)>1:
+        step("\tMore than one invoice, sending the warning email")
+        enviar_correu(polissa.id, 71, 8,'giscedata.polissa')
+    step("Open and send all the invoices")
+    pagador_id = Invoice.read(polissa.id, ['pagador'])['pagador'][0]
+    lang = O.ResPartner.read(pagador_id, ['lang'])['lang']
+    open_and_send(invoice_ids, lang) 
 
     if parame:
         ignoreme = raw_input("Pulsa return para siguiente contrato")

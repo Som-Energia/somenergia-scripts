@@ -236,10 +236,15 @@ def adelantar_polissa_endarerida(pol_ids):
 def enviar_correu(pol_id, template_id, from_id, src_model):
     lazyOOOP()
     print "mail enviat a la polissa: {pol_id}".format(**locals())
-    ctx = {'active_ids': [pol_id],'active_id': pol_id,
-            'template_id': template_id, 'src_model': src_model,
-            'src_rec_ids': [pol_id], 'from': from_id}
-    params = {'state': 'single', 'priority':0, 'from': ctx['from']}           
+    ctx = {
+        'active_ids': [pol_id],
+        'active_id': pol_id,
+        'template_id': template_id,
+        'src_model': src_model,
+        'src_rec_ids': [pol_id],
+        'from': from_id,
+        }
+    params = {'state': 'single', 'priority':0, 'from': ctx['from']}
     wiz = O.PoweremailSendWizard.create(params, ctx)
     O.PoweremailSendWizard.send_mail([wiz.id], ctx)
 
@@ -323,7 +328,25 @@ def activar_modcon(pol_id, data_final):
     O.WorkflowWorkitem.write(wk_workitem_id, {'act_id': wkf_activities[0]})
     return True    
         
-                
+def open_and_send(invoice_ids, lang):
+    lazyOOOP()
+    ctx = {
+	    'active_id': invoice_ids[0],
+	    'active_ids': invoice_ids,
+        'lang': lang,
+	    'tz': 'Europe/Madrid'
+        }
+    vals = dict(
+        state='init',
+        send_refund=False,
+        send_rectified=False,
+        send_digest=False,
+        num_contracts=1,
+        )
+    wizard = O.WizardInvoiceOpenAndSend.create(vals, ctx)
+    wizard.action_obrir_i_enviar(ctx)
+
+
 def reimportar_ok(linia_id):
     lazyOOOP()
     import time
