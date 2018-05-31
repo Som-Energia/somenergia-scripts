@@ -147,7 +147,9 @@ for sw_id in sw_ids:
             sense_lectura_distri.append(sw_obj.read(sw_id,['cups_id'])['cups_id'][1])
             print "No trobem cap lectura de distribuidora anterior a la data de l'ultima lectura"
             continue
-        vals_new.update({'data_alta':data_ultima_lectura})
+        lect_distri_read = lectP_obj.read(lect_distri_id[0],['name'])
+        data_distri = lect_distri_read['name']
+        vals_new.update({'data_alta':data_distri})
         vals_new.update({'data_firma_contracte': data_ultima_lectura})
         vals_new.update({'ref_dist': pol_antiga_read['ref_dist']})
         pagador_id = pol_obj.read(pol_nova_id,['pagador'])['pagador'][0]
