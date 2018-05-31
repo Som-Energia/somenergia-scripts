@@ -151,6 +151,7 @@ for sw_id in sw_ids:
         data_distri = lect_distri_read['name']
         vals_new.update({'data_alta':data_distri})
         vals_new.update({'data_firma_contracte': data_ultima_lectura})
+        vals_new.update({'data_ultima_lectura': data_ultima_lectura})
         vals_new.update({'ref_dist': pol_antiga_read['ref_dist']})
         pagador_id = pol_obj.read(pol_nova_id,['pagador'])['pagador'][0]
         vals_new.update({'titular':pagador_id})
