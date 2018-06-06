@@ -61,9 +61,9 @@ LEFT JOIN (
             cas.state='open' AND
             TRUE
         GROUP BY
-            polissa_id
+            sw.cups_polissa_id
         ORDER BY
-            polissa_id
+            sw.cups_polissa_id
     ) AS r1
     ON r1.polissa_id = polissa.id
 LEFT JOIN (
