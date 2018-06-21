@@ -12,6 +12,7 @@ O = Client(**configdb.erppeek)
 success("Connectat")
 
 doit = 'si' in sys.argv or '--doit' in sys.argv
+query = '--query' in sys.argv
 success('')
 if doit:
     success("Es faran canvis a les polisses (doit=True)")
@@ -21,15 +22,31 @@ else:
 #Objectes
 pol_obj = O.GiscedataPolissa
 lectF_obj = O.GiscedataLecturesLectura
+pool_obj = O.GiscedataLecturesLecturaPool
 comp_obj = O.GiscedataLecturesComptador
+per_obj = O.GiscedataPolissaTarifaPeriodes
+
+# Ambit de cerques de polisses:
+#  * tg = 1 -->  telegestio operativa amb cch
+#  * data_ultima_lectura (facturades real ) > avui - 40 (dies) --> ha facturat els ultims 40 dies
+#  * no_estimable = fals --> tick de no estimable esta desactivat
+#  * facturacio_potencia = icp --> self explaining
+#
+# per cada polissa que trobada amb la cerca anterior es mira per ordre:
+#  1 comptadors actius = 1 --> si no error i fora
+#  2 hi ha lectura a 'lectures' amb origen (allowed_origins) telegestio,visual [corregida],TPL [corregida],Telemesura [corregida] en data_ultima_lectura o data_alta si no hi ha data_ultima_lectura --> si no error i fora
+#  3 per cada periode (A --> P1 ; DHA --> P1 i P2 ; DHS --> P1, P2 i P3)
+#  3.1 cerquem les ultimes 4 (lectures_pool_ultimes) al contador actiu --> si hi han menys de 4 (lectures_pool_minimes) llavors error i fora
+#  3.2 calculem els dies entre les dates llegides --> si algun  es < 20 (min_days) o > 40 (max_days) llavors error i fora
+#  4 si la polissa ha arribat aqui la passarem a no estimable si el doit esta actiu
 
 #constants de modificació
 dies = 40
-versio = "v1.2"
-distris = [
-    '0021', # iberdrola
-    #'0031', # endesa
-    ]
+lectures_pool_minimes = 4
+lectures_pool_ultimes = 4
+min_days = 20
+max_days = 40
+versio = "v2.0"
 allowed_origins = [
     12, # Telegestió"
     #11, # Estimada amb factor d'utilització"
@@ -44,25 +61,67 @@ allowed_origins = [
     2, # Telemesura corregida"
     1, # Telemesura"
     ]
-filtres = "tg=1, distris {} , origens {}".format(distris, allowed_origins)
+filtres = "tg=1, origens {}, minim {} lectures a pool amb distancia entre {} i {}".format(allowed_origins,lectures_pool_minimes,min_days,max_days)
 missatge = "Desactivem el sistema d'estimació ja que té telegestió "
 missatge += "-- [{versio}][{filtres}]".format(**locals())
+
+def isodate(adate):
+    return adate and datetime.strptime(adate,'%Y-%m-%d')
 
 def today_minus_days(days):
     return datetime.strftime(datetime.today() - timedelta(days = days),"%Y-%m-%d")
 
-def search_candidates_to_tg(distributors,measure_origins,days):
+def test_pool_measures(periode_ids,metter_id,polissa_id,res):
+    for periode_id in periode_ids:
+        last_pool_ids = pool_obj.search([
+            ('comptador','=',metter_id),
+            ('periode','=',periode_id),
+            ],
+            limit=lectures_pool_ultimes,
+            order="name DESC")
+
+        if len(last_pool_ids) < lectures_pool_minimes:
+            warn("menys de {} lectures, trobades {}".format(
+                lectures_pool_minimes,len(last_pool_ids)))
+            res.too_few_measures.append(polissa_id)
+            return False
+
+        last_pool_measures = pool_obj.read(last_pool_ids,['name','lectura'])
+
+        days = [ (isodate(first['name']) - isodate(second['name'])).days
+            for first,second in zip(last_pool_measures,last_pool_measures[1:])]
+
+        if min(days) < min_days or max(days) > max_days:
+            warn("dies entre ultimes lectures de pool fora de limits {}",days)
+            res.wrong_days_pool.append(polissa_id)
+            return False
+
+        measures = [ measure['lectura'] for measure in last_pool_measures]
+        measures.reverse()
+        for first, second in zip(measures, measures[1:]):
+            if first > second:
+                warn("dies entre ultimes lectures de pool no creix {}",measures)
+                res.no_grown_days_pool.append(polissa_id)
+                return False
+
+    return True
+
+def search_candidates_to_tg(measure_origins,days):
     #counters
-    bad_metters = []
-    no_real_measures = []
-    with_bad_message = []
-    candidates = []
-    
+    res = ns({
+        'candidates':[],
+        'bad_metters':[],
+        'no_real_measures':[],
+        'too_few_measures':[],
+        'wrong_days_pool':[],
+        'no_grown_days_pool':[],
+        })
+
     pol_ids = pol_obj.search([
         ('tg','=','1'), # operativa amb cch
         ('data_ultima_lectura','>',today_minus_days(days)), # ultima factura a 40 dies enradera
-        ('distribuidora.ref','in',distributors), # allowed distris
         ('no_estimable','=',False), # estimable
+        ('facturacio_potencia','=','icp'), # no maximeter
         ]) 
     totals = len(pol_ids)
 
@@ -74,14 +133,14 @@ def search_candidates_to_tg(distributors,measure_origins,days):
             "data_ultima_lectura",
             "data_alta",
             "name",
-            "observacions_estimacio",
+            "tarifa",
             ]))
-        step("{}/{} polissa {}".format(counter+1,totals,polissa.name))
+        step("{}/{} polissa {} {}".format(counter+1,totals,polissa.name,polissa.tarifa[1]))
 
         metter_ids = comp_obj.search([('polissa','=',pol_id)])
         if len(metter_ids) != 1:
             warn("Numero de comptadors no contemplat")
-            bad_metters.append(pol_id)
+            res.bad_metters.append(pol_id)
             continue
 
         search_date = polissa.data_ultima_lectura or polissa.data_alta
@@ -92,22 +151,30 @@ def search_candidates_to_tg(distributors,measure_origins,days):
             ])
         if not measure:
             warn("Cap lectura real trobada en {}".format(search_date))
-            no_real_measures.append(pol_id)
+            res.no_real_measures.append(pol_id)
             continue
 
-        candidates.append(pol_id)
+        per_ids = per_obj.search([
+            ('tarifa','=',polissa.tarifa[0]),
+            ('tipus','=','te'),
+            ])
+
+        if not test_pool_measures(per_ids,metter_ids[0],pol_id,res):
+            continue
+
+        res.candidates.append(pol_id)
 
     success('')
-    success("Candiats ... {}",len(candidates))
-    return ns({
-        'candidates':candidates,
-        'bad_metters':bad_metters,
-        'no_real_measures':no_real_measures,
-        'bad_message':with_bad_message,
-        })
+    success("Candidats ............................. {}",len(res.candidates))
+    success("Comptadors malament ................... {}",len(res.bad_metters))
+    success("Sense lectures reals .................. {}",len(res.no_real_measures))
+    success("Menys de {} lectures a pool ............ {}",lectures_pool_minimes,len(res.too_few_measures))
+    success("Dies entre lectures fora de [{}..{}] .. {}",min_days,max_days,len(res.wrong_days_pool))
+    success("Dies entre lectures no creix .......... {} , {}",len(res.no_grown_days_pool),res.no_grown_days_pool)
+    return res
 
 def search_candidates_to_tg_default():
-    return search_candidates_to_tg(distris,allowed_origins,dies)
+    return search_candidates_to_tg(allowed_origins,dies)
 
 def change_to_tg(pol_ids):
     success('')
@@ -141,13 +208,14 @@ def change_to_tg(pol_ids):
 
 def candidates_to_tg():
     res = search_candidates_to_tg_default()
-    pol_ids = res.candidates
-    ret = change_to_tg(pol_ids)
+    if query:
+        return res
+    ret = change_to_tg(res.candidates)
+    success('')
+    success("S'han modificat {} polisses",len(ret))
     return ret
 
 if __name__=='__main__':
     res = candidates_to_tg()
-    success('')
-    success("S'han modificat {} polisses",len(res))
 
 # vim: et ts=4 sw=4
