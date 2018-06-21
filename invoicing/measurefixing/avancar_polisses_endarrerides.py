@@ -102,13 +102,18 @@ for counter,polissa in enumerate(polisses):
 
     #step("TODO: Call giscedata factura validation validator") 
     Validator = O.GiscedataFacturacioValidationValidator
+    warning = O.GiscedataFacturacioValidationWarning
     step("\tValidando facturas...")
     validation_errors = [
         Validator.validate_invoice(invoice_id) 
         for invoice_id in generatedInvoice_ids
         ]
+    for invoice_errors in validation_errors:
+        for invoice_error in invoice_errors:
+            step("\tDetected errors: {}", warning.read(invoice_error, ['message','name'])['name'])    
     step("\tValidation result {}", validation_errors)
-    ko = parame = any(validation_errors)
+    # TODO: filter out 'enrarecida' validations
+    ko = any(validation_errors)
     if ko:
         error("Polissa que falla: {}", polissa.id)
 
