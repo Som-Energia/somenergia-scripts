@@ -60,7 +60,7 @@ def showContract(pol_id):
         'cups',
         ])
     success("""
-    Polissa: {name}
+    Polissa: {name} id: {id}
     CUPS: {cups[1]}
     Data ultima lectura: {data_ultima_lectura}
 """, **pol_read)

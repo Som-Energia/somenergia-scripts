@@ -128,26 +128,26 @@ for counter,polissa in enumerate(polisses):
         if measures_ids:
             Measures.unlink(measures_ids, {})
 
-    if ko or True:
+    if ko:
         step("\tAnotate it as a failing case")
         result.contractsWithError.append(polissa.id)
-        clearDraftInvoices(polissa, generatedInvoice_ids, Wizard.data_ultima_lectura_original)
-        if parame:
-            ignoreme = raw_input("Pulsa return para siguiente contrato")
-        continue
+    else:
+        step("\tAnotate it as a forwarded case")
+        result.contractsForwarded.append(polissa.id)
 
-    step("\tAnotate it as a forwarded case")
-    result.contractsForwarded.append(polissa.id)
-    if len(generatedInvoice_ids)>1:
-        step("\tMore than one invoice, sending the warning email")
-        enviar_correu(polissa.id, 71, 8,'giscedata.polissa')
-    step("Open and send all the invoices")
-    pagador_id = Invoice.read(polissa.id, ['pagador'])['pagador'][0]
-    lang = O.ResPartner.read(pagador_id, ['lang'])['lang']
-    open_and_send(invoice_ids, lang) 
+    if ko:
+        clearDraftInvoices(polissa, generatedInvoice_ids, aWizard.data_ultima_lectura_original)
+    else:
+        if len(generatedInvoice_ids)>1:
+            step("\tMore than one invoice, sending the warning email")
+            enviar_correu(polissa.id, 71, 8,'giscedata.polissa')
+        step("Open and send all the invoices")
+        print 'polissa.id', polissa.id
+        lang = O.ResPartner.read(polissa.pagador[0], ['lang'])['lang']
+        # TODO: What if this fails? Mails already sent!
+        open_and_send(generatedInvoice_ids, lang) 
 
-    if parame:
-        ignoreme = raw_input("Pulsa return para siguiente contrato")
+    ignoreme = raw_input("Pulsa return para siguiente contrato")
 
 success(result.dump())
 
