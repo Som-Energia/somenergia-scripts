@@ -344,7 +344,7 @@ def open_and_send(invoice_ids, lang):
         num_contracts=1,
         )
     wizard = O.WizardInvoiceOpenAndSend.create(vals, ctx)
-    wizard.action_obrir_i_enviar(ctx)
+    wizard.action_obrir_i_enviar()
 
 
 def reimportar_ok(linia_id):

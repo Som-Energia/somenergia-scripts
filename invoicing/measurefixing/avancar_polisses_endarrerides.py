@@ -49,6 +49,7 @@ polisses = Contract.read(polissaEndarrerida_ids,[
     'comptadors',
     'data_ultima_lectura',
     'lot_facturacio',
+    'pagador',
     ])
 
 result = ns()
