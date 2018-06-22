@@ -115,6 +115,7 @@ def search_candidates_to_tg(measure_origins,days):
         'too_few_measures':[],
         'wrong_days_pool':[],
         'no_grown_days_pool':[],
+        'errors':[],
         })
 
     pol_ids = pol_obj.search([
@@ -128,49 +129,56 @@ def search_candidates_to_tg(measure_origins,days):
     success('')
     success('Cercant candiats a passar a no estimable:')
     for counter,pol_id in enumerate(pol_ids):
+        try:
+            polissa = ns(pol_obj.read(pol_id,[
+                "data_ultima_lectura",
+                "data_alta",
+                "name",
+                "tarifa",
+                ]))
+            step("{}/{} polissa {} {}".format(counter+1,totals,polissa.name,polissa.tarifa[1]))
 
-        polissa = ns(pol_obj.read(pol_id,[
-            "data_ultima_lectura",
-            "data_alta",
-            "name",
-            "tarifa",
-            ]))
-        step("{}/{} polissa {} {}".format(counter+1,totals,polissa.name,polissa.tarifa[1]))
+            metter_ids = comp_obj.search([('polissa','=',pol_id)])
+            if len(metter_ids) != 1:
+                warn("Numero de comptadors no contemplat")
+                res.bad_metters.append(pol_id)
+                continue
 
-        metter_ids = comp_obj.search([('polissa','=',pol_id)])
-        if len(metter_ids) != 1:
-            warn("Numero de comptadors no contemplat")
-            res.bad_metters.append(pol_id)
-            continue
+            search_date = polissa.data_ultima_lectura or polissa.data_alta
+            measure = lectF_obj.search([
+                ('comptador','=',metter_ids[0]),
+                ('name','=',search_date),
+                ('origen_id','in',measure_origins),
+                ])
+            if not measure:
+                warn("Cap lectura real trobada en {}".format(search_date))
+                res.no_real_measures.append(pol_id)
+                continue
 
-        search_date = polissa.data_ultima_lectura or polissa.data_alta
-        measure = lectF_obj.search([
-            ('comptador','=',metter_ids[0]),
-            ('name','=',search_date),
-            ('origen_id','in',measure_origins),
-            ])
-        if not measure:
-            warn("Cap lectura real trobada en {}".format(search_date))
-            res.no_real_measures.append(pol_id)
-            continue
+            per_ids = per_obj.search([
+                ('tarifa','=',polissa.tarifa[0]),
+                ('tipus','=','te'),
+                ])
 
-        per_ids = per_obj.search([
-            ('tarifa','=',polissa.tarifa[0]),
-            ('tipus','=','te'),
-            ])
+            if not test_pool_measures(per_ids,metter_ids[0],pol_id,res):
+                continue
 
-        if not test_pool_measures(per_ids,metter_ids[0],pol_id,res):
-            continue
+            res.candidates.append(pol_id)
 
-        res.candidates.append(pol_id)
+        except Exception, e:
+            warn("Error {}",str(e))
+            res.errors.append(pol_id)
 
     success('')
-    success("Candidats ............................. {}",len(res.candidates))
+    success("Candidats a passar a no estimable ..... {}",len(res.candidates))
     success("Comptadors malament ................... {}",len(res.bad_metters))
     success("Sense lectures reals .................. {}",len(res.no_real_measures))
     success("Menys de {} lectures a pool ............ {}",lectures_pool_minimes,len(res.too_few_measures))
     success("Dies entre lectures fora de [{}..{}] .. {}",min_days,max_days,len(res.wrong_days_pool))
     success("Dies entre lectures no creix .......... {} , {}",len(res.no_grown_days_pool),res.no_grown_days_pool)
+    success("Errors ................................ {} , {}",len(res.errors),res.errors)
+    if query:
+        success("Candidats: {}",res.candidates)
     return res
 
 def search_candidates_to_tg_default():
@@ -208,7 +216,7 @@ def change_to_tg(pol_ids):
 
 def candidates_to_tg():
     res = search_candidates_to_tg_default()
-    if query:
+    if not doit:
         return res
     ret = change_to_tg(res.candidates)
     success('')
