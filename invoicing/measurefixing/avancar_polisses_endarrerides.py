@@ -13,11 +13,11 @@ from validacio_eines import (
 )
 from consolemsg import step, fail, success, warn, error
 from yamlns import namespace as ns
+import ssl
+import sys
+
 
 #####workaround validate ssl testing
-
-import ssl
-
 try:
     _create_unverified_https_context = ssl._create_unverified_context
 except AttributeError:
@@ -27,20 +27,29 @@ else:
     # Handle target environment that doesn't support HTTPS verification
     ssl._create_default_https_context = _create_unverified_https_context
 
+# Modification variable to safer execution
+doit = '--doit' in sys.argv
+
 # definitions
+step("Connectant a l'erp")
 O = lazyOOOP()
+success("Connectat")
+
 Contract = O.GiscedataPolissa
 Measures = O.GiscedataLecturesLectura
 
 step("Cercant polisses endarrerides")
 polissaEndarrerida_ids = contractOutOfBatchDate()
+_polissaEndarrerida_ids = [
+    #153397,
+    #154667,
+    #1883, # Falla validacion
+    39, # Pasa validaciones
+]
 polissaEndarrerida_ids_len = len(polissaEndarrerida_ids)
 step("Adelantant {} polisses",polissaEndarrerida_ids_len)
-
-_polissaEndarrerida_ids = [
-    153397,
-    154667,
-]
+if polissaEndarrerida_ids_len == 0:
+    fail("Cap polissa per adelantar!")
 
 polisses = Contract.read(polissaEndarrerida_ids,[
     'name',
@@ -56,7 +65,6 @@ result = ns()
 result.contractsWithPreviousDraftInvoices=[]
 result.contractsWithError=[]
 result.contractsForwarded=[]
-
 
 for counter,polissa in enumerate(polisses):
     polissa = ns(polissa)
@@ -91,7 +99,7 @@ for counter,polissa in enumerate(polisses):
 
         step("\tGenerando factura para {}", aWizard.data_inici)
         aWizard.action_generar_factura()
-        step("State: {0.state}\nInfo:\n{0.info}",
+        step("\tState: {0.state}\nInfo:\n{0.info}",
             aWizard)
 
         if aWizard.state != 'init': break
@@ -135,7 +143,7 @@ for counter,polissa in enumerate(polisses):
         step("\tAnotate it as a forwarded case")
         result.contractsForwarded.append(polissa.id)
 
-    if ko:
+    if not doit or ko:
         clearDraftInvoices(polissa, generatedInvoice_ids, aWizard.data_ultima_lectura_original)
     else:
         if len(generatedInvoice_ids)>1:
@@ -152,7 +160,7 @@ for counter,polissa in enumerate(polisses):
 success(result.dump())
 
 success(u"""\
-- Polisses avançades a data de lot:
+- Polisses avancades a data de lot:
     - {contractsForwarded} 
 
 - Polisses que ja tenien factures en esborrany i s'han deixat
