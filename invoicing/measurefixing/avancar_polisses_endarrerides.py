@@ -51,6 +51,7 @@ def undoDraftInvoicesAndMeasures(polissa, invoice_ids, data_ultima_lectura_origi
 
 # constants
 DELAYED_CONTRACT_WARNING_TEXT = "F017"
+SEPPARATOR = "-"*60
 
 # Modification variable to safer execution
 doit = '--doit' in sys.argv
@@ -96,9 +97,14 @@ result.contractsWithPreviousDraftInvoices=[]
 result.contractsWithError=[]
 result.contractsForwarded=[]
 result.contractsWarned=[]
+result.contractsCrashed=[]
+result.contractsWizardBadEndEstate=[]
+result.contractsValidationError=[]
 
 for counter,polissa in enumerate(polisses):
     polissa = ns(polissa)
+    success("")
+    success(SEPPARATOR)
     success("{}/{} polissa: {}  id: {}  data ultima lectura: {}  CUPS: {}",
         counter+1,
         polissaEndarrerida_ids_len,
@@ -107,52 +113,68 @@ for counter,polissa in enumerate(polisses):
         polissa.data_ultima_lectura,
         polissa.cups[1],
         )
+    success(SEPPARATOR)
 
-    drafInvoice_ids = draftContractInvoices(polissa.id)
-    if drafInvoice_ids:
-        warn("El contracte {id} ja tenia {n} factures en esborrany",
-            n=len(drafInvoice_ids), **polissa)
-        result.contractsWithPreviousDraftInvoices.append(polissa.id)
-        continue
+    try:
+        drafInvoice_ids = draftContractInvoices(polissa.id)
+        if drafInvoice_ids:
+            warn("El contracte {id} ja tenia {n} factures en esborrany",
+                n=len(drafInvoice_ids), **polissa)
+            result.contractsWithPreviousDraftInvoices.append(polissa.id)
+            continue
 
-    step("\tInicialtzem el wizard")
-    Wizard = O.WizardAvancarFacturacio
-    wizcontext = dict(active_id = polissa.id)
-    aWizard = Wizard.create({}, wizcontext)
+        step("\tInicialtzem el wizard")
+        Wizard = O.WizardAvancarFacturacio
+        wizcontext = dict(active_id = polissa.id)
+        aWizard = Wizard.create({}, wizcontext)
 
-    data_inici_anterior = None
-    while aWizard.data_inici != data_inici_anterior:
+        data_inici_anterior = None
+        while aWizard.data_inici != data_inici_anterior:
 
-        data_inici_anterior = aWizard.data_inici
+            data_inici_anterior = aWizard.data_inici
 
-        step("\tGenerant factures per {}", aWizard.data_inici)
-        aWizard.action_generar_factura()
-        step(u"\tState: {0.state}",aWizard)
-        step(u"\tInfo:")
-        print aWizard.info
+            step("\tGenerant factures per {}", aWizard.data_inici)
+            aWizard.action_generar_factura()
+            step(u"\tState: {0.state}",aWizard)
+            step(u"\tInfo: ")
+            print aWizard.info
 
-        if aWizard.state != 'init': break
+            if aWizard.state != 'init': break
 
-    step("\tValidem factures creades")
-    generated_invoice_ids = draftContractInvoices(polissa.id)
-    success("\tFactures generades: {}", generated_invoice_ids)
+        ko = aWizard.state == 'error'
+        if ko:
+            result.contractsWizardBadEndEstate.append(polissa.id)
+        else:
+            step("\tValidem factures creades")
+            draft_invoice_ids = draftContractInvoices(polissa.id)
+            success("\tFactures generades: {}", draft_invoice_ids)
 
-    ko = False
-    for generated_invoice_id in generated_invoice_ids:
-        validation_warnings = Validator.validate_invoice(generated_invoice_id) 
-        for validation_warning in validation_warnings:
-            v_warning_text = warning.read(validation_warnings, ['message','name'])['name']
-            warn("\tValidation error {} {}",generated_invoice_id,v_warning_text)
-            if v_warning_text != DELAYED_CONTRACT_WARNING_TEXT: 
-                ko = True
+            for draft_invoice_id in draft_invoice_ids:
+                validation_warnings = Validator.validate_invoice(draft_invoice_id) 
+                for validation_warning in validation_warnings:
+                    v_warning_text = warning.read(validation_warnings, ['message','name'])['name']
+                    warn("\tValidation error {} {}",draft_invoice_id,v_warning_text)
+                    if v_warning_text != DELAYED_CONTRACT_WARNING_TEXT: 
+                        ko = True # validation error
+            if ko:
+                result.contractsValidationError.append(polissa.id)
+
+
+    except Exception as e:
+        ko = True # general execution error
+        result.contractsCrashed.append(polissa.id)
+        error("ERROR generant factures")
+        error(unicode(e))
 
     if ko:
-        step("\tAnotem la polissa com a cas fallit {} {}",polissa.id,polissa.name)
+        step("\tAnotem la polissa com a cas d'error")
         result.contractsWithError.append(polissa.id)
     else:
         step("\tAnotem la polissa com a cas ok")
         result.contractsForwarded.append(polissa.id)
 
+    # in case of general execution error the draft invoices list can be incomplete, refresh it
+    generated_invoice_ids = draftContractInvoices(polissa.id)
     if not doit or ko:
         undoDraftInvoicesAndMeasures(polissa, generated_invoice_ids, aWizard.data_ultima_lectura_original)
     else:
@@ -169,19 +191,32 @@ for counter,polissa in enumerate(polisses):
         warn("prem entrar per avançar el següent contracte")
         ignoreme = raw_input("")
 
-success(u"")
-success(u" - FINAL - ")
-success(u"")
-success(result.dump())
+success("")
+success(" ---------")
+success(" - FINAL -")
+success(" ---------")
+#success(result.dump())
 success(u"""\
 - Polisses avancades a data de lot:
-    - {contractsForwarded} 
+    - {contractsForwarded}
 
-- Polisses que ja tenien factures en esborrany i s'han deixat
+- Polisses notificades amb mail d'advertiment:
+    - {contractsWarned}
+
+- Polisses que ja tenien factures en esborrany i s'han deixat:
     - {contractsWithPreviousDraftInvoices}
 
-- Polisses que no s'ha pogut validar les factures generades:
+- Polisses que no han pogut avancar:
     - {contractsWithError}
+
+- Polisses que han donat error al intentar facturar:
+    - {contractsWizardBadEndEstate}
+
+- Polisses que han donat error al validar factures:
+    - {contractsValidationError}
+
+- Polisses que han generat error fatal al intentar facturar:
+    - {contractsCrashed}
 """, **result)
 
 # vim: et ts=4 sw=4
