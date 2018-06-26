@@ -2,8 +2,6 @@
 # -*- coding: utf8 -*-
 
 from validacio_eines import (
-    adelantar_polissa_endarerida,
-    polisses_de_factures,
     contractOutOfBatchDate,
     lazyOOOP,
     draftContractInvoices,
