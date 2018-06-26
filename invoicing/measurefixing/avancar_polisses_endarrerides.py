@@ -41,10 +41,15 @@ def undoDraftInvoicesAndMeasures(polissa, invoice_ids, data_ultima_lectura_origi
     measures_ids = Measures.search([
         ('comptador','in', polissa.comptadors),
         ('name', '>', str(data_ultima_lectura_original)),
-    ])
+        ])
     step("\tEliminem lectures creades {}", measures_ids)
     if measures_ids:
         Measures.unlink(measures_ids, {})
+    step("\tTornem a posar la polissa al lot d'origen {}",
+        polissa.lot_facturacio[1])
+    Contract.write(polissa.id,{
+        'lot_facturacio': polissa.lot_facturacio[0]
+        })
 
 
 # constants
@@ -103,13 +108,15 @@ for counter,polissa in enumerate(polisses):
     polissa = ns(polissa)
     success("")
     success(SEPPARATOR)
-    success("{}/{} polissa: {}  id: {}  data ultima lectura: {}  CUPS: {}",
+    success("{}/{} polissa: {}  id: {}  data ultima lectura: {}  CUPS: {}  Tarifa: {}  lot facturacio {}",
         counter+1,
         polissaEndarrerida_ids_len,
         polissa.name,
         polissa.id,
         polissa.data_ultima_lectura,
         polissa.cups[1],
+        polissa.tarifa[1],
+        polissa.lot_facturacio[1],
         )
     success(SEPPARATOR)
 
