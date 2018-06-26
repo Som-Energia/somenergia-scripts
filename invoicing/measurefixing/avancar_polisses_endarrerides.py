@@ -63,6 +63,9 @@ success("Connectat")
 
 Contract = O.GiscedataPolissa
 Measures = O.GiscedataLecturesLectura
+Invoice = O.GiscedataFacturacioFactura
+Validator = O.GiscedataFacturacioValidationValidator
+warning = O.GiscedataFacturacioValidationWarning
 
 step("Cercant polisses endarrerides")
 polissaEndarrerida_ids = contractOutOfBatchDate()
@@ -126,7 +129,7 @@ for counter,polissa in enumerate(polisses):
         aWizard.action_generar_factura()
         step(u"\tState: {0.state}",aWizard)
         step(u"\tInfo:")
-        print repr(aWizard.info)
+        print aWizard.info
 
         if aWizard.state != 'init': break
 
@@ -160,7 +163,7 @@ for counter,polissa in enumerate(polisses):
         step("Obrir i enviar totes les factures generades, updatarà la data ultima factura a polissa")
         lang = O.ResPartner.read(polissa.pagador[0], ['lang'])['lang']
         # TODO: What if this fails? Mails already sent!
-        open_and_send(generated_invoice_ids, lang) 
+        open_and_send(generated_invoice_ids, lang)
 
     if not direct:
         warn("prem entrar per avançar el següent contracte")
