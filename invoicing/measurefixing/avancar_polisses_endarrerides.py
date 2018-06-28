@@ -46,11 +46,18 @@ def undoDraftInvoicesAndMeasures(polissa, invoice_ids, data_ultima_lectura_origi
     if measures_ids:
         Measures.unlink(measures_ids, {})
     step("\tTornem a posar la polissa al lot d'origen {}",
-        polissa.lot_facturacio[1])
-    Contract.write(polissa.id,{
-        'lot_facturacio': polissa.lot_facturacio[0]
-        })
+        getStr(polissa.lot_facturacio,1,'cap'))
+    if polissa.lot_facturacio:
+        lot = polissa.lot_facturacio[0]
+    else:
+        lot = None
+    Contract.write(polissa.id,{'lot_facturacio': lot})
 
+def getStr(item,offset,default):
+    try:
+        return str(item(offset))
+    except:
+        return default
 
 # constants
 DELAYED_CONTRACT_WARNING_TEXT = "F017"
@@ -116,7 +123,7 @@ for counter,polissa in enumerate(polisses):
         polissa.data_ultima_lectura,
         polissa.cups[1],
         polissa.tarifa[1],
-        polissa.lot_facturacio[1],
+        getStr(polissa.lot_facturacio,1,'cap'),
         )
     success(SEPPARATOR)
 
@@ -150,17 +157,20 @@ for counter,polissa in enumerate(polisses):
         if ko:
             result.contractsWizardBadEndEstate.append(polissa.id)
         else:
-            step("\tValidem factures creades")
             draft_invoice_ids = draftContractInvoices(polissa.id)
             success("\tFactures generades: {}", draft_invoice_ids)
+            step("\tValidem factures creades")
 
             for draft_invoice_id in draft_invoice_ids:
                 validation_warnings = Validator.validate_invoice(draft_invoice_id) 
                 for validation_warning in validation_warnings:
-                    v_warning_text = warning.read(validation_warnings, ['message','name'])['name']
-                    warn("\tValidation error {} {}",draft_invoice_id,v_warning_text)
-                    if v_warning_text != DELAYED_CONTRACT_WARNING_TEXT: 
+                    v_warning_text = warning.read(validation_warning, ['message','name'])
+                    if v_warning_text['name'] != DELAYED_CONTRACT_WARNING_TEXT: 
                         ko = True # validation error
+                        warn(" - factura: {} error: {} {}",
+                            draft_invoice_id,
+                            (v_warning_text['name']).encode('utf-8'),
+                            (v_warning_text['message']).encode('utf-8'))
             if ko:
                 result.contractsValidationError.append(polissa.id)
 
@@ -177,6 +187,10 @@ for counter,polissa in enumerate(polisses):
     else:
         step("\tAnotem la polissa com a cas ok")
         result.contractsForwarded.append(polissa.id)
+
+    if not direct:
+        warn("prem entrar per desfer o obrir i enviar")
+        ignoreme = raw_input("")
 
     # in case of general execution error the draft invoices list can be incomplete, refresh it
     generated_invoice_ids = draftContractInvoices(polissa.id)
