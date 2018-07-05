@@ -88,7 +88,7 @@ n_msgs = int(args[0])
 try:
     dbconn=psycopg2.connect(**configdb.psycopg)
 except Exception, ex:
-    print "Unable to connect to database " + configdb['DB_NAME']
+    print "Unable to connect to database " + str(configdb.psycopg)
     raise ex
 
 dbcur = dbconn.cursor()
