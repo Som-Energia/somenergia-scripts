@@ -38,13 +38,25 @@ def undoDraftInvoicesAndMeasures(polissa, invoice_ids, data_ultima_lectura_origi
     step("\tEliminem factures creades {}", invoice_ids)
     if invoice_ids:
         Invoice.unlink(invoice_ids, {})
+
     measures_ids = Measures.search([
         ('comptador','in', polissa.comptadors),
         ('name', '>', str(data_ultima_lectura_original)),
+        ('id','not in',polissa.id_ultima_lectura)
         ])
-    step("\tEliminem lectures creades {}", measures_ids)
+    step("\tEliminem lectures creades: {}", measures_ids)
     if measures_ids:
         Measures.unlink(measures_ids, {})
+
+    measures_ids = MeasuresPot.search([
+        ('comptador','in', polissa.comptadors),
+        ('name', '>', str(data_ultima_lectura_original)),
+        ('id','not in',polissa.id_ultima_lectura_pot)
+        ])
+    step("\tEliminem lectures de potencia creades: {}", measures_ids)
+    if measures_ids:
+        MeasuresPot.unlink(measures_ids, {})
+
     step("\tTornem a posar la polissa al lot d'origen {}",
         getStr(polissa.lot_facturacio,1,'cap'))
     if polissa.lot_facturacio:
@@ -55,7 +67,7 @@ def undoDraftInvoicesAndMeasures(polissa, invoice_ids, data_ultima_lectura_origi
 
 def getStr(item,offset,default):
     try:
-        return str(item(offset))
+        return str(item[offset])
     except:
         return default
 
@@ -74,6 +86,7 @@ success("Connectat")
 
 Contract = O.GiscedataPolissa
 Measures = O.GiscedataLecturesLectura
+MeasuresPot = O.GiscedataLecturesPotencia
 Invoice = O.GiscedataFacturacioFactura
 Validator = O.GiscedataFacturacioValidationValidator
 warning = O.GiscedataFacturacioValidationWarning
@@ -113,6 +126,13 @@ result.contractsValidationError=[]
 
 for counter,polissa in enumerate(polisses):
     polissa = ns(polissa)
+    polissa.id_ultima_lectura = Measures.search([
+        ('comptador','in', polissa.comptadors),
+        ])
+    polissa.id_ultima_lectura_pot = MeasuresPot.search([
+        ('comptador','in', polissa.comptadors),
+        ])
+
     success("")
     success(SEPPARATOR)
     success("{}/{} polissa: {}  id: {}  data ultima lectura: {}  CUPS: {}  Tarifa: {}  lot facturacio {}",
@@ -158,17 +178,18 @@ for counter,polissa in enumerate(polisses):
             result.contractsWizardBadEndEstate.append(polissa.id)
         else:
             draft_invoice_ids = draftContractInvoices(polissa.id)
+            draft_invoice_ids.reverse()
             success("\tFactures generades: {}", draft_invoice_ids)
             step("\tValidem factures creades")
 
             for draft_invoice_id in draft_invoice_ids:
+                step("\t - Validant factura {}",draft_invoice_id)
                 validation_warnings = Validator.validate_invoice(draft_invoice_id) 
                 for validation_warning in validation_warnings:
                     v_warning_text = warning.read(validation_warning, ['message','name'])
                     if v_warning_text['name'] != DELAYED_CONTRACT_WARNING_TEXT: 
                         ko = True # validation error
-                        warn(" - factura: {} error: {} {}",
-                            draft_invoice_id,
+                        warn("   · {} {}",
                             (v_warning_text['name']).encode('utf-8'),
                             (v_warning_text['message']).encode('utf-8'))
             if ko:
@@ -195,7 +216,7 @@ for counter,polissa in enumerate(polisses):
     # in case of general execution error the draft invoices list can be incomplete, refresh it
     generated_invoice_ids = draftContractInvoices(polissa.id)
     if not doit or ko:
-        undoDraftInvoicesAndMeasures(polissa, generated_invoice_ids, aWizard.data_ultima_lectura_original)
+        undoDraftInvoicesAndMeasures(polissa, generated_invoice_ids, polissa.data_ultima_lectura)
     else:
         if len(generated_invoice_ids)>1:
             step("\tMes d'una factura generada enviem el mail de Avis de multiples factures")

@@ -87,6 +87,7 @@ def contractOutOfBatchDate():
 def draftContractInvoices(contract_id):
     return O.GiscedataFacturacioFactura.search([
         ('state','=','draft'),
+        ('type', '=', 'out_invoice'),
         ('polissa_id','=',contract_id),
         ])
 
