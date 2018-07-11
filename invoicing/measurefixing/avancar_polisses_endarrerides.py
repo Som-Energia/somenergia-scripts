@@ -231,6 +231,14 @@ for counter,polissa in enumerate(polisses):
         warn("prem entrar per avançar el següent contracte")
         ignoreme = raw_input("")
 
+result.contractsForwarded_len = len(result.contractsForwarded)
+result.contractsWarned_len = len(result.contractsWarned)
+result.contractsWithPreviousDraftInvoices_len = len(result.contractsWithPreviousDraftInvoices)
+result.contractsWithError_len = len(result.contractsWithError)
+result.contractsWizardBadEndEstate_len = len(result.contractsWizardBadEndEstate)
+result.contractsValidationError_len = len(result.contractsValidationError)
+result.contractsCrashed_len = len(result.contractsCrashed)
+
 success("")
 success(" ---------")
 success(" - FINAL -")
@@ -257,6 +265,34 @@ success(u"""\
 
 - Polisses que han generat error fatal al intentar facturar:
     - {contractsCrashed}
+""", **result)
+
+success(" ---------")
+success(" - RESULTADOS TOTALES -")
+success(" ---------")
+
+success(u"""\
+- Polisses avancades a data de lot:
+    - {contractsForwarded_len}
+
+- Polisses notificades amb mail d'advertiment:
+    - {contractsWarned_len}
+
+- Polisses que ja tenien factures en esborrany i s'han deixat:
+    - {contractsWithPreviousDraftInvoices_len}
+
+- Polisses que no han pogut avancar:
+    - {contractsWithError_len}
+
+- Polisses que han donat error al intentar facturar:
+    - {contractsWizardBadEndEstate_len}
+
+- Polisses que han donat error al validar factures:
+    - {contractsValidationError_len}
+
+- Polisses que han generat error fatal al intentar facturar:
+    - {contractsCrashed_len}
+
 """, **result)
 
 # vim: et ts=4 sw=4
