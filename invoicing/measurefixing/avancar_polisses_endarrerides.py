@@ -272,26 +272,19 @@ success(" - RESULTADOS TOTALES -")
 success(" ---------")
 
 success(u"""\
-- Polisses avancades a data de lot:
-    - {contractsForwarded_len}
+- Polisses avancades a data de lot: {contractsForwarded_len}
 
-- Polisses notificades amb mail d'advertiment:
-    - {contractsWarned_len}
+- Polisses notificades amb mail d'advertiment: {contractsWarned_len}
 
-- Polisses que ja tenien factures en esborrany i s'han deixat:
-    - {contractsWithPreviousDraftInvoices_len}
+- Polisses que ja tenien factures en esborrany i s'han deixat: {contractsWithPreviousDraftInvoices_len}
 
-- Polisses que no han pogut avancar:
-    - {contractsWithError_len}
+- Polisses que no han pogut avancar: {contractsWithError_len}
 
-- Polisses que han donat error al intentar facturar:
-    - {contractsWizardBadEndEstate_len}
+- Polisses que han donat error al intentar facturar: {contractsWizardBadEndEstate_len}
 
-- Polisses que han donat error al validar factures:
-    - {contractsValidationError_len}
+- Polisses que han donat error al validar factures: {contractsValidationError_len}
 
-- Polisses que han generat error fatal al intentar facturar:
-    - {contractsCrashed_len}
+- Polisses que han generat error fatal al intentar facturar: {contractsCrashed_len}
 
 """, **result)
 
