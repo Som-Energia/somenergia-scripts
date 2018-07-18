@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from validacio_eines import buscar_errors_lot_ids, validar_canvis, lazyOOOP
+from validacio_eines import buscar_errors_lot_ids, validar_canvis, lazyOOOP, currentBatch
 
 
 O = lazyOOOP()
