@@ -125,7 +125,7 @@ result.contractsCrashed=[]
 result.contractsWizardBadEndEstate=[]
 result.contractsValidationError=[]
 
-def avancar_polissa(polissa,counter,sem):
+def avancar_polissa(polissa,counter,sem,result):
     
     with sem:
         polissa = ns(polissa)
@@ -234,30 +234,80 @@ def avancar_polissa(polissa,counter,sem):
             ignoreme = raw_input("")
 
 
-        return counter
+        return counter,result
 
-def avancar_multiple_polissa(polisses):
+def avancar_multiple_polissa(polisses,result):
     
     with futures.ThreadPoolExecutor(max_workers=5) as executor:
         to_do = []
         sem = Semaphore()
         for counter, polissa in enumerate(polisses):
-            future = executor.submit(avancar_polissa, polissa, counter, sem)
+            future = executor.submit(avancar_polissa, polissa, counter, sem, result)
             to_do.append(future)
             msg = 'Scheduled for {}: {}'
             print(msg.format(polissa, future))
         
-        results = []
-        for future in futures.as_completed(to_do):
-            res = future.result()
-            msg = '{} result: {!r}'
-            print(msg.format(future, res))
-            results.append(res)
+    return result
 
-    return len(results)
+def results(result):
+    result.contractsForwarded_len = len(result.contractsForwarded)
+    result.contractsWarned_len = len(result.contractsWarned)
+    result.contractsWithPreviousDraftInvoices_len = len(result.contractsWithPreviousDraftInvoices)
+    result.contractsWithError_len = len(result.contractsWithError)
+    result.contractsWizardBadEndEstate_len = len(result.contractsWizardBadEndEstate)
+    result.contractsValidationError_len = len(result.contractsValidationError)
+    result.contractsCrashed_len = len(result.contractsCrashed)
+    
+    success("")
+    success(" ---------")
+    success(" - FINAL -")
+    success(" ---------")
+    success(u"""\
+     Polisses avancades a data de lot:
+        {contractsForwarded}
+    
+     Polisses notificades amb mail d'advertiment:
+        {contractsWarned}
+    
+     Polisses que ja tenien factures en esborrany i s'han deixat:
+        {contractsWithPreviousDraftInvoices}
+    
+     Polisses que no han pogut avancar:
+        {contractsWithError}
+    
+     Polisses que han donat error al intentar facturar:
+        {contractsWizardBadEndEstate}
+    
+     Polisses que han donat error al validar factures:
+        {contractsValidationError}
+    
+     Polisses que han generat error fatal al intentar facturar:
+         {contractsCrashed}
+    """, **result)
+    success(" ---------")
+    success(" - RESULTADOS TOTALES -")
+    success(" ---------")
+    
+    success(u"""\
+     Polisses avancades a data de lot: {contractsForwarded_len}
+    
+     Polisses notificades amb mail d'advertiment: {contractsWarned_len}
+    
+     Polisses que ja tenien factures en esborrany i s'han deixat: {contractsWithPreviousDraftInvoices_len}
+    
+     Polisses que no han pogut avancar: {contractsWithError_len}
+    
+     Polisses que han donat error al intentar facturar: {contractsWizardBadEndEstate_len}
+    
+     Polisses que han donat error al validar factures: {contractsValidationError_len}
+    
+     Polisses que han generat error fatal al intentar facturar: {contractsCrashed_len}
+    
+    """, **result)
 
 if __name__ == '__main__':
-    avancar_multiple_polissa(polisses)
-
+    avancar_multiple_polissa(polisses,result)
+    results(result)
+    
 # vim: et ts=4 sw=4
 
