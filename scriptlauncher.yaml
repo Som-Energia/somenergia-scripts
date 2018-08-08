@@ -265,7 +265,7 @@ gestiocontractes:
           file:
             type: FILE
             description: Excel con los cups
-       cupstoemailcanvicomptador:
+      cupstoemailcanvicomptador:
         script: SOME_SRC/cups2email/cups2email_lang_canvi_comptador.py {file}
         title: Email avis tall de llum si no deixen canviar el comptador a la distribuidora
         description:
