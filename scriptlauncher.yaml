@@ -265,6 +265,14 @@ gestiocontractes:
           file:
             type: FILE
             description: Excel con los cups
+       cupstoemailcanvicomptador:
+        script: SOME_SRC/cups2email/cups2email_lang_canvi_comptador.py {file}
+        title: Email avis tall de llum si no deixen canviar el comptador a la distribuidora
+        description:
+        parameters:
+          file:
+            type: FILE
+            description: Excel con los cups
       contractesSenseATR:
         script: python SOME_SRC/somenergia-scripts/Informacio/cercar_contractes_sense_atr.py {date_from} {date_to}
         title: Cerca contractes sense casos ATR creats
