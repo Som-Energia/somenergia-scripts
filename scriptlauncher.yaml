@@ -361,6 +361,19 @@ generation:
         celles:
           description: Enganxa les celles de l'Excel >
 
+accounting:
+  description: Comptabilitat
+  scripts:
+    llibremajoracumulat:
+      title: Llibre Major Acumulat
+      script: python SOME_SRC/somenergia-scripts/accounting/llibremajoracumulat.py && mv report.pdf {pdfoutput}
+      description: >
+        Genera un pdf
+      parameters:
+        pdfoutput:
+          type: FILEDOWN
+          extension: pdf
+
 validation:
   description: Validació de codis
   scripts:
