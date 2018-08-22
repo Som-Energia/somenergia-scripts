@@ -366,13 +366,26 @@ accounting:
   scripts:
     llibremajoracumulat:
       title: Llibre Major Acumulat
-      script: python SOME_SRC/somenergia-scripts/accounting/llibremajoracumulat.py && mv report.pdf {pdfoutput}
+      script: python SOME_SRC/somenergia-scripts/accounting/llibremajoracumulat.py {report} {compte} {inici} {final}
       description: >
-        Genera un pdf
+        Genera un pdf amb el llibre major acumulat.
+        Demanat per en Carles.
       parameters:
-        pdfoutput:
+        compte:
+          description: "ID del compte que es vol mirar (TODO: fer-ho a partir del codi de compte)"
+          default: 1703
+        inici:
+          type: date
+          description: Data d'inici de l'informe (en format YYYY-MM-DD)
+          default: '2018-01-01'
+        final:
+          type: date
+          description: Data final de l'informe (en format YYYY-MM-DD)
+          default: '2018-07-24'
+        report:
           type: FILEDOWN
           extension: pdf
+          name: LlibreMajorAcumulat-{compte}-{inici}-{final}.pdf
 
 validation:
   description: Validació de codis

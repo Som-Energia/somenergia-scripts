@@ -5,16 +5,11 @@ from subprocess import call
 import time
 import configdb
 
-#report = 'giscedata.facturacio.factura'
-#ids = [1513047, 1513049, 1513057, 1513042]
-#ids = [1513042]
-
-
 report = 'account.general.ledger.cumulative'
-ids = [1703] # 572000000002
-start_date = '2018-01-01'
-end_date = '2018-07-24'
-fiscal_year = 10 # '2018'
+outputFile = sys.argv[1]
+ids = [int(sys.argv[2])] # [1703] # 572000000002
+start_date = sys.argv[3]
+end_date = sys.argv[4]
 state = 'none' # 'none' tots , 'bydate': per dates
 
 params = {
@@ -36,15 +31,15 @@ params = {
         },
         'amount_currency': False,
         'display_account': 'bal_mouvement',
-        'fiscalyear': 2},
-        'model': 'account.account',
-        'report_id': False,
-        'id': ids[0]
+        'fiscalyear': 2
+    },
+    'model': 'account.account',
+    'report_id': False,
+    'id': ids[0]
 }
 
 O = Client(**configdb.erppeek)
 
-#report_id = O.report(report, ids)
 report_id = O.report(report, ids, params, {'lang': 'ca_ES', 'tz': 'Europe/Madrid'})
 sys.stdout.write("Waiting")
 res = {'state': False}
@@ -55,8 +50,8 @@ while not res['state']:
     sys.stdout.flush()
 
 sys.stdout.write("\n")
+	
 
-with open('report.pdf','w') as f:
+with open(outputFile,'w') as f:
     f.write(base64.b64decode(res['result']))
 
-call(['okular', 'report.pdf'])
