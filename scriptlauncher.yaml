@@ -401,3 +401,5 @@ validation:
       parameters:
         cnae:
           description: CNAE
+
+# vim: et ts=2 sw=2
