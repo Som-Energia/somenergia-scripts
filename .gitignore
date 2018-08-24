@@ -4,3 +4,4 @@ configdb.py
 *.pyc
 *.swp
 admin/client_secret.json
+Baixa_Socis/CredencialsBaixaSocis.json
