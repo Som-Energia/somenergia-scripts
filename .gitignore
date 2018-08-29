@@ -4,4 +4,9 @@ configdb.py
 *.pyc
 *.swp
 admin/client_secret.json
-Baixa_Socis/CredencialsBaixaSocis.json
+admin/Baixa_Socis/CredencialsBaixaSocis.json
+admin/Baixa_Socis/baixa_socies.sql
+admin/Baixa_Socis/configdb.py
+admin/Baixa_Socis/expected.csv
+admin/Baixa_Socis/migracio_baixa_socies.csv
+admin/Baixa_Socis/result.csv

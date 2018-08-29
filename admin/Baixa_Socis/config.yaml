@@ -1,0 +1,11 @@
+filename: 'Baixa socis - Baja socios (respuestas)'  
+sheet: 'Respuestas de formulario 1' 
+intervalCells4Date: G1:G692
+intervalCells4DNI: C1:C692
+intervalCells4Check: F1:F692 
+queryfile: 'baixa_socies.sql'
+oldFilename: 'Baixes de soci/a'
+oldSheet: 'Full1'
+oldintervalCells4Date: 
+oldintervalCells4DNI: C4:C633
+oldintervalCells4Check:
