@@ -10,3 +10,5 @@ admin/Baixa_Socis/configdb.py
 admin/Baixa_Socis/expected.csv
 admin/Baixa_Socis/migracio_baixa_socies.csv
 admin/Baixa_Socis/result.csv
+admin/dades_id_polissa_potencia_dist.csv
+admin/actualizarpotencias.json

@@ -1,0 +1,8 @@
+#-*- coding:utf-8 -*-
+
+document :
+    filename : 'errors 3032_revisio'
+    sheet : 'Busqueda dins ERP'
+    potenciaIntervalCells : M2:M81
+    idpolissaIntervalCells : B2:B81
+
