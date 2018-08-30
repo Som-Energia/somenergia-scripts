@@ -51,6 +51,7 @@ def update_dades_erp(data):
         step("Generando periodos para el id polissa {}", id_polissa)
         O.GiscedataPolissa.generar_periodes_potencia([id_polissa])
         step("Modificando polissa {}", p['name'])
+        # TODO: Que se añade a los campos Observaciones, data_inici, data_firma_contracte?
         parameters = {'accio':'modificar','polissa_id':id_polissa,'observacions':'TEST','data_inici':'2018-08-28','data_firma_contracte':'2018-08-28'}
         wizard_id = O.GiscedataPolissaCrearContracte.create(parameters)
         O.GiscedataPolissaCrearContracte.action_crear_contracte([wizard_id], {})
