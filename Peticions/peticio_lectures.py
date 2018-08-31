@@ -116,7 +116,7 @@ avui_ = avui.strftime('%Y/%m/%d')
 from_id = O.PoweremailCore_accounts.search([('email_id','=','factura@somenergia.coop')])
 template_id = O.PoweremailTemplates.search([('name','=',u'Petici\xf3 lectura comptador OV')])
 #enviats_ids = O.PoweremailMailbox.search([('pem_subject','ilike','Som energia: Lectura de consum (contracte'),('date_mail','>',min_date)])
-enviats_ids = O.PoweremailMailbox.search([('pem_subject','ilike',u'Petici\xf3 lectura comptador'),('date_mail','>',sent_date)])
+enviats_ids = O.PoweremailMailbox.search([('pem_subject','ilike',u'Petici\xf3 lectura comptador'),('date_mail','>',sent_date), ('folder','=','sent')])
 enviats = O.PoweremailMailbox.read(enviats_ids,['reference','date_mail'])
 polisses_enviats_auto = [int(polissa_ref['reference'].split(',')[1]) for polissa_ref in enviats]
 
