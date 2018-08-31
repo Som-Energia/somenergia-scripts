@@ -42,7 +42,7 @@ sense_lectures_estimades = []
 
 #constants correu electronic
 template_id = 53 #Explicacio de la facturacio i canvi de comptador
-from_id = 8 # factura@somenergia.coop
+from_id = O.PoweremailCore_accounts.search([('email_id','=','factura@somenergia.coop')])
 src_model = 'giscedata.polissa'
 
 

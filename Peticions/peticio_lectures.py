@@ -113,6 +113,7 @@ O = OOOP(**configdb.ooop)
 avui = datetime.today()
 avui_ = avui.strftime('%Y/%m/%d')
 
+from_id = O.PoweremailCore_accounts.search([('email_id','=','factura@somenergia.coop')])
 template_id = O.PoweremailTemplates.search([('name','=',u'Petici\xf3 lectura comptador OV')])
 #enviats_ids = O.PoweremailMailbox.search([('pem_subject','ilike','Som energia: Lectura de consum (contracte'),('date_mail','>',min_date)])
 enviats_ids = O.PoweremailMailbox.search([('pem_subject','ilike',u'Petici\xf3 lectura comptador'),('date_mail','>',sent_date)])
@@ -142,7 +143,7 @@ for polissa_id in polisses_process_auto[:n_msgs]:
            'template_id': template_id[0],
            'src_model': 'giscedata.polissa',
            'src_rec_ids': [polissa_id],
-           'from': 8}
+           'from': from_id}
 
     params = {'state': 'single',
               'priority':0,
