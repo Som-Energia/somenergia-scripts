@@ -143,7 +143,7 @@ for polissa_id in polisses_process_auto[:n_msgs]:
            'template_id': template_id[0],
            'src_model': 'giscedata.polissa',
            'src_rec_ids': [polissa_id],
-           'from': from_id}
+           'from': from_id[0]}
 
     params = {'state': 'single',
               'priority':0,
