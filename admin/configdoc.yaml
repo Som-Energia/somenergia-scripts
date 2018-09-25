@@ -2,7 +2,9 @@
 
 document :
     filename : 'errors 3032_revisio'
-    sheet : 'Busqueda dins ERP'
-    potenciaIntervalCells : M2:M81
-    idpolissaIntervalCells : B2:B81
+    sheet : 'Casos per passar SCRIPT'
+    potenciaIntervalCells : F2:F46
+    idpolissaIntervalCells : A2:A46
+    datainiciIntervalCells : D2:D46
+    potenciaactivaIntervalCells: E2:E46
 
