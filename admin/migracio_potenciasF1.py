@@ -46,9 +46,8 @@ def get_id_polissa_potencia_dist_from_drive():
 def update_dades_erp(data):
 
     O = OOOP(**dbconfig.ooop)
-    #print "".join([str(d) for d in data if d[0]=='5500'])
-    cont = 0
     for d in data:
+
         potencia = float(d[0])*0.001
         id_polissa = int(d[1])
         data_inici = d[2]
@@ -61,6 +60,7 @@ def update_dades_erp(data):
             potencia,
             )
         p = O.GiscedataPolissa.read(id_polissa)
+        O.GiscedataPolissa.send_signal([id_polissa],'modcontractual')
         O.GiscedataPolissa.write(id_polissa,{'potencia':potencia})
         observaciones_value =   """
                                 Data %s: Canvi potencia %s a potencia %s per
@@ -70,18 +70,16 @@ def update_dades_erp(data):
         step("Generando periodos para el id polissa {}", id_polissa)
         O.GiscedataPolissa.generar_periodes_potencia([id_polissa])
         step("Modificando polissa {}", p['name'])
-        # TODO: Que se añade a los campos Observaciones, data_inici, data_firma_contracte?
         parameters = {'accio':'modificar','polissa_id':id_polissa,'observacions':observaciones_value,'data_inici':data_inici,'data_firma_contracte':data_firma}
         # en accio nou hay que tener en cuenta las fechas de data_inici y data_final del anterior registro
         # parameters = {'accio':'nou','polissa_id':id_polissa,'observacions':observaciones_value,'data_inici':'2019-01-22','data_firma_contracte':data_firma,'data_final':'2020-01-22'}
         wizard_id = O.GiscedataPolissaCrearContracte.create(parameters)
         O.GiscedataPolissaCrearContracte.action_crear_contracte([wizard_id], {})
         success("Polissa {} con potencia antigua {} actualizada con potencia distri {}", p['name'], potencia_activa, potencia)
-
+        cont += 1
 def get_dades_from_csv():
 
      with open('dades_id_polissa_potencia_dist.csv') as csv_file:
-         #csv_reader = csv.reader(csv_file, delimiter='\t')
          data = []
          for row in csv_file:
             data_line = row.rstrip().split('\t')
@@ -91,7 +89,7 @@ def get_dades_from_csv():
 def main():
 
     step("Get all potenciadist from {} drive", config.document['filename'])
-    #get_id_polissa_potencia_dist_from_drive()
+    get_id_polissa_potencia_dist_from_drive()
     data = get_dades_from_csv()
     update_dades_erp(data)
 
