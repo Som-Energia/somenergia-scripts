@@ -76,7 +76,7 @@ def update_dades_erp(data):
         wizard_id = O.GiscedataPolissaCrearContracte.create(parameters)
         O.GiscedataPolissaCrearContracte.action_crear_contracte([wizard_id], {})
         success("Polissa {} con potencia antigua {} actualizada con potencia distri {}", p['name'], potencia_activa, potencia)
-        cont += 1
+
 def get_dades_from_csv():
 
      with open('dades_id_polissa_potencia_dist.csv') as csv_file:
