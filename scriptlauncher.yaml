@@ -249,6 +249,14 @@ gestiocontractes:
         parameters:
           date:
             description: Introdueix la data amb el format 'YYYY-mm-dd', l'última no inclosa
+      cupstoemailc:
+        script: SOME_SRC/cups2email/cups2email_lang_c.py {file}
+        title: Email segon avís requeriment butlletí elèctric a partir dels CUPS facilitats per la distribuidora
+        description: 
+        parameters:
+          file:
+            type: FILE
+            description: Excel con los cups
       cupstoemailb:
         script: SOME_SRC/cups2email/cups2email_lang_b.py {file}
         title: Email validació de instalació a partir dels CUPS facilitats per la distribuidora
