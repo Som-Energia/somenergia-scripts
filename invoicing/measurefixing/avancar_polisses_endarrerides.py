@@ -93,12 +93,14 @@ Validator = O.GiscedataFacturacioValidationValidator
 warning = O.GiscedataFacturacioValidationWarning
 
 step("Cercant polisses endarrerides")
-polissaEndarrerida_ids = contractOutOfBatchDate()
-_polissaEndarrerida_ids = [
+_polissaEndarrerida_ids = contractOutOfBatchDate()
+polissaEndarrerida_ids = [
     #153397,
     #154667,
     #1883, # Falla validacion
-    39, # Pasa validaciones
+    #39, # Pasa validaciones
+    #3179,
+    31385,
 ]
 polissaEndarrerida_ids_len = len(polissaEndarrerida_ids)
 step("Adelantant {} polisses",polissaEndarrerida_ids_len)
@@ -126,7 +128,7 @@ result.contractsWizardBadEndEstate=[]
 result.contractsValidationError=[]
 
 def avancar_polissa(polissa,counter,sem,result):
-    
+
     with sem:
         polissa = ns(polissa)
         polissa.id_ultima_lectura = Measures.search([
@@ -186,10 +188,10 @@ def avancar_polissa(polissa,counter,sem,result):
 
                 for draft_invoice_id in draft_invoice_ids:
                     step("\t - Validant factura {}",draft_invoice_id)
-                    validation_warnings = Validator.validate_invoice(draft_invoice_id) 
+                    validation_warnings = Validator.validate_invoice(draft_invoice_id)
                     for validation_warning in validation_warnings:
                         v_warning_text = warning.read(validation_warning, ['message','name'])
-                        if v_warning_text['name'] != DELAYED_CONTRACT_WARNING_TEXT: 
+                        if v_warning_text['name'] != DELAYED_CONTRACT_WARNING_TEXT:
                             ko = True # validation error
                             warn("   · {} {}",
                                 (v_warning_text['name']).encode('utf-8'),
@@ -223,7 +225,8 @@ def avancar_polissa(polissa,counter,sem,result):
             if len(generated_invoice_ids)>1:
                 step("\tMes d'una factura generada enviem el mail de Avis de multiples factures")
                 result.contractsWarned.append(polissa.id)
-                enviar_correu(polissa.id, 71, 8,'giscedata.polissa')
+                # 3er parametro id from hay que indicar el que toca para la plantilla
+                enviar_correu(polissa.id, 71, 27,'giscedata.polissa')
             step("Obrir i enviar totes les factures generades, updatarà la data ultima factura a polissa")
             lang = O.ResPartner.read(polissa.pagador[0], ['lang'])['lang']
             # TODO: What if this fails? Mails already sent!
@@ -237,7 +240,7 @@ def avancar_polissa(polissa,counter,sem,result):
         return counter,result
 
 def avancar_multiple_polissa(polisses,result):
-    
+
     with futures.ThreadPoolExecutor(max_workers=5) as executor:
         to_do = []
         sem = Semaphore()
@@ -246,7 +249,7 @@ def avancar_multiple_polissa(polisses,result):
             to_do.append(future)
             msg = 'Scheduled for {}: {}'
             print(msg.format(polissa, future))
-        
+
     return result
 
 def results(result):
@@ -257,7 +260,7 @@ def results(result):
     result.contractsWizardBadEndEstate_len = len(result.contractsWizardBadEndEstate)
     result.contractsValidationError_len = len(result.contractsValidationError)
     result.contractsCrashed_len = len(result.contractsCrashed)
-    
+
     success("")
     success(" ---------")
     success(" - FINAL -")
@@ -265,49 +268,49 @@ def results(result):
     success(u"""\
      Polisses avancades a data de lot:
         {contractsForwarded}
-    
+
      Polisses notificades amb mail d'advertiment:
         {contractsWarned}
-    
+
      Polisses que ja tenien factures en esborrany i s'han deixat:
         {contractsWithPreviousDraftInvoices}
-    
+
      Polisses que no han pogut avancar:
         {contractsWithError}
-    
+
      Polisses que han donat error al intentar facturar:
         {contractsWizardBadEndEstate}
-    
+
      Polisses que han donat error al validar factures:
         {contractsValidationError}
-    
+
      Polisses que han generat error fatal al intentar facturar:
          {contractsCrashed}
     """, **result)
     success(" ---------")
     success(" - RESULTADOS TOTALES -")
     success(" ---------")
-    
+
     success(u"""\
      Polisses avancades a data de lot: {contractsForwarded_len}
-    
+
      Polisses notificades amb mail d'advertiment: {contractsWarned_len}
-    
+
      Polisses que ja tenien factures en esborrany i s'han deixat: {contractsWithPreviousDraftInvoices_len}
-    
+
      Polisses que no han pogut avancar: {contractsWithError_len}
-    
+
      Polisses que han donat error al intentar facturar: {contractsWizardBadEndEstate_len}
-    
+
      Polisses que han donat error al validar factures: {contractsValidationError_len}
-    
+
      Polisses que han generat error fatal al intentar facturar: {contractsCrashed_len}
-    
+
     """, **result)
 
 if __name__ == '__main__':
     avancar_multiple_polissa(polisses,result)
     results(result)
-    
+
 # vim: et ts=4 sw=4
 
