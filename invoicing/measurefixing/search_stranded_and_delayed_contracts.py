@@ -122,6 +122,7 @@ class SearchStrandedAndDelayed(Searcher):
     def __init__(self, limits=None):
         Searcher.__init__(self, limits)
         self.result.last_polissa_created = None
+        self.result.with_draft_invoices = []
         self.result.never_billed_no_meters = []  # endarrerides
         self.result.never_billed_stranded = []
         self.result.never_billed_distri_shame = []  # endarrerida
@@ -136,6 +137,10 @@ class SearchStrandedAndDelayed(Searcher):
         self.template = """
 RESUM DE L'SCRIPT:
 ------------------
+
+ * Polisses pre-filtrades:
+    - Amb factures en esborrany: {len_with_draft_invoices}
+        {names_with_draft_invoices}
 
  * Polisses que no han facturat mai:
     - Sense contadors : {len_never_billed_no_meters}
@@ -164,11 +169,11 @@ RESUM DE L'SCRIPT:
     - comptadors : {len_billed_no_meters}
         {names_billed_no_meters}
 
-    - Encallades: {len_billed_furder_stranded}
-        {names_billed_furder_stranded}
-
     - Culpa distri: {len_billed_furder_distri_shame}
         {names_billed_furder_distri_shame}
+
+    - Encallades: {len_billed_furder_stranded}
+        {names_billed_furder_stranded}
 
  * Polisses que no han entrat en les anteriors:
     - Endarrerides: {len_late_billing}
@@ -249,14 +254,37 @@ RESUM DE L'SCRIPT:
         facts = self.fact_obj.search([
             ('polissa_id', '=', polissa.id),
             ('origin', '=', False),
+            ('type','in',['out_refund','out_invoice']),
             ], order='date_invoice DESC'
             )
         if not facts:
             return None
         return self.fact_obj.browse(facts[0])
 
+    def has_draft_invoices(self, polissa):
+        facts = self.fact_obj.search([
+            ('polissa_id', '=', polissa.id),
+            ('origin', '=', False),
+            ('type','in',['out_refund','out_invoice']),
+            ('state', '=', 'draft'),
+            ], order='date_invoice DESC'
+            )
+        return facts
+
+    # testing contracts with draft invoices
+    def test_1_contract_with_draft_invoices(self, counter, polissa):
+        draft_invoices = self.has_draft_invoices(polissa)
+        if draft_invoices:
+            self.io.info(
+                "la polissa {} te {} factures en esborrany",
+                polissa.name,
+                len(draft_invoices))
+            self.result.with_draft_invoices.append(polissa)
+            return True
+        return False
+
     # testing the never billed contrats, case A in documentation
-    def test_never_billed_contract(self, counter, polissa):
+    def test_2_never_billed_contract(self, counter, polissa):
         if polissa.data_ultima_lectura:
             return False
         if polissa.facturacio_suspesa:
@@ -297,15 +325,12 @@ RESUM DE L'SCRIPT:
         return True
 
     # testing the billed contrats with cholder change, case A' in documentation
-    def test_billed_contract_titular_change(self, counter, polissa):
+    def test_3_billed_contract_titular_change(self, counter, polissa):
         if not polissa.data_ultima_lectura:
             return False
         if polissa.data_ultima_lectura > polissa.data_alta:
             return False
         if polissa.facturacio_suspesa:
-            return False
-
-        if polissa.data_alta > today_minus(5):
             return False
 
         if len(polissa.comptadors) == 0:
@@ -342,7 +367,7 @@ RESUM DE L'SCRIPT:
         return True
 
     # testing the billed contrats, case B in documentation
-    def test_billed_contracts(self, counter, polissa):
+    def test_4_billed_contracts(self, counter, polissa):
         if not polissa.data_ultima_lectura:
             return False
 
@@ -373,7 +398,7 @@ RESUM DE L'SCRIPT:
 
         has_further_pool_readings = self.has_next_to_date_pool_readings(
             polissa,
-            last_inv.date_end)
+            polissa.data_ultima_lectura)
         if has_further_pool_readings:
             self.io.info(
                 "la polissa {} ha facturat i te lectures a pool despres de la"
@@ -384,7 +409,7 @@ RESUM DE L'SCRIPT:
 
         has_further_lect_readings = self.has_next_to_date_lect_readings(
             polissa,
-            last_inv.date_end)
+            polissa.data_ultima_lectura)
         if has_further_lect_readings:
             self.io.info(
                 "la polissa {} ha facturat i te lectures a lectures despres de"
