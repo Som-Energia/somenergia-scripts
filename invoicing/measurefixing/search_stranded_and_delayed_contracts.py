@@ -28,7 +28,7 @@ class Searcher:
                 try:
                     item_data = self.item_data_loader(key)
                     caught = False
-                    for method in dir(self):
+                    for method in sorted(dir(self)):
                         if (
                             callable(getattr(self, method)) and
                             method.startswith('test_')
