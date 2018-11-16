@@ -172,7 +172,6 @@ def get_contract_status(O, contract_id):
                                                        ('invoice_id.type', 'in', ['out_invoice','out_refund']),
                                                        ('invoice_id.state', '=', 'open'),
                                                        ('invoice_id.date_invoice', '<', limit_date.strftime('%Y-%m-%d'))])
-
     if len(invoices_id):
         return 'UNPAID'
 
@@ -198,6 +197,6 @@ def open_and_send(O, ids, lang, send_refund=True, send_rectified=True, send_dige
 def getPeriodId(period_obj):
     period_name = datetime.today().strftime('%m/%Y')
     return period_obj.search([('name','=',period_name)])[0]
-    
+
 
 # vim: et ts=4 sw=4
