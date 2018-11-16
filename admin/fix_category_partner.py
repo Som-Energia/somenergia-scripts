@@ -4,6 +4,7 @@ import sys
 import configdb
 from consolemsg import step, fail, success, warn, error
 from yamlns import namespace as ns
+from erppeek import Client
 
 #TODO set up as external parameters using click
 # Constants
