@@ -6,12 +6,20 @@ from yamlns import namespace as ns
 import xmlrpclib
 import time
 
+def hours(seconds):
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    if h > 0:
+        return "%d:%02d:%02d" % (h, m, s)
+    else:
+        return "%02d:%02d" % (m, s)
 
 # the class
 class Searcher:
     def __init__(self, limits=None):
         self.limits_min = min(limits) if limits else None
         self.limits_max = max(limits) if limits else None
+        self.broken_connection_wait = 3
         self.io = io
         self.result = ns({})
         self.result.connectionErrors = 0
@@ -19,12 +27,11 @@ class Searcher:
 
     def run(self):
         self.setup()
+        self.start = time.time()
         try:
             for key, counter in self.key_generator():
-
                 if self.handbrake(counter):
                     continue
-
                 try:
                     item_data = self.item_data_loader(key)
                     caught = False
@@ -36,15 +43,17 @@ class Searcher:
                             test_case_func = getattr(self, method)
                             caught = test_case_func(counter, item_data)
                             if caught:
-                                self.io.info("catched , no more testing")
+                                self.io.info(
+                                    "catched by {}, no more testing",
+                                    method)
                                 break
                     if not caught:
                         self.not_caught_by_tests(counter, item_data)
                 except xmlrpclib.ProtocolError:
                     self.io.error("Broken connection, nap time!")
                     self.result.connectionErrors += 1
-                    time.sleep(3)
-
+                    time.sleep(self.broken_connection_wait)
+            self.io.bigstep("Done in {}",self.get_elapsed_time())
         except KeyboardInterrupt:
             self.io.error("Pressed ctrl+C , exiting the main loop")
 
@@ -99,6 +108,20 @@ class Searcher:
 
     def not_caught_by_tests(self, counter, polissa):
         pass
+
+    # Helper funtions
+    def get_elapsed_time(self):
+        return hours(time.time() - self.start)
+
+    def get_loop_times(self,partials,totals):
+        elapsed = time.time() - self.start
+        expected = (elapsed * totals) / partials
+        remaining = expected - elapsed
+        return (
+            hours(elapsed),
+            hours(remaining),
+            hours(expected)
+            )
 
 
 # Debugging constants
@@ -207,9 +230,17 @@ RESUM DE L'SCRIPT:
         totals = len(pol_ids)
 
         for counter, pol_id in enumerate(pol_ids):
+            item = counter + 1
+            (elapsed, remaining, expected) = self.get_loop_times(item, totals)
             self.io.bigstep(
-                "{}/{} processing polissa id {}", counter+1, totals, pol_id)
-            yield pol_id, counter+1
+                "{}/{} processing polissa id {} .. ( {} / {} / {} )",
+                item,
+                totals,
+                pol_id,
+                elapsed,
+                remaining,
+                expected)
+            yield pol_id, item
 
     def item_data_loader(self, key):
         return self.pol_obj.browse(key)
