@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
-
+import pdb; pdb.set_trace()
 from validacio_eines import (
     contractOutOfBatchDate,
     lazyOOOP,
-    draftContractInvoices,
     enviar_correu,
     open_and_send,
 )
@@ -35,7 +34,8 @@ def debugWizard(wiz):
     step('state:', wiz.state)
     step('info:', wiz.info)
 
-def undoDraftInvoicesAndMeasures(polissa, invoice_ids, data_ultima_lectura_original):
+def undoDraftInvoicesAndMeasures(polissa, invoice_ids):
+    data_ultima_lectura_original = polissa.data_ultima_lectura
     step("\tEliminem factures creades {}", invoice_ids)
     if invoice_ids:
         Invoice.unlink(invoice_ids, {})
@@ -151,7 +151,8 @@ def avancar_polissa(polissa,counter,sem,result):
             getStr(polissa.lot_facturacio,1,'cap'),
             )
         success(SEPPARATOR)
-        hasAB = exist_draft_invoices_polissa(polissa)
+        previous_draft_invoices = exist_draft_invoices_polissa(polissa)
+
         try:
             ko = generate_draft_invoices_polissa(polissa)
             if ko:
@@ -177,11 +178,13 @@ def avancar_polissa(polissa,counter,sem,result):
             ignoreme = raw_input("")
 
         # in case of general execution error the draft invoices list can be incomplete, refresh it
-        generated_invoice_ids = draftContractInvoices(polissa.id)
+        draft_invoice_ids = get_draft_invoices_from_polissa(polissa)
+        generated_invoice_ids = get_generated_invoices_ids(previous_draft_invoices, draft_invoice_ids)
+        pdb.set_trace()
         if not doit or ko:
-            undoDraftInvoicesAndMeasures(polissa, generated_invoice_ids, polissa.data_ultima_lectura)
+            undoDraftInvoicesAndMeasures(polissa, generated_invoice_ids)
         else:
-            send_mail_open_send_invoices(generated_invoice_ids,polissa)
+            send_mail_open_send_invoices(draft_invoice_ids,polissa)
 
         if not direct:
             warn("prem entrar per avançar el següent contracte")
@@ -189,9 +192,15 @@ def avancar_polissa(polissa,counter,sem,result):
 
         return counter,result
 
+def get_generated_invoices_ids(previous_draft_invoices, draft_invoice_ids):
+        previous_draft_invoices = set(previous_draft_invoices)
+        draft_invoice_ids = set(draft_invoice_ids)
+        generated_invoice_ids = draft_invoice_ids.difference(previous_draft_invoices)
+        return list(generated_invoice_ids)
+
 def exist_draft_invoices_polissa(polissa):
 
-    existDrafInvoice_ids = draftContractInvoices(polissa.id)
+    existDrafInvoice_ids = get_draft_invoices_from_polissa(polissa)
     if existDrafInvoice_ids:
         warn("El contracte {id} ja tenia {n} factures en esborrany",
             n=len(existDrafInvoice_ids), **polissa)
@@ -225,7 +234,7 @@ def generate_draft_invoices_polissa(polissa):
 
 def validate_draft_invoices(polissa):
 
-    draft_invoice_ids = draftContractInvoices(polissa.id)
+    draft_invoice_ids = get_draft_invoices_from_polissa(polissa)
     draft_invoice_ids.reverse()
     success("\tFactures generades: {}", draft_invoice_ids)
     step("\tValidem factures creades")
@@ -245,9 +254,9 @@ def validate_draft_invoices(polissa):
         result.contractsValidationError.append(polissa.id)
     return ko
 
-def send_mail_open_send_invoices(generated_invoice_ids,polissa):
+def send_mail_open_send_invoices(draft_invoice_ids,polissa):
 
-    if len(generated_invoice_ids)>1:
+    if len(draft_invoice_ids)>1:
         if polissa_has_draft_refund_invoices(polissa):
             step("\tFactura AB existent enviem el mail de Resum AB y rectificadoras")
             result.contractsWarned.append(polissa.id)
@@ -265,7 +274,7 @@ def send_mail_open_send_invoices(generated_invoice_ids,polissa):
     ignoreme = raw_input("")
 
     # TODO: What if this fails? Mails already sent!
-    return open_and_send(generated_invoice_ids, lang)
+    return open_and_send(draft_invoice_ids, lang)
 
 def polissa_has_draft_refund_invoices(polissa):
 
@@ -274,6 +283,14 @@ def polissa_has_draft_refund_invoices(polissa):
             ('type', '=', 'out_refund'),
             ('polissa_id','=',polissa.id),
             ])
+
+def get_draft_invoices_from_polissa(polissa):
+
+    return O.GiscedataFacturacioFactura.search([
+        ('state','=','draft'),
+        ('polissa_id','=',polissa.id),
+        ])
+
 ## TODO: with a list of polissas obtain id_polissa
 def get_polissa_id_from_polissa():
 
