@@ -423,4 +423,17 @@ validation:
         cnae:
           description: CNAE
 
+
+benchmarks:
+  description: Provant el temps de resposta
+  scripts:
+    userbrowse:
+      title: Llegeix els registres de N persones
+      script: python SOME_SRC/somenergia-scripts/benchmarks/user_browse.py {nregistres}
+      parameters:
+        nregistres:
+          default: 100
+          description: Cuants registres
+
+
 # vim: et ts=2 sw=2
