@@ -367,7 +367,7 @@ generation:
       description: Formateja arxius de previsió
       parameters:
         celles:
-          description: Enganxa les celles de l'Excel >
+          description: Enganxa les celles de l'Excel
 
 accounting:
   description: Comptabilitat
