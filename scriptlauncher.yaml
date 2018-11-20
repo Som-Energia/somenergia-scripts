@@ -380,8 +380,8 @@ accounting:
         Demanat per en Carles.
       parameters:
         compte:
-          description: "ID del compte que es vol mirar (TODO: fer-ho a partir del codi de compte)"
-          default: 1703
+          description: "Número del compte comptable que es vol mirar"
+          default: NO ESPECIFICAT
         inici:
           type: date
           description: Data d'inici de l'informe (en format YYYY-MM-DD)
