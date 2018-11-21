@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
-import pdb; pdb.set_trace()
+#import pdb; pdb.set_trace()
 from validacio_eines import (
     contractOutOfBatchDate,
     lazyOOOP,
@@ -158,7 +158,9 @@ def avancar_polissa(polissa,counter,sem,result):
             if ko:
                 result.contractsWizardBadEndEstate.append(polissa.id)
             else:
-                ko = validate_draft_invoices(polissa)
+                draft_invoice_ids = get_draft_invoices_from_polissa(polissa)
+                generated_invoice_ids = get_generated_invoices_ids(previous_draft_invoices, draft_invoice_ids)
+                ko = validate_draft_invoices(polissa,generated_invoice_ids)
 
         except Exception as e:
             ko = True # general execution error
@@ -180,7 +182,6 @@ def avancar_polissa(polissa,counter,sem,result):
         # in case of general execution error the draft invoices list can be incomplete, refresh it
         draft_invoice_ids = get_draft_invoices_from_polissa(polissa)
         generated_invoice_ids = get_generated_invoices_ids(previous_draft_invoices, draft_invoice_ids)
-        pdb.set_trace()
         if not doit or ko:
             undoDraftInvoicesAndMeasures(polissa, generated_invoice_ids)
         else:
@@ -232,15 +233,14 @@ def generate_draft_invoices_polissa(polissa):
     ko = aWizard.state == 'error'
     return ko
 
-def validate_draft_invoices(polissa):
+def validate_draft_invoices(polissa,generated_invoice_ids):
 
-    draft_invoice_ids = get_draft_invoices_from_polissa(polissa)
-    draft_invoice_ids.reverse()
-    success("\tFactures generades: {}", draft_invoice_ids)
+    generated_invoice_ids.reverse()
+    success("\tFactures generades: {}", generated_invoice_ids)
     step("\tValidem factures creades")
 
     ko = False
-    for draft_invoice_id in draft_invoice_ids:
+    for draft_invoice_id in generated_invoice_ids:
         step("\t - Validant factura {}",draft_invoice_id)
         validation_warnings = Validator.validate_invoice(draft_invoice_id)
         for validation_warning in validation_warnings:
@@ -266,7 +266,7 @@ def send_mail_open_send_invoices(draft_invoice_ids,polissa):
             step("\tMes d'una factura generada enviem el mail de Avis de multiples factures")
             result.contractsWarned.append(polissa.id)
             # 3er parametro id from hay que indicar el que toca para la plantilla
-            enviar_correu(polissa.id, 71, 27,'giscedata.polissa')
+            enviar_correu(polissa.id, 210, 27,'giscedata.polissa')
 
     step("Obrir i enviar totes les factures generades, updatarà la data ultima factura a polissa")
     lang = O.ResPartner.read(polissa.pagador[0], ['lang'])['lang']
@@ -288,6 +288,7 @@ def get_draft_invoices_from_polissa(polissa):
 
     return O.GiscedataFacturacioFactura.search([
         ('state','=','draft'),
+        ('type','in',['out_refund','out_invoice']),
         ('polissa_id','=',polissa.id),
         ])
 
