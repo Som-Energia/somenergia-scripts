@@ -6,6 +6,7 @@ from yamlns import namespace as ns
 import xmlrpclib
 import time
 
+
 def hours(seconds):
     m, s = divmod(seconds, 60)
     h, m = divmod(m, 60)
@@ -13,6 +14,7 @@ def hours(seconds):
         return "%d:%02d:%02d" % (h, m, s)
     else:
         return "%02d:%02d" % (m, s)
+
 
 # the class
 class Searcher:
@@ -53,7 +55,7 @@ class Searcher:
                     self.io.error("Broken connection, nap time!")
                     self.result.connectionErrors += 1
                     time.sleep(self.broken_connection_wait)
-            self.io.bigstep("Done in {}",self.get_elapsed_time())
+            self.io.bigstep("Done in {}", self.get_elapsed_time())
         except KeyboardInterrupt:
             self.io.error("Pressed ctrl+C , exiting the main loop")
 
@@ -113,7 +115,7 @@ class Searcher:
     def get_elapsed_time(self):
         return hours(time.time() - self.start)
 
-    def get_loop_times(self,partials,totals):
+    def get_loop_times(self, partials, totals):
         elapsed = time.time() - self.start
         expected = (elapsed * totals) / partials
         remaining = expected - elapsed
@@ -160,46 +162,51 @@ class SearchStrandedAndDelayed(Searcher):
         self.template = """
 RESUM DE L'SCRIPT:
 ------------------
+Aquest script classifica en diferents categories les polisses que estan a \
+l'apartat de "Contractes amb facturació endarrerida" del ERP.
+Les polisses sortiran ordenades per data de l'última lectura facturada.
+Serà mes fiable si el passem despres d'haver obert factures al procés.
 
- * Polisses pre-filtrades:
-    - Amb factures en esborrany: {len_with_draft_invoices}
+ * Polisses amb factures en esborrany: {len_with_draft_invoices}
         {names_with_draft_invoices}
 
  * Polisses que no han facturat mai:
     - Sense contadors : {len_never_billed_no_meters}
         {names_never_billed_no_meters}
 
-    - Culpa de distri: {len_never_billed_distri_shame}
+    - Valorar si cal posar reclamació a distri: {len_never_billed_distri_shame}
         {names_never_billed_distri_shame}
 
-    - Encallades: {len_never_billed_stranded}
+    - Encallades, requereixen actuació manual: {len_never_billed_stranded}
         {names_never_billed_stranded}
 
  * Polisses amb canvi de titular i no han facturat mai:
     - Sense contadors : {len_billed_tchange_no_meters}
         {names_billed_tchange_no_meters}
 
-    - Culpa de distri: {len_billed_tchange_distri_shame}
+    - Valorar si cal posar reclamació a distri: \
+{len_billed_tchange_distri_shame}
         {names_billed_tchange_distri_shame}
 
-    - Encallades: {len_billed_tchange_stranded}
+    - Encallades, requereixen actuació manual: {len_billed_tchange_stranded}
         {names_billed_tchange_stranded}
 
  * Polisses que han facturat:
     - Sense factures : {len_billed_but_no_invoces}
         {names_billed_but_no_invoces}
 
-    - comptadors : {len_billed_no_meters}
+    - Sense contadors : {len_billed_no_meters}
         {names_billed_no_meters}
 
-    - Culpa distri: {len_billed_furder_distri_shame}
+    - Valorar si cal posar reclamació a distri: \
+{len_billed_furder_distri_shame}
         {names_billed_furder_distri_shame}
 
-    - Encallades: {len_billed_furder_stranded}
+    - Encallades, requereixen actuació manual: {len_billed_furder_stranded}
         {names_billed_furder_stranded}
 
- * Polisses que no han entrat en les anteriors:
-    - Endarrerides: {len_late_billing}
+ * Polisses que no han entrat en les anteriors (endarrerides): \
+{len_late_billing}
         {names_late_billing}
 
  Notes:
@@ -222,11 +229,10 @@ RESUM DE L'SCRIPT:
         self.result.today = today
 
     def key_generator(self):
-        pol_ids = self.pol_obj.search([
-            ('facturacio_endarrerida', '=', True),
-            ])  # Delayed only
+        pol_ids = self.pol_obj.search(
+            [('facturacio_endarrerida', '=', True)],
+            order='data_ultima_lectura DESC, data_alta DESC')  # Delayed only
 
-        pol_ids = sorted(pol_ids)  # sorted
         totals = len(pol_ids)
 
         for counter, pol_id in enumerate(pol_ids):
@@ -285,7 +291,7 @@ RESUM DE L'SCRIPT:
         facts = self.fact_obj.search([
             ('polissa_id', '=', polissa.id),
             ('origin', '=', False),
-            ('type','in',['out_refund','out_invoice']),
+            ('type', 'in', ['out_refund', 'out_invoice']),
             ], order='date_invoice DESC'
             )
         if not facts:
@@ -296,7 +302,7 @@ RESUM DE L'SCRIPT:
         facts = self.fact_obj.search([
             ('polissa_id', '=', polissa.id),
             ('origin', '=', False),
-            ('type','in',['out_refund','out_invoice']),
+            ('type', 'in', ['out_refund', 'out_invoice']),
             ('state', '=', 'draft'),
             ], order='date_invoice DESC'
             )
@@ -482,7 +488,7 @@ RESUM DE L'SCRIPT:
 
 
 if __name__ == "__main__":
-    s = Searcher()
-    s.run()
+    # s = Searcher()
+    # s.run()
     s = SearchStrandedAndDelayed()
     s.run()
