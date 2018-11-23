@@ -139,20 +139,20 @@ def facturar_manual(pol_ids):
     factura_obj = O.GiscedataFacturacioFactura
     comp_obj = O.GiscedataLecturesComptador
     pol_obj = O.GiscedataPolissa
-    
+
     #Inicialitzadors
     polisses_names=[]
     factures_dobles = []
     err = []
-    
+
     polissa_ids = pol_ids
     polissa_ids = list(set(polissa_ids))
-    
+
     avui = datetime.strftime(datetime.today(),'%Y-%m-%d')
-    
+
     n = 0
     total = len(polissa_ids)
-    
+
     for polissa_id in polissa_ids:
         data_fi = False
         fact_ids = []
@@ -168,7 +168,7 @@ def facturar_manual(pol_ids):
                     data_inici = polissa.data_alta
                 else:
                     data_inici = (datetime.strptime(polissa.data_ultima_lectura, '%Y-%m-%d') + timedelta(days=1)).strftime( '%Y-%m-%d')
-                
+
                 context = {'factura_manual': True,
                         'data_inici_factura': data_inici,
                         'data_final_factura': data_fi,
@@ -184,7 +184,7 @@ def facturar_manual(pol_ids):
             print "polissa_id %d" % polissa_id
             err.append(polissa_id)
     return data_fi, fact_ids
-    
+
 def carregar_lectures_from_pool(pol_ids):
     lazyOOOP()
     for pol_id in pol_ids:
@@ -195,7 +195,7 @@ def carregar_lectures_from_pool(pol_ids):
         ctx = {'active_ids': comptadors_ids}
         wiz = O.GiscedataLecturesPoolWizard.create({},ctx)
         O.GiscedataLecturesPoolWizard.action_carrega_lectures([wiz.id], ctx)
-    return 
+    return
 
 
 def polisses_de_factures(factura_ids):
@@ -273,12 +273,12 @@ def enviar_correu_actualitzacio_facturacio_endarrerida(pol_ids):
     except Exception, e:
         print str(e)
     return sent_email
- 
+
 def es_cefaco(pol_id):
     lazyOOOP()
     pol_read = O.GiscedataPolissa.read(pol_id,['category_id'])
     return bool(set(pol_read['category_id']) & set([1,3,5,6,7,8,9,14,15,21,]))
-    
+
 def copiar_lectures(lectura_id):
     lazyOOOP()
     ctx = {'active_id': lectura_id}
@@ -327,8 +327,8 @@ def activar_modcon(pol_id, data_final):
     search_wkitem = [('inst_id', '=', wk_inst_id[0])]
     wk_workitem_id = O.WorkflowWorkitem.search(search_wkitem)
     O.WorkflowWorkitem.write(wk_workitem_id, {'act_id': wkf_activities[0]})
-    return True    
-        
+    return True
+
 def open_and_send(invoice_ids, lang):
     lazyOOOP()
     ctx = {
@@ -339,8 +339,8 @@ def open_and_send(invoice_ids, lang):
         }
     vals = dict(
         state='init',
-        send_refund=False,
-        send_rectified=False,
+        send_refund=True,
+        send_rectified=True,
         send_digest=False,
         num_contracts=1,
         )

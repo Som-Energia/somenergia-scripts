@@ -292,9 +292,13 @@ def get_draft_invoices_from_polissa(polissa):
         ('polissa_id','=',polissa.id),
         ])
 
-## TODO: with a list of polissas obtain id_polissa
-def get_polissa_id_from_polissa():
+## TODO: with a list of polissas name obtain id_polissa
+def get_polissa_id_from_polissa_name(polissa_name):
 
+    polissa_name
+    polissa_name = [O.GiscedataPolissa.search([('name','=',name)])[0]
+                    for name in polissaEndarrerida_ids
+                    if O.GiscedataPolissa.search([('name','=',name)])]
     return
 
 def avancar_multiple_polissa(polisses,result):
