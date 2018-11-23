@@ -1,11 +1,21 @@
-filename: 'Baixa socis - Baja socios (respuestas)'  
-sheet: 'Respuestas de formulario 1' 
-intervalCells4Date: G1:G692
-intervalCells4DNI: C1:C692
-intervalCells4Check: F1:F692 
-queryfile: 'baixa_socies.sql'
-oldFilename: 'Baixes de soci/a'
-oldSheet: 'Full1'
-oldintervalCells4Date: 
-oldintervalCells4DNI: C4:C633
-oldintervalCells4Check:
+newDrive:
+    filename: 'Baixa socis - Baja socios (respuestas)' 
+    sheet: 'Respuestas de formulario 1'
+    intervalCells4DateI: A1:A795
+    intervalCells4DateF: G1:G795 
+    intervalCells4DNI: C1:C795
+    intervalCells4Check: F1:F795
+    intervalCells4Name: B1:B795
+oldDrive:
+    filename: 'Baixes de soci/a'
+    sheet: 'Full 1'
+    intervalCells4DateI: A9:A647
+    intervalCells4DateF: H9:H647
+    intervalCells4DNI: D9:D647
+    intervalCells4Check: I9:I647
+queryfile1:
+    sql: 'baixa_socies.sql'
+    output: 'socis_erp_sin_fecha.csv'
+query_no_record_socis:
+    sql: 'find_socis_with_no_somergia_soci_record.sql'
+    output: 'Socis_with_no_record_on_somenergia_soci.csv'
