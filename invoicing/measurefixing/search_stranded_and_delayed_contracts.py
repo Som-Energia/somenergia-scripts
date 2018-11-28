@@ -1,12 +1,35 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 from validacio_eines import lazyOOOP, daysAgo
-import consolemsg as io
+import consolemsg
 from yamlns import namespace as ns
 import xmlrpclib
 import time
 
+# logging presets
+ioModePresets = {
+    'debug': None,
+    'release': ['success', 'error', 'fail'],
+}
 
+
+# the proxy
+class ProxyAllow:
+    def __init__(self, object, allowed=None):
+        self.object = object
+        self.allowed = allowed
+
+    def __getattr__(self, name):
+        if self.allowed is None or name in self.allowed:
+            return getattr(self.object, name)
+        else:
+            return getattr(self, 'idle')
+
+    def idle(self, *args, **kwds):
+        pass
+
+
+# helper function
 def hours(seconds):
     m, s = divmod(seconds, 60)
     h, m = divmod(m, 60)
@@ -18,11 +41,11 @@ def hours(seconds):
 
 # the class
 class Searcher:
-    def __init__(self, limits=None):
+    def __init__(self, limits=None, ioMode=None):
         self.limits_min = min(limits) if limits else None
         self.limits_max = max(limits) if limits else None
         self.broken_connection_wait = 3
-        self.io = io
+        self.io = ProxyAllow(consolemsg, ioModePresets.get(ioMode, None))
         self.result = ns({})
         self.result.connectionErrors = 0
         self.template = "output template, connection errors {connectionErrors}"
@@ -128,6 +151,7 @@ class Searcher:
 
 # Debugging constants
 today = None
+outputMode = 'release'
 
 
 # Helper funtions
@@ -145,7 +169,7 @@ def date_plus(date, days=1):
 
 class SearchStrandedAndDelayed(Searcher):
     def __init__(self, limits=None):
-        Searcher.__init__(self, limits)
+        Searcher.__init__(self, limits, outputMode)
         self.result.last_polissa_created = None
         self.result.with_draft_invoices = []
         self.result.never_billed_no_meters = []  # endarrerides
@@ -231,7 +255,7 @@ Serà mes fiable si el passem despres d'haver obert factures al procés.
     def key_generator(self):
         pol_ids = self.pol_obj.search(
             [('facturacio_endarrerida', '=', True)],
-            order='data_ultima_lectura DESC, data_alta DESC')  # Delayed only
+            order='data_ultima_lectura ASC, data_alta ASC')  # Delayed only
 
         totals = len(pol_ids)
 
