@@ -218,6 +218,11 @@ invoicefixing:
         contract_name:
           description: Número de contracte
 
+    stranded:
+      script: python SOME_SRC/somenergia-scripts/invoicing/measurefixing/search_stranded_and_delayed_contracts.py
+      title: Recompte de polisses encallades i endarrerides
+      description: Recompte i classificacio de polisses en encallades, reclamables o endarrerides segons casuistica, partint de "Contractes amb facturacio endarrerida" del ERP.
+
 gestiocontractes:
     description: Gestió de contractes
     scripts:
