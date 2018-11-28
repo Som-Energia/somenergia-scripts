@@ -15,21 +15,26 @@ ioModePresets = {
 
 # the proxy
 class ProxyAllow:
-    def __init__(self, object, allowed=None):
+    def __init__(self, object, allowed=None, default=None):
         self.object = object
         self.allowed = allowed
+        self.default = default
 
     def __getattr__(self, name):
         if self.allowed is None or name in self.allowed:
-            return getattr(self.object, name)
-        else:
-            return getattr(self, 'idle')
+            try:
+                return getattr(self.object, name)
+            except AttributeError:
+                if self.default:
+                    return getattr(self.object, self.default)
+
+        return getattr(self, 'idle')
 
     def idle(self, *args, **kwds):
         pass
 
 
-# helper function
+# helper functions
 def hours(seconds):
     m, s = divmod(seconds, 60)
     h, m = divmod(m, 60)
@@ -45,7 +50,10 @@ class Searcher:
         self.limits_min = min(limits) if limits else None
         self.limits_max = max(limits) if limits else None
         self.broken_connection_wait = 3
-        self.io = ProxyAllow(consolemsg, ioModePresets.get(ioMode, None))
+        self.io = ProxyAllow(
+            object=consolemsg,
+            allowed=ioModePresets.get(ioMode, None),
+            default='step')
         self.result = ns({})
         self.result.connectionErrors = 0
         self.template = "output template, connection errors {connectionErrors}"
