@@ -1,0 +1,12 @@
+Name_of_Janitor:
+    active: True #True if we want to consider this janitor, False otherwise
+    description: Brief description of the janitor
+    sender: 
+    - mail_of_sender
+    recipients: 
+    - mail_of_recipients
+    bcc: [] 
+    subject: subject format: "Janitor: Brief summary of the janitor's goal"
+    content: Body message with more details on the janitor  
+    sql: "sql/query.sql"
+    output: "csv/attachment_with_incoherent_data_"
