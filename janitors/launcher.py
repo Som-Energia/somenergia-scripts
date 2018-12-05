@@ -12,7 +12,7 @@ import psycopg2
 import configdb
 from ooop import OOOP
 from sheetfetcher import SheetFetcher
-from consolemsg import step, error, warn, fail
+from consolemsg import step, error, warn, fail, success
 from emili import sendMail
 
 def get_data_from_erp(queryfile, pfilename):
@@ -33,15 +33,15 @@ def get_data_from_erp(queryfile, pfilename):
     erp_data = [dict(data) for data in erp_data]
     filename = pfilename+datetime.now().strftime("%Y%m%d")+'.csv'
     if erp_data:
-        step("There are {} incoherent records in {}", len(erp_data), datetime.now().strftime("%Y-%m-%d"))
-        step("Saving incoherent  data in {}" , filename)
+        error("\tThere are {} incoherent records in {}", len(erp_data), datetime.now().strftime("%Y-%m-%d"))
+        error("\tSaving incoherent  data in {}" , filename)
         header = {key for d in erp_data for key in d.keys()}
         with open(filename, "w") as loadsocis:
             writer = csv.DictWriter(loadsocis, header) 
             writer.writeheader()
             writer.writerows(erp_data)    
     else:
-        step("Perfect! There is nothing to do! No incoherent records found in {}", datetime.now().strftime("%Y-%m-%d"))
+        success("\tPerfect! There is nothing to do! No incoherent records found in {}", datetime.now().strftime("%Y-%m-%d"))
     return erp_data, filename   
  
 def sendmail2all(janitor, attachment):
@@ -89,4 +89,4 @@ if __name__ == '__main__':
         raise
 
     janitor_execution(config)
-    step("Done!")
+    success("Done!")
