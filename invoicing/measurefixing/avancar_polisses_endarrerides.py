@@ -7,6 +7,11 @@ from validacio_eines import (
     enviar_correu,
     open_and_send,
 )
+from checkDateLecturaPolissa import (
+    checkDateLecturaPolissa,
+    get_invoices_from_polissa,
+    get_last_invoice_not_AB,
+)
 from consolemsg import step, fail, success, warn, error
 from yamlns import namespace as ns
 import ssl
@@ -126,6 +131,7 @@ result.contractsWarned=[]
 result.contractsCrashed=[]
 result.contractsWizardBadEndEstate=[]
 result.contractsValidationError=[]
+result.contractsWithWrongDataLectura=[]
 
 def avancar_polissa(polissa,counter,sem,result):
 
@@ -152,7 +158,15 @@ def avancar_polissa(polissa,counter,sem,result):
             )
         success(SEPPARATOR)
         previous_draft_invoices = exist_draft_invoices_polissa(polissa)
-
+        try:
+            ko = checkDateLecturaPolissa(polissa)
+            if ko:
+                result.contractsWithWrongDataLectura.append(polissa.id)
+        except Exception as e:
+            ko = True # general execution error
+            result.contractsCrashed.append(polissa.id)
+            error("ERROR check data lectura polissa")
+            error(unicode(e))
         try:
             ko = generate_draft_invoices_polissa(polissa)
             if ko:
@@ -322,6 +336,7 @@ def results(result):
     result.contractsWizardBadEndEstate_len = len(result.contractsWizardBadEndEstate)
     result.contractsValidationError_len = len(result.contractsValidationError)
     result.contractsCrashed_len = len(result.contractsCrashed)
+    result.contractsWithWrongDataLectura_len = len(result.contractsWithWrongDataLectura)
 
     success("")
     success(" ---------")
@@ -346,8 +361,11 @@ def results(result):
      Polisses que han donat error al validar factures:
         {contractsValidationError}
 
+     Polisses que han donat error amb la data de ultima lectura facturades:
+        {contractsWithWrongDataLectura}
+
      Polisses que han generat error fatal al intentar facturar:
-         {contractsCrashed}
+        {contractsCrashed}
     """, **result)
     success(" ---------")
     success(" - RESULTADOS TOTALES -")
@@ -365,6 +383,8 @@ def results(result):
      Polisses que han donat error al intentar facturar: {contractsWizardBadEndEstate_len}
 
      Polisses que han donat error al validar factures: {contractsValidationError_len}
+
+     Polisses que han donat error amb la data de ultima lectura facturades: {contractsWithWrongDataLectura_len}
 
      Polisses que han generat error fatal al intentar facturar: {contractsCrashed_len}
 
