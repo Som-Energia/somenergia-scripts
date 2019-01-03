@@ -132,6 +132,13 @@ result.contractsCrashed=[]
 result.contractsWizardBadEndEstate=[]
 result.contractsValidationError=[]
 result.contractsWithWrongDataLectura=[]
+result.contractsWithValidationErrorAndABDraft=[]
+result.contractsWithValidationErrorAndNoABDraft=[]
+result.contractsStrangedAndABDraft=[]
+result.contractsStrangedAndNoABDraft=[]
+result.contracsWithoutAB=[]
+result.contractsWithABResultPositive=[]
+result.contractsWithABResultNegative=[]
 
 def avancar_polissa(polissa,counter,sem,result):
 
@@ -157,6 +164,7 @@ def avancar_polissa(polissa,counter,sem,result):
             getStr(polissa.lot_facturacio,1,'cap'),
             )
         success(SEPPARATOR)
+        hasValidationError = False
         previous_draft_invoices = exist_draft_invoices_polissa(polissa)
         try:
             ko = checkDateLecturaPolissa(polissa)
@@ -175,20 +183,38 @@ def avancar_polissa(polissa,counter,sem,result):
                 draft_invoice_ids = get_draft_invoices_from_polissa(polissa)
                 generated_invoice_ids = get_generated_invoices_ids(previous_draft_invoices, draft_invoice_ids)
                 ko = validate_draft_invoices(polissa,generated_invoice_ids)
+                hasValidationError = ko
 
         except Exception as e:
             ko = True # general execution error
             result.contractsCrashed.append(polissa.id)
             error("ERROR generant factures")
             error(unicode(e))
-
         if ko:
+            if hasValidationError:
+                if polissa_has_draft_refund_invoices(polissa):
+                    result.contractsWithValidationErrorAndABDraft.append(polissa.id)
+                else:
+                    result.contractsWithValidationErrorAndNoABDraft.append(polissa.id)
+            else:
+                if polissa_has_draft_refund_invoices(polissa):
+                    result.contractsStrangedAndABDraft.append(polissa.id)
+                else:
+                    result.contractsStrangedAndNoABDraft.append(polissa.id)
+
             step("\tAnotem la polissa com a cas d'error")
             result.contractsWithError.append(polissa.id)
         else:
+            if not polissa_has_draft_refund_invoices(polissa):
+                result.contracsWithoutAB.append(polissa.id)
+            else:
+                rectified = get_diff_ab_fe_resultat(polissa)
+                if rectified >= 0:
+                    result.contractsWithABResultPositive.append(polissa.id)
+                else:
+                    result.contractsWithABResultNegative.append(polissa.id)
             step("\tAnotem la polissa com a cas ok")
             result.contractsForwarded.append(polissa.id)
-
         if not direct:
             warn("prem entrar per desfer o obrir i enviar")
             ignoreme = raw_input("")
@@ -293,10 +319,18 @@ def send_mail_open_send_invoices(draft_invoice_ids,polissa):
 def polissa_has_draft_refund_invoices(polissa):
 
     return O.GiscedataFacturacioFactura.search([
-            ('state','=','draft'),
-            ('type', '=', 'out_refund'),
-            ('polissa_id','=',polissa.id),
-            ])
+        ('state','=','draft'),
+        ('type', '=', 'out_refund'),
+        ('polissa_id','=',polissa.id),
+        ])
+
+def get_draft_fe_invoices_from_polissa(polissa):
+
+    return O.GiscedataFacturacioFactura.search([
+        ('state','=','draft'),
+        ('type', '=', 'out_invoice'),
+        ('polissa_id','=',polissa.id),
+        ])
 
 def get_draft_invoices_from_polissa(polissa):
 
@@ -306,6 +340,26 @@ def get_draft_invoices_from_polissa(polissa):
         ('polissa_id','=',polissa.id),
         ])
 
+def get_diff_ab_fe_resultat(polissa):
+
+    ab_amount = 0.0
+    fe_amount = 0.0
+    ab_invoices = polissa_has_draft_refund_invoices(polissa)
+    ab_invoices = O.GiscedataFacturacioFactura.read(
+        ab_invoices,[
+            'amount_total',
+        ])
+    fe_invoices = get_draft_fe_invoices_from_polissa(polissa)
+    fe_invoices = O.GiscedataFacturacioFactura.read(
+        fe_invoices,[
+            'amount_total',
+        ])
+    for ab_invoice in ab_invoices:
+        ab_amount += ab_invoice['amount_total']
+    for fe_invoice in fe_invoices:
+        fe_amount += fe_invoice['amount_total']
+    diff_amount = ab_amount - fe_amount
+    return diff_amount
 ## TODO: with a list of polissas name obtain id_polissa
 def get_polissa_id_from_polissa_name(polissa_name):
 
@@ -337,57 +391,58 @@ def results(result):
     result.contractsValidationError_len = len(result.contractsValidationError)
     result.contractsCrashed_len = len(result.contractsCrashed)
     result.contractsWithWrongDataLectura_len = len(result.contractsWithWrongDataLectura)
+    result.contracsWithoutAB_len = len(result.contracsWithoutAB)
+    result.contractsWithABResultPositive_len = len(result.contractsWithABResultPositive)
+    result.contractsWithABResultNegative_len = len(result.contractsWithABResultNegative)
+    result.contractsWithValidationErrorAndABDraft_len = len(result.contractsWithValidationErrorAndABDraft)
+    result.contractsWithValidationErrorAndNoABDraft_len = len(result.contractsWithValidationErrorAndNoABDraft)
+    result.contractsStrangedAndABDraft_len = len(result.contractsStrangedAndABDraft)
+    result.contractsStrangedAndNoABDraft_len = len(result.contractsStrangedAndNoABDraft)
 
     success("")
     success(" ---------")
     success(" - FINAL -")
     success(" ---------")
     success(u"""\
-     Polisses avancades a data de lot:
-        {contractsForwarded}
+     Polisses sense cap factura abonadora: {contracsWithoutAB_len}
+        {contracsWithoutAB}
 
-     Polisses notificades amb mail d'advertiment:
-        {contractsWarned}
+     Polisses amb factura abonadora i resultat de la rectificacio positiu: {contractsWithABResultPositive_len}
+        {contractsWithABResultPositive}
 
-     Polisses que ja tenien factures en esborrany i s'han deixat:
-        {contractsWithPreviousDraftInvoices}
+     Polisses amb factura abonadora i resultat de la rectificacio negatiu: {contractsWithABResultNegative_len}
+        {contractsWithABResultNegative}
 
-     Polisses que no han pogut avancar:
+     Polisses en les NO ha estat possible avansar la facturacio: {contractsWithError_len}
         {contractsWithError}
 
-     Polisses que han donat error al intentar facturar:
-        {contractsWizardBadEndEstate}
+     Perque tenen error de validacio de factura:
 
-     Polisses que han donat error al validar factures:
-        {contractsValidationError}
+        Tenen factura abonadora en esborrany: {contractsWithValidationErrorAndABDraft_len}
+        {contractsWithValidationErrorAndABDraft}
 
-     Polisses que han donat error amb la data de ultima lectura facturades:
-        {contractsWithWrongDataLectura}
+        Sense factura abonadora: {contractsWithValidationErrorAndNoABDraft_len}
+        {contractsWithValidationErrorAndNoABDraft}
 
-     Polisses que han generat error fatal al intentar facturar:
-        {contractsCrashed}
-    """, **result)
-    success(" ---------")
-    success(" - RESULTADOS TOTALES -")
-    success(" ---------")
+     Perque estan encallades:
 
-    success(u"""\
-     Polisses avancades a data de lot: {contractsForwarded_len}
+        Tenen factura abonadora en esborrany: {contractsStrangedAndABDraft_len}
+        {contractsStrangedAndABDraft}
 
-     Polisses notificades amb mail d'advertiment: {contractsWarned_len}
-
-     Polisses que ja tenien factures en esborrany i s'han deixat: {contractsWithPreviousDraftInvoices_len}
-
-     Polisses que no han pogut avancar: {contractsWithError_len}
+        Sense factura abonadora: {contractsStrangedAndNoABDraft_len}
+        {contractsStrangedAndNoABDraft}
 
      Polisses que han donat error al intentar facturar: {contractsWizardBadEndEstate_len}
+        {contractsWizardBadEndEstate}
 
      Polisses que han donat error al validar factures: {contractsValidationError_len}
+        {contractsValidationError}
 
      Polisses que han donat error amb la data de ultima lectura facturades: {contractsWithWrongDataLectura_len}
+        {contractsWithWrongDataLectura}
 
      Polisses que han generat error fatal al intentar facturar: {contractsCrashed_len}
-
+        {contractsCrashed}
     """, **result)
 
 if __name__ == '__main__':
