@@ -296,17 +296,17 @@ def validate_draft_invoices(polissa,generated_invoice_ids):
 
 def send_mail_open_send_invoices(draft_invoice_ids,polissa):
 
-    if len(draft_invoice_ids)>1:
+    if len(draft_invoice_ids)>=1:
         if polissa_has_draft_refund_invoices(polissa):
             step("\tFactura AB existent enviem el mail de Resum AB y rectificadoras")
             result.contractsWarned.append(polissa.id)
             # 3er parametro id from hay que indicar el que toca para la plantilla
-            enviar_correu(polissa.id, 55, 27,'giscedata.polissa')
+            enviar_correu(polissa.id, 55, 23,'giscedata.polissa')
         else:
             step("\tMes d'una factura generada enviem el mail de Avis de multiples factures")
             result.contractsWarned.append(polissa.id)
             # 3er parametro id from hay que indicar el que toca para la plantilla
-            enviar_correu(polissa.id, 210, 27,'giscedata.polissa')
+            enviar_correu(polissa.id, 210, 23,'giscedata.polissa')
 
     step("Obrir i enviar totes les factures generades, updatarà la data ultima factura a polissa")
     lang = O.ResPartner.read(polissa.pagador[0], ['lang'])['lang']
@@ -358,7 +358,7 @@ def get_diff_ab_fe_resultat(polissa):
         ab_amount += ab_invoice['amount_total']
     for fe_invoice in fe_invoices:
         fe_amount += fe_invoice['amount_total']
-    diff_amount = ab_amount - fe_amount
+    diff_amount = fe_amount - ab_amount
     return diff_amount
 ## TODO: with a list of polissas name obtain id_polissa
 def get_polissa_id_from_polissa_name(polissa_name):

@@ -32,7 +32,6 @@ def checkDateLecturaPolissa(polissa):
             ko = True
     if last_invoice.type == 'out_refund':
         last_invoice_not_AB = ns(get_last_invoice_not_AB(invoices))
-        print last_invoice_not_AB
         if last_invoice_not_AB.data_final != polissa.data_ultima_lectura:
             step('Factura AB con fecha diferente a data última lectura')
             ko = True
@@ -47,10 +46,8 @@ def get_last_invoice_not_AB(invoices):
     count_AB = 0
     for elem in invoices:
         if ns(elem).type == 'out_refund':
-            print "factura AB"
             count_AB += 1
         if count_AB >= 0 and ns(elem).type == 'out_invoice':
-            print "factura FE o RE"
             count_AB -=1
         if count_AB < 0:
             return elem
