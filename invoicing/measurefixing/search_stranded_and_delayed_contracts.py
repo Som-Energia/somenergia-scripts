@@ -4,6 +4,7 @@ from validacio_eines import lazyOOOP, daysAgo
 import consolemsg
 from yamlns import namespace as ns
 import xmlrpclib
+import socket
 import time
 
 # logging presets
@@ -84,6 +85,10 @@ class Searcher:
                         self.not_caught_by_tests(counter, item_data)
                 except xmlrpclib.ProtocolError:
                     self.io.error("Broken connection, nap time!")
+                    self.result.connectionErrors += 1
+                    time.sleep(self.broken_connection_wait)
+                except socket.error:
+                    self.io.error("Broken socket, nap time!")
                     self.result.connectionErrors += 1
                     time.sleep(self.broken_connection_wait)
             self.io.bigstep("Done in {}", self.get_elapsed_time())
