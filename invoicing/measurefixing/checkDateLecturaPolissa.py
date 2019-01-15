@@ -11,6 +11,42 @@ Invoice = O.GiscedataFacturacioFactura
 Polissa = O.GiscedataPolissa
 
 def checkDateLecturaPolissa(polissa):
+    AB_ids = Invoice.search([
+        ('type','in',['out_refund']),
+        ('polissa_id','=',polissa['id'])
+        ])
+    FE_ids = Invoice.search([
+       ('type','in',['out_invoice']),
+       ('polissa_id','=',polissa['id'])
+        ])
+    if AB_ids:
+        FE_AB_refs = Invoice.read(AB_ids, ['ref'])
+        FE_AB_ids = [x['ref'][0] for x in FE_AB_refs]
+        FE_clean_ids = list(set(set(FE_ids) - set(FE_AB_ids)))
+    else:
+        FE_clean_ids = FE_ids
+    if FE_clean_ids:
+        last_FE_id = max(FE_clean_ids)
+        last_FE = Invoice.read(last_FE_id,['data_final'])
+        last_FE_data_final = last_FE['data_final']
+    else:
+        last_FE_data_final = None
+
+    if last_FE_data_final != polissa['data_ultima_lectura']:
+        step('Factura FE o RE fecha diferente a data última lectura')
+        return True
+    return False
+
+def hasDraftABInvoice(polissa):
+    AB_ids = Invoice.search([
+        ('type','in',['out_refund']),
+        ('polissa_id','=',polissa['id']),
+        ('state','=','draft')
+        ])
+    return len(AB_ids) > 0
+
+
+def checkDateLecturaPolissaB(polissa):
     ko = False
     #polissa = Polissa.read(polissa,[
     #    'id',
@@ -53,4 +89,6 @@ def get_last_invoice_not_AB(invoices):
             return elem
 
 #polissa = O.GiscedataPolissa.search([('id','=','00046')])
-#print checkDateLecturaPolissa(polissa)
+#pol = Polissa.read(81,['name','data_alta','tarifa','comptadors','data_ultima_lectura','lot_facturacio','pagador','cups',])
+#print hasDraftABInvoice(pol)
+#print checkDateLecturaPolissa(pol)

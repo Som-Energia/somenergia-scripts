@@ -9,8 +9,7 @@ from validacio_eines import (
 )
 from checkDateLecturaPolissa import (
     checkDateLecturaPolissa,
-    get_invoices_from_polissa,
-    get_last_invoice_not_AB,
+    hasDraftABInvoice,
 )
 from consolemsg import step, fail, success, warn, error
 from yamlns import namespace as ns
@@ -131,7 +130,8 @@ result.contractsWarned=[]
 result.contractsCrashed=[]
 result.contractsWizardBadEndEstate=[]
 result.contractsValidationError=[]
-result.contractsWithWrongDataLectura=[]
+result.contractsWithWrongDataLecturaWithoutAB=[]
+result.contractsWithWrongDataLecturaWithAB=[]
 result.contractsWithValidationErrorAndABDraft=[]
 result.contractsWithValidationErrorAndNoABDraft=[]
 result.contractsStrangedAndABDraft=[]
@@ -139,6 +139,8 @@ result.contractsStrangedAndNoABDraft=[]
 result.contracsWithoutAB=[]
 result.contractsWithABResultPositive=[]
 result.contractsWithABResultNegative=[]
+
+# TODO: use a add function to control list appends
 
 def avancar_polissa(polissa,counter,sem,result):
 
@@ -166,66 +168,72 @@ def avancar_polissa(polissa,counter,sem,result):
         success(SEPPARATOR)
         hasValidationError = False
         previous_draft_invoices = exist_draft_invoices_polissa(polissa)
+
         try:
-            ko = checkDateLecturaPolissa(polissa)
-            if ko:
-                result.contractsWithWrongDataLectura.append(polissa.id)
+            has_different_dates = checkDateLecturaPolissa(polissa)
         except Exception as e:
-            ko = True # general execution error
+            has_different_dates = True # general execution error
             result.contractsCrashed.append(polissa.id)
             error("ERROR check data lectura polissa")
             error(unicode(e))
-        try:
-            ko = generate_draft_invoices_polissa(polissa)
-            if ko:
-                result.contractsWizardBadEndEstate.append(polissa.id)
-            else:
-                draft_invoice_ids = get_draft_invoices_from_polissa(polissa)
-                generated_invoice_ids = get_generated_invoices_ids(previous_draft_invoices, draft_invoice_ids)
-                ko = validate_draft_invoices(polissa,generated_invoice_ids)
-                hasValidationError = ko
 
-        except Exception as e:
-            ko = True # general execution error
-            result.contractsCrashed.append(polissa.id)
-            error("ERROR generant factures")
-            error(unicode(e))
-        if ko:
-            if hasValidationError:
-                if polissa_has_draft_refund_invoices(polissa):
-                    result.contractsWithValidationErrorAndABDraft.append(polissa.id)
-                else:
-                    result.contractsWithValidationErrorAndNoABDraft.append(polissa.id)
+        if has_different_dates:
+            if hasDraftABInvoice(polissa):
+                result.contractsWithWrongDataLecturaWithAB.append(polissa.id)
             else:
-                if polissa_has_draft_refund_invoices(polissa):
+                result.contractsWithWrongDataLecturaWithoutAB.append(polissa.id)
+        else:
+
+            try:
+                error_generating_inv = generate_draft_invoices_polissa(polissa)
+            except Exception as e:
+                error_generating_inv = True
+            if error_generating_inv:
+                if hasDraftABInvoice(polissa):
                     result.contractsStrangedAndABDraft.append(polissa.id)
                 else:
                     result.contractsStrangedAndNoABDraft.append(polissa.id)
-
-            step("\tAnotem la polissa com a cas d'error")
-            result.contractsWithError.append(polissa.id)
-        else:
-            if not polissa_has_draft_refund_invoices(polissa):
-                result.contracsWithoutAB.append(polissa.id)
+                # undoing the generated facts
+                draft_invoice_ids = get_draft_invoices_from_polissa(polissa)
+                generated_invoice_ids = get_generated_invoices_ids(previous_draft_invoices, draft_invoice_ids)
+                undoDraftInvoicesAndMeasures(polissa, generated_invoice_ids)
             else:
-                rectified = get_diff_ab_fe_resultat(polissa)
-                if rectified >= 0:
-                    result.contractsWithABResultPositive.append(polissa.id)
-                else:
-                    result.contractsWithABResultNegative.append(polissa.id)
-            step("\tAnotem la polissa com a cas ok")
-            result.contractsForwarded.append(polissa.id)
-        if not direct:
-            warn("prem entrar per desfer o obrir i enviar")
-            ignoreme = raw_input("")
+                try:
+                    draft_invoice_ids = get_draft_invoices_from_polissa(polissa)
+                    generated_invoice_ids = get_generated_invoices_ids(previous_draft_invoices, draft_invoice_ids)
+                    validation_error = validate_draft_invoices(polissa,generated_invoice_ids)
+                except Exception as e:
+                    validation_error = True
 
-        # in case of general execution error the draft invoices list can be incomplete, refresh it
-        draft_invoice_ids = get_draft_invoices_from_polissa(polissa)
-        generated_invoice_ids = get_generated_invoices_ids(previous_draft_invoices, draft_invoice_ids)
-        if not doit or ko:
-            undoDraftInvoicesAndMeasures(polissa, generated_invoice_ids)
-        else:
-            send_mail_open_send_invoices(draft_invoice_ids,polissa)
+                if validation_error:
+                    if hasDraftABInvoice(polissa):
+                        result.contractsWithValidationErrorAndABDraft.append(polissa.id)
+                    else:
+                        result.contractsWithValidationErrorAndNoABDraft.append(polissa.id)
+                    # undoing generated facts
+                    undoDraftInvoicesAndMeasures(polissa, generated_invoice_ids)
+                else:
+                    if not hasDraftABInvoice(polissa):
+                        result.contracsWithoutAB.append(polissa.id)
+                    else:
+                        rectified = get_diff_ab_fe_resultat(polissa)
+                        if rectified >= 0:
+                            result.contractsWithABResultPositive.append(polissa.id)
+                        else:
+                            result.contractsWithABResultNegative.append(polissa.id)
+
+                    step("\tAnotem la polissa com a cas ok")
+                    result.contractsForwarded.append(polissa.id)
+
+                    if not direct:
+                        warn("prem entrar per desfer o obrir i enviar")
+                        ignoreme = raw_input("")
+                    draft_invoice_ids = get_draft_invoices_from_polissa(polissa)
+                    if not doit:
+                        generated_invoice_ids = get_generated_invoices_ids(previous_draft_invoices, draft_invoice_ids)
+                        undoDraftInvoicesAndMeasures(polissa, generated_invoice_ids)
+                    else:
+                        send_mail_open_send_invoices(draft_invoice_ids,polissa)
 
         if not direct:
             warn("prem entrar per avançar el següent contracte")
@@ -390,7 +398,8 @@ def results(result):
     result.contractsWizardBadEndEstate_len = len(result.contractsWizardBadEndEstate)
     result.contractsValidationError_len = len(result.contractsValidationError)
     result.contractsCrashed_len = len(result.contractsCrashed)
-    result.contractsWithWrongDataLectura_len = len(result.contractsWithWrongDataLectura)
+    result.contractsWithWrongDataLecturaWithoutAB_len = len(result.contractsWithWrongDataLecturaWithoutAB)
+    result.contractsWithWrongDataLecturaWithAB_len = len(result.contractsWithWrongDataLecturaWithAB)
     result.contracsWithoutAB_len = len(result.contracsWithoutAB)
     result.contractsWithABResultPositive_len = len(result.contractsWithABResultPositive)
     result.contractsWithABResultNegative_len = len(result.contractsWithABResultNegative)
@@ -438,8 +447,11 @@ def results(result):
      Polisses que han donat error al validar factures: {contractsValidationError_len}
         {contractsValidationError}
 
-     Polisses que han donat error amb la data de ultima lectura facturades: {contractsWithWrongDataLectura_len}
-        {contractsWithWrongDataLectura}
+     Perque hi ha un error en la data de la darrera lectura facturada:
+        - Tenen factura abonadora en esborrany: {contractsWithWrongDataLecturaWithAB_len}
+          {contractsWithWrongDataLecturaWithAB}
+        - Sense factura abonadora: {contractsWithWrongDataLecturaWithoutAB_len}
+          {contractsWithWrongDataLecturaWithoutAB}
 
      Polisses que han generat error fatal al intentar facturar: {contractsCrashed_len}
         {contractsCrashed}
