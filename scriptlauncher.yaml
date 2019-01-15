@@ -223,11 +223,6 @@ invoicefixing:
       title: Recompte de polisses encallades i endarrerides
       description: Recompte i classificacio de polisses en encallades, reclamables o endarrerides segons casuistica, partint de "Contractes amb facturacio endarrerida" del ERP.
 
-    movesuplements:
-      script:  python SOME_SRC/somenergia-scripts/invoicing/throw_forward_territorial_supplements.py --doit
-      title: Moure els suplements territorials que hi hagin fins a principi del mes següent al actual a futur.
-      description: Recompta i mou tots els suplements territorials que trobi amb data anterior al primer dia del mes que ve.
-
 gestiocontractes:
     description: Gestió de contractes
     scripts:
