@@ -178,17 +178,18 @@ def avancar_polissa(polissa,counter,sem,result):
             error(unicode(e))
 
         if has_different_dates:
+            result.contractsWithError.append(polissa.id)
             if hasDraftABInvoice(polissa):
                 result.contractsWithWrongDataLecturaWithAB.append(polissa.id)
             else:
                 result.contractsWithWrongDataLecturaWithoutAB.append(polissa.id)
         else:
-
             try:
                 error_generating_inv = generate_draft_invoices_polissa(polissa)
             except Exception as e:
                 error_generating_inv = True
             if error_generating_inv:
+                result.contractsWithError.append(polissa.id)
                 if hasDraftABInvoice(polissa):
                     result.contractsStrangedAndABDraft.append(polissa.id)
                 else:
@@ -206,6 +207,7 @@ def avancar_polissa(polissa,counter,sem,result):
                     validation_error = True
 
                 if validation_error:
+                    result.contractsWithError.append(polissa.id)
                     if hasDraftABInvoice(polissa):
                         result.contractsWithValidationErrorAndABDraft.append(polissa.id)
                     else:
@@ -413,45 +415,52 @@ def results(result):
     success(" - FINAL -")
     success(" ---------")
     success(u"""\
-     Polisses sense cap factura abonadora: {contracsWithoutAB_len}
-        {contracsWithoutAB}
 
-     Polisses amb factura abonadora i resultat de la rectificacio positiu: {contractsWithABResultPositive_len}
-        {contractsWithABResultPositive}
+    * Polisses en les que hem avansat la facturacio: {contractsForwarded_len}
+        {contractsForwarded}
 
-     Polisses amb factura abonadora i resultat de la rectificacio negatiu: {contractsWithABResultNegative_len}
-        {contractsWithABResultNegative}
+            - Polisses sense cap factura abonadora: {contracsWithoutAB_len}
+            {contracsWithoutAB}
 
-     Polisses en les NO ha estat possible avansar la facturacio: {contractsWithError_len}
+            - Polisses amb factura abonadora i resultat de la rectificacio positiu: {contractsWithABResultPositive_len}
+            {contractsWithABResultPositive}
+
+            - Polisses amb factura abonadora i resultat de la rectificacio negatiu: {contractsWithABResultNegative_len}
+            {contractsWithABResultNegative}
+
+    * Polisses en les NO ha estat possible avansar la facturacio: {contractsWithError_len}
         {contractsWithError}
 
-     Perque tenen error de validacio de factura:
+         # Perque en les factures generades hi ha un error de validacio de factura:
 
-        Tenen factura abonadora en esborrany: {contractsWithValidationErrorAndABDraft_len}
-        {contractsWithValidationErrorAndABDraft}
+            - Tenen factura abonadora en esborrany: {contractsWithValidationErrorAndABDraft_len}
+            {contractsWithValidationErrorAndABDraft}
 
-        Sense factura abonadora: {contractsWithValidationErrorAndNoABDraft_len}
-        {contractsWithValidationErrorAndNoABDraft}
+            - Sense factura abonadora: {contractsWithValidationErrorAndNoABDraft_len}
+            {contractsWithValidationErrorAndNoABDraft}
 
-     Perque estan encallades:
+         # Perque el wizard NO ha pogut generar factures:
 
-        Tenen factura abonadora en esborrany: {contractsStrangedAndABDraft_len}
-        {contractsStrangedAndABDraft}
+            - Tenen factura abonadora en esborrany: {contractsStrangedAndABDraft_len}
+            {contractsStrangedAndABDraft}
 
-        Sense factura abonadora: {contractsStrangedAndNoABDraft_len}
-        {contractsStrangedAndNoABDraft}
+             - Sense factura abonadora: {contractsStrangedAndNoABDraft_len}
+            {contractsStrangedAndNoABDraft}
+
+
+         # Perque hi ha un error en la data de la darrera lectura facturada:
+
+            - Tenen factura abonadora en esborrany: {contractsWithWrongDataLecturaWithAB_len}
+              {contractsWithWrongDataLecturaWithAB}
+
+            - Sense factura abonadora: {contractsWithWrongDataLecturaWithoutAB_len}
+              {contractsWithWrongDataLecturaWithoutAB}
 
      Polisses que han donat error al intentar facturar: {contractsWizardBadEndEstate_len}
         {contractsWizardBadEndEstate}
 
      Polisses que han donat error al validar factures: {contractsValidationError_len}
         {contractsValidationError}
-
-     Perque hi ha un error en la data de la darrera lectura facturada:
-        - Tenen factura abonadora en esborrany: {contractsWithWrongDataLecturaWithAB_len}
-          {contractsWithWrongDataLecturaWithAB}
-        - Sense factura abonadora: {contractsWithWrongDataLecturaWithoutAB_len}
-          {contractsWithWrongDataLecturaWithoutAB}
 
      Polisses que han generat error fatal al intentar facturar: {contractsCrashed_len}
         {contractsCrashed}
