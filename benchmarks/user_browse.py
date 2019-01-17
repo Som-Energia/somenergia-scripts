@@ -31,7 +31,7 @@ contracts = erp.GiscedataPolissa.read(range(100),[])
 success("Llegir {} Contractes {}",nregistres, time.time()-t0)
 
 t0 = time.time()
-accountML = erp.AccountMoveLine.read(range(15),[])
+accountML = erp.AccountMoveLine.read(range(50),[])
 success("Llegir {} Account Move Line {}",nregistres, time.time()-t0)
 
 
