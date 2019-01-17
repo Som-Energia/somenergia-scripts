@@ -30,9 +30,9 @@ t0 = time.time()
 contracts = erp.GiscedataPolissa.read(range(100),[])
 success("Llegir {} Contractes {}",nregistres, time.time()-t0)
 
-
-#users = ns.loads(ns(users=users).dump())
-#print users.users[2].dump()
+t0 = time.time()
+accountML = erp.AccountMoveLine.read(range(15),[])
+success("Llegir {} Account Move Line {}",nregistres, time.time()-t0)
 
 
 
