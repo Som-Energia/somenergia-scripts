@@ -26,7 +26,9 @@ def checkDateLecturaPolissa(polissa):
     else:
         FE_clean_ids = FE_ids
     if FE_clean_ids:
-        last_FE_id = max(FE_clean_ids)
+        last_FE_id = Invoice.search([
+                ('id','in', FE_clean_ids)],
+                order = 'data_final desc')[0]
         last_FE = Invoice.read(last_FE_id,['data_final'])
         last_FE_data_final = last_FE['data_final']
     else:
@@ -89,6 +91,6 @@ def get_last_invoice_not_AB(invoices):
             return elem
 
 #polissa = O.GiscedataPolissa.search([('id','=','00046')])
-#pol = Polissa.read(81,['name','data_alta','tarifa','comptadors','data_ultima_lectura','lot_facturacio','pagador','cups',])
+#pol = Polissa.read(165,['name','data_alta','tarifa','comptadors','data_ultima_lectura','lot_facturacio','pagador','cups',])
 #print hasDraftABInvoice(pol)
 #print checkDateLecturaPolissa(pol)

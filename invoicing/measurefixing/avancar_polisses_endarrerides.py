@@ -417,7 +417,6 @@ def results(result):
     success(u"""\
 
     * Polisses en les que hem avansat la facturacio: {contractsForwarded_len}
-        {contractsForwarded}
 
             - Polisses sense cap factura abonadora: {contracsWithoutAB_len}
             {contracsWithoutAB}
@@ -429,7 +428,6 @@ def results(result):
             {contractsWithABResultNegative}
 
     * Polisses en les NO ha estat possible avansar la facturacio: {contractsWithError_len}
-        {contractsWithError}
 
          # Perque en les factures generades hi ha un error de validacio de factura:
 
