@@ -434,7 +434,7 @@ benchmarks:
   scripts:
     userbrowse:
       title: Llegeix els registres de N Partmers, Contractes, Account Move Lines
-      script: python /home/alberto/somenergia/somenergia-scripts/benchmarks/user_browse.py {nregistres}
+      script: python SOME_SRC/somenergia-scripts/benchmarks/user_browse.py {nregistres}
       parameters:
         nregistres:
           default: 2
