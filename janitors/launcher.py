@@ -68,13 +68,15 @@ def janitor_execution(config):
             warn("Skipping janitor: {name}", name=name)
             continue
         step("Running janitor: {description}",**janitor)
-        allData, filename = get_data_from_erp(
-            janitor.sql,
-            janitor.output
-            )    
-        if allData:
-            sendmail2all(janitor, filename)
-
+        if janitor.get('query', True):
+            allData, filename = get_data_from_erp(
+                janitor.sql,
+                janitor.output
+                )
+            if allData:
+                sendmail2all(janitor, filename)
+        else:
+            os.system(janitor.python)
     
 if __name__ == '__main__':
 
