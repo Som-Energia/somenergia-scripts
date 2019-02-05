@@ -359,6 +359,11 @@ admin:
       script: python SOME_SRC/somenergia-scripts/admin/descarregar_assentaments_comptables.py
       title: Puja al Drive els assentaments pels interventors
       description:
+    tempsAlTrello:
+      script: python SOME_SRC/somenergia-scripts/admin/reportrello.py
+      title: Consulta l'esforç dels Fogons
+      description: Consulta la suma de esforç (spend/expected) i agrupa per Label i per Member de totes les targetes dels Fogons
+
 
 generation:
   description: Generació
