@@ -356,9 +356,14 @@ admin:
         id_remesa:
           description: Id remesa on posar el retorn dels títol (ex. 2349)
     assentamentsInterventors:
-      script: python SOME_SRC/somenergia-scripts/admin/descarregar_assentaments_comptables.py
+      script: python SOME_SRC/somenergia-scripts/admin/descarregar_assentaments_comptables.py --start_date {start_date} --end_date {end_date}
       title: Puja al Drive els assentaments pels interventors
-      description:
+      description: Exporta els assentaments al Drive a la carpeta compartida AssentamentsInterventors
+      parameters:
+        start_date:
+          description: data inici (ex. 2019-01-01)
+        end_date:
+          description: data final (ex. 2019-03-31)
     tempsAlTrello:
       script: python SOME_SRC/somenergia-scripts/admin/reportrello.py
       title: Consulta l'esforç dels Fogons

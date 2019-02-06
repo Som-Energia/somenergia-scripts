@@ -12,11 +12,7 @@ from oauth2client.file import Storage
 from apiclient.http import MediaFileUpload
 
 
-try:
-    import argparse
-    flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
-except ImportError:
-    flags = None
+
 
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/drive-python-quickstart.json
@@ -74,5 +70,11 @@ def upload(path, folder_id):
                                         media_body=media,
                                         fields='id').execute()
 
+if __name__ == '__main__':
+    try:
+        import argparse
+        flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
+    except ImportError:
+        flags = None
 
 # vim: et ts=4 sw=4 
