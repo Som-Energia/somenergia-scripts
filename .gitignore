@@ -1,36 +1,34 @@
 *~
 scripts_crontab.sh
-configdb.py
+*configdb.py
+*dbconfig.py
 *.pyc
 *.swp
 *.ipynb
 
-## Baixa
+## Baixa Socis
 admin/Baixa_Socis/CredencialsBaixaSocis.json
 admin/Baixa_Socis/configdb.py
 admin/Baixa_Socis/*.csv
+admin/Baixa_Socis/config2\.yaml
+admin/Baixa_Socis/dbconfig\.py
+admin/Baixa_Socis/find_incoherent_active\.sql
+admin/Baixa_Socis/find_incoherent_category\.sql
+admin/Baixa_Socis/find_incoherent_data\.py
+admin/Baixa_Socis/find_incoherent_soci\.sql
+admin/Baixa_Socis/find_socis_without_cancelation_date\.sql
+admin/Baixa_Socis/Study4socis\.sql
 
 ## Admin
 admin/client_secret.json
 admin/dades_id_polissa_potencia_dist.csv
 admin/actualizarpotencias.json
+admin/trellovariables.py
+admin/token.pickle
 
-admin/Baixa_Socis/config2\.yaml
-
-admin/Baixa_Socis/dbconfig\.py
-
-admin/Baixa_Socis/find_incoherent_active\.sql
-
-admin/Baixa_Socis/find_incoherent_category\.sql
-
-admin/Baixa_Socis/find_incoherent_data\.py
-
-admin/Baixa_Socis/find_incoherent_soci\.sql
-
-admin/Baixa_Socis/find_socis_without_cancelation_date\.sql
-
-admin/Baixa_Socis/Study4socis\.sql
-
+# Janitors
 janitors/config\.yaml
-
 janitors/csv/
+
+# Benchmarks
+benchmarks/dbconfig.py

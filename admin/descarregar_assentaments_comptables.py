@@ -16,6 +16,7 @@ import argparse
 # python admin/descarregar_assentaments_comptables.py --start_date 2018-01-10 --end_date 2018-01-20
 
 MAX_MOVES_LINES = 700000 #Max linies assentament del programa dels interventors
+FOLDER = '18f1DXG8V5QmCBKivozHldvcob6opldN1'
 
 class MoveReport:
     def __init__(self, cursor):
@@ -62,7 +63,7 @@ class MoveReport:
 
         file_name = '/tmp/assent_interv_' + str(start_line) + '.csv'
         self.build_report(self.cursor.fetchall(), file_name)
-        driveUtils.upload(file_name, '18f1DXG8V5QmCBKivozHldvcob6opldN1')
+        driveUtils.upload(file_name, FOLDER)
         print "From ", start_line, " to ", end_line, " exported."
 
     def move_by_month(self, start_date, end_date):
@@ -88,7 +89,7 @@ class MoveReport:
 
         file_name = '/tmp/assent_interv_' + start_date.strftime("%Y-%m-%d") + '.csv'
         self.build_report(self.cursor.fetchall(), file_name)
-        driveUtils.upload(file_name, '18f1DXG8V5QmCBKivozHldvcob6opldN1')
+        driveUtils.upload(file_name, FOLDER)
         print "From ", start_date, " to ", end_date, " exported."
 
     def build_report(self, records, filename):
