@@ -9,7 +9,7 @@ import driveUtils
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import locale
-locale.setlocale(locale.LC_ALL, '')
+locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
 import argparse
 
 ## SYNTAX
@@ -96,7 +96,7 @@ class MoveReport:
 
         with codecs.open(filename,'wb','utf-8') as csvfile:
             writer = csv.writer(csvfile, delimiter=';')
-            writer.writerow(['numero', 'data', 'compte', 'codi', 'deure','haver'])
+            writer.writerow(["número", 'data', 'compte', 'codi', 'deure','haver'])
  
             for record in records:
                 number = record[0]
@@ -115,11 +115,15 @@ class MoveReport:
 
 
 def main(args):
+    reload(sys)
+    sys.setdefaultencoding('utf8')
+
     start_date =  args.start_date
     end_date = args.end_date
 
     try:
         dbconn=psycopg2.connect(**configdb.psycopg)
+        dbconn.set_client_encoding('UTF8')
     except Exception, ex:
         print "Unable to connect to database " + configdb['DB_NAME']
         raise ex
