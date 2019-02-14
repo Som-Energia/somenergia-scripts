@@ -61,7 +61,7 @@ class MoveReport:
                                     'start_line': start_line,
                                     'MAX_MOVES_LINES': MAX_MOVES_LINES,})
 
-        file_name = '/tmp/assent_interv_' + str(start_line) + '.csv'
+        file_name = '/tmp/assent_interv_' + str(start_date) + "_" +  str(start_line) + '.csv'
         self.build_report(self.cursor.fetchall(), file_name)
         driveUtils.upload(file_name, FOLDER)
         print "From ", start_line, " to ", end_line, " exported."
