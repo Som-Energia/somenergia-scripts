@@ -23,6 +23,7 @@ for template in templates:
 
     if trad_ca and trad_es and trad_en:
         print template.id, "OK :", template.name, ">>> Ja esta OK"
+        continue
 
     if trad_ca:
         if trad_es is None:
