@@ -23,3 +23,7 @@ ITMEMBERS = {
 ITLABELS = {
     'label_id_you_want_to_print': "Label_name_you_want_to_print",
 }
+# For as, Teams are a kind of member
+ITTEAMS = {
+    'team_id_you_want_to_print': "Team_name_you_want_to_print",
+}

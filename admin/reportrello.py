@@ -40,6 +40,7 @@ def printMembers(client, members):
             p = Member(client, member_id)
             m = p.fetch()
             name = m.full_name
+            print("Warning: Hem d'afegir aquesta persona a la llista de MEMBERS: " + m.full_name + " : " + member_id)
         #Only print IT members
         if trellovariables.ITMEMBERS.has_key(member_id):
             print("\"" + name + "\";" + str(values[0]) + ";" + str(values[1]) + ";")
@@ -54,8 +55,24 @@ def printLabels(client, labels):
             p = Label(client, label_id, "")
             m = p.fetch()
             name = m.name
+            print("Warning: Hem d'afegir aquesta etiqueta la llista de ITLABELS: " + m.full_name + " : " + member_id)
         #Only print IT labels
         if trellovariables.ITLABELS.has_key(label_id):
+            print("\"" + name + "\";" + str(values[0]) + ";" + str(values[1]) + ";")
+
+def printTeams(client, teams):
+    print("TEAM;SPEND;EXPECTED;")
+    for member_id, values in members.items():
+        name = ""
+        if trellovariables.MEMBERS.has_key(member_id):
+            name = trellovariables.MEMBERS.get(member_id)
+        else:
+            p = Member(client, member_id)
+            m = p.fetch()
+            name = m.full_name
+            print("Warning: Hem d'afegir aquesta persona a la llista de MEMBERS: " + m.full_name + " : " + member_id)
+        #Only print IT Teams
+        if trellovariables.ITTEAMS.has_key(member_id):
             print("\"" + name + "\";" + str(values[0]) + ";" + str(values[1]) + ";")
 
 members = {}
@@ -81,3 +98,5 @@ print("======= MEMBERS =========")
 printMembers(client, members)
 print("======= LABELS ==========")
 printLabels(client, labels)
+print("======= TEAMS =========")
+printTeams(client, members)
