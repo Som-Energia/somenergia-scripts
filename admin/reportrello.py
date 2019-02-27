@@ -33,7 +33,7 @@ def getMemberName(client, member_id):
 
 def printMembers(client, members):
     print("MEMBER;SPEND;EXPECTED;")
-    for member_id, values in members.items():
+    for member_id in sorted(members):
         name = ""
         if trellovariables.MEMBERS.has_key(member_id):
             name = trellovariables.MEMBERS.get(member_id)
@@ -44,11 +44,11 @@ def printMembers(client, members):
             print("Warning: Hem d'afegir aquesta persona a la llista de MEMBERS: " + m.full_name + " : " + member_id)
         #Only print IT members
         if trellovariables.ITMEMBERS.has_key(member_id):
-            print("\"" + name + "\";" + str(values[0]) + ";" + str(values[1]) + ";")
+            print("\"" + name + "\";" + str(members.get(member_id)[0]) + ";" + str(members.get(member_id)[1]) + ";")
         
 def printLabels(client, labels):
     print("LABEL;SPEND;EXPECTED;")
-    for label_id, values in labels.items():
+    for label_id in sorted(labels):
         name = ""
         if trellovariables.LABELS.has_key(label_id):
             name = trellovariables.LABELS.get(label_id)
@@ -59,11 +59,11 @@ def printLabels(client, labels):
             print("Warning: Hem d'afegir aquesta etiqueta la llista de ITLABELS: " + m.full_name + " : " + member_id)
         #Only print IT labels
         if trellovariables.ITLABELS.has_key(label_id):
-            print("\"" + name + "\";" + str(values[0]) + ";" + str(values[1]) + ";")
+            print("\"" + name + "\";" + str(labels.get(label_id)[0]) + ";" + str(labels.get(label_id)[1]) + ";")
 
 def printTeams(client, teams):
     print("TEAM;SPEND;EXPECTED;")
-    for member_id, values in members.items():
+    for member_id in sorted(members):
         name = ""
         if trellovariables.MEMBERS.has_key(member_id):
             name = trellovariables.MEMBERS.get(member_id)
@@ -74,7 +74,7 @@ def printTeams(client, teams):
             print("Warning: Hem d'afegir aquesta persona a la llista de MEMBERS: " + m.full_name + " : " + member_id)
         #Only print IT Teams
         if trellovariables.ITTEAMS.has_key(member_id):
-            print("\"" + name + "\";" + str(values[0]) + ";" + str(values[1]) + ";")
+            print("\"" + name + "\";" + str(teams.get(member_id)[0]) + ";" + str(teams.get(member_id)[1]) + ";")
 
 members = {}
 labels = {}
@@ -90,6 +90,8 @@ for card in it_board.get_cards({'fields': 'all'}, "visible"):
             labels[label] = [spend,estimated]
 
     for member in card.idMembers:
+        if not trellovariables.ITMEMBERS.has_key(member):
+            continue
         if members.has_key(member):
             members[member] = [members.get(member)[0] + spend , members.get(member)[1] + estimated]
         else:
