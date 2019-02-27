@@ -6,6 +6,7 @@ from trello.member import Member
 from trello.label import Label
 from trello.board import Board
 import trellovariables
+import re
 
 #SETUP
 client = TrelloClient(
@@ -16,14 +17,14 @@ client = TrelloClient(
 #Get Board
 it_board = Board(client, trellovariables.ITBOARD)
 
-def getEstimated(name):
-    if name[0:1] == "(":
-        return int(name[3:4])
-    return 0
+#Constants time position in card
+TIME_SPEND = 1
+TIME_ESTIMATED = 2
 
-def getSpend(name):
-    if name[0:1] == "(":
-        return int(name[1:2])
+def getCardTime(name, typetime):
+    e = re.search("^.*?\((\d+)\/(\d+)\).*$", name)
+    if e:
+        return int(e.group(typetime))
     return 0
 
 def getMemberName(client, member_id):
@@ -79,8 +80,8 @@ members = {}
 labels = {}
 
 for card in it_board.get_cards({'fields': 'all'}, "visible"):
-    spend = getSpend(card.name)
-    estimated = getEstimated(card.name)
+    spend = getCardTime(card.name, TIME_SPEND)
+    estimated = getCardTime(card.name, TIME_ESTIMATED)
  
     for label in card.idLabels:
         if labels.has_key(label):
