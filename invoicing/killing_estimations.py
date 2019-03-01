@@ -6,6 +6,7 @@ from yamlns import namespace as ns
 from consolemsg import step, success, error, warn, color, printStdError
 from datetime import datetime, timedelta
 import sys
+from count_estimations import calc_estimations
 
 step("Connectant a l'erp")
 O = Client(**configdb.erppeek)
@@ -225,5 +226,7 @@ def candidates_to_tg():
 
 if __name__=='__main__':
     res = candidates_to_tg()
+    success('')
+    calc_estimations()
 
 # vim: et ts=4 sw=4

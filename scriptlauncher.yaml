@@ -302,6 +302,10 @@ gestiocontractes:
         parameters:
           doit:
             description: Vols fer els canvis? (escriu 'si' per aplicar-ho)
+      countEstimation:
+        script: python SOME_SRC/somenergia-scripts/invoicing/count_estimations.py
+        title:  Control estadístic de polisses estimables i no estimables
+        description: Mesura uns quants estadístics sobre pólisses amb el sistema d'estimació tret i les que no creuant les dades amb polisses endarrerides.
 
       mailofcontractowners:
         script: SOME_SRC/somenergia-scripts/Informes/mailofcontractowners.sh {contracts} {output}
