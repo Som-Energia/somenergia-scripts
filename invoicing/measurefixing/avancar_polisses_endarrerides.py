@@ -96,16 +96,27 @@ Invoice = O.GiscedataFacturacioFactura
 Validator = O.GiscedataFacturacioValidationValidator
 warning = O.GiscedataFacturacioValidationWarning
 
+polissas_file = sys.argv[1]
+## TODO: with a list of polissas name obtain id_polissa
+def get_polissa_id_from_polissa_name(polissas_file):
+    polissas_names = []
+    polissas_id = []
+    with open(polissas_file, 'r') as f:
+        polissas_names = f.readlines()
+        polissas_names = [x.strip() for x in polissas_names]
+    for pol in polissas_names:
+        try:
+            polissa_id = O.GiscedataPolissa.search([('name','=',pol)])[0]
+            polissas_id.append(polissa_id)
+        except Exception as e:
+            error("ERROR la polissa {} no ha estat trobada l'ERP",pol)
+            error(unicode(e))
+    return polissas_id
+
 step("Cercant polisses endarrerides")
+
+polissaEndarrerida_ids = get_polissa_id_from_polissa_name(polissas_file)
 _polissaEndarrerida_ids = contractOutOfBatchDate()
-polissaEndarrerida_ids = [
-    #153397,
-    #154667,
-    #1883, # Falla validacion
-    #39, # Pasa validaciones
-    #3179,
-    31385,
-]
 polissaEndarrerida_ids_len = len(polissaEndarrerida_ids)
 step("Adelantant {} polisses",polissaEndarrerida_ids_len)
 if polissaEndarrerida_ids_len == 0:
@@ -227,9 +238,6 @@ def avancar_polissa(polissa,counter,sem,result):
                     step("\tAnotem la polissa com a cas ok")
                     result.contractsForwarded.append(polissa.id)
 
-                    if not direct:
-                        warn("prem entrar per desfer o obrir i enviar")
-                        ignoreme = raw_input("")
                     draft_invoice_ids = get_draft_invoices_from_polissa(polissa)
                     if not doit:
                         generated_invoice_ids = get_generated_invoices_ids(previous_draft_invoices, draft_invoice_ids)
@@ -237,9 +245,9 @@ def avancar_polissa(polissa,counter,sem,result):
                     else:
                         send_mail_open_send_invoices(draft_invoice_ids,polissa)
 
-        if not direct:
-            warn("prem entrar per avançar el següent contracte")
-            ignoreme = raw_input("")
+        #if not direct:
+        #    warn("prem entrar per avançar el següent contracte")
+        #    ignoreme = raw_input("")
 
         return counter,result
 
@@ -256,8 +264,6 @@ def exist_draft_invoices_polissa(polissa):
         warn("El contracte {id} ja tenia {n} factures en esborrany",
             n=len(existDrafInvoice_ids), **polissa)
         result.contractsWithPreviousDraftInvoices.append(polissa.id)
-       # return
-
     return existDrafInvoice_ids
 
 def generate_draft_invoices_polissa(polissa):
@@ -370,14 +376,6 @@ def get_diff_ab_fe_resultat(polissa):
         fe_amount += fe_invoice['amount_total']
     diff_amount = fe_amount - ab_amount
     return diff_amount
-## TODO: with a list of polissas name obtain id_polissa
-def get_polissa_id_from_polissa_name(polissa_name):
-
-    polissa_name
-    polissa_name = [O.GiscedataPolissa.search([('name','=',name)])[0]
-                    for name in polissaEndarrerida_ids
-                    if O.GiscedataPolissa.search([('name','=',name)])]
-    return
 
 def avancar_multiple_polissa(polisses,result):
 
