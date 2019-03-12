@@ -90,7 +90,7 @@ for card in it_board.get_cards({'fields': 'all'}, "visible"):
             labels[label] = [spend,estimated]
 
     for member in card.idMembers:
-        if not trellovariables.ITMEMBERS.has_key(member):
+        if not trellovariables.ITMEMBERS.has_key(member) and not trellovariables.ITTEAMS.has_key(member):
             continue
         if members.has_key(member):
             members[member] = [members.get(member)[0] + spend , members.get(member)[1] + estimated]
