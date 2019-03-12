@@ -121,6 +121,19 @@ measurefixing:
       title: Corregir pòlisses que no es troba la lectura anterior.
       description: doitDEstimada (Endesas) i doitDmenys1 (resta) del diagrama de casos d i d-1 de Mariona
 
+    avancarfactendarrerida:
+      script: python SOME_SRC/somenergia-scripts/invoicing/measurefixing/avancar_polisses_endarrerides.py {contracts} {doit}
+      title: Avanzar factura endarrerida
+      description: >
+          Dado un fichero de polizas, se usa el wizard de avanzar facturación atrasada. El fichero deberá tener una poliza por linea.
+      parameters:
+        contracts:
+          type: FILE
+          description: >
+            Fichero de polizas. Una poliza por linea.
+        doit:
+          description: Campo para confirmar cambios en producción escribir --doit. En blanco deshace las facturas.
+
 invoicefixing:
   description: Facturació. Eines per lots, F1 i factures
   scripts:
