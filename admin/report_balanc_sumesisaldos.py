@@ -4,6 +4,7 @@ import base64
 from subprocess import call
 import time
 import sys
+import dbconfig
 
 #report = 'giscedata.facturacio.factura'
 #ids = [1513047, 1513049, 1513057, 1513042]
@@ -11,8 +12,9 @@ import sys
 
 report = 'account.general.ledger.cumulative'
 ids = [1703] # 572000000002
-start_date = sys.argv[1]
-end_date = sys.argv[2]
+output_file = sys.argv[1]
+start_date = sys.argv[2]
+end_date = sys.argv[3]
 fiscal_year = 10 # '2018'
 state = 'none' # 'none' tots , 'bydate': per dates
 
@@ -41,7 +43,9 @@ params = {
         'id': ids[0]
 }
 
-O = Client('http://localhost:8069', 'database','user','pass')
+O = Client(**dbconfig.erppeek)
+
+#O = Client('http://localhost:8069', 'database','user','pass')
 
 #report_id = O.report(report, ids)
 report_id = O.report(report, ids, params, {'lang': 'ca_ES', 'tz': 'Europe/Madrid'})
@@ -55,7 +59,7 @@ while not res['state']:
 
 sys.stdout.write("\n")
 
-with open('report.pdf','w') as f:
+with open(output_file,'w') as f:
     f.write(base64.b64decode(res['result']))
 
 #call(['evince', 'report.pdf'])

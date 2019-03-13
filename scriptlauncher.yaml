@@ -386,14 +386,19 @@ admin:
       title: Consulta l'esforç dels Fogons
       description: Consulta la suma de esforç (spend/expected) i agrupa per Label i per Member de totes les targetes dels Fogons
     balancSiS:
-      script: python SOME_SRC/somenergia-scripts/admin/report_balanc_sumesisaldos.py {start_date} {end_date}
+      script: python SOME_SRC/somenergia-scripts/admin/report_balanc_sumesisaldos.py {report} {start_date} {end_date}
       title: Informe Balanç Sumes i Saldo
-      description: Informe Balanç Sumes i Saldos
+      description: Genera un pdf amb l'informe Balanç Sumes i Saldos
       parameters:
         start_date:
           description: data inici (ex. 2015-01-01)
         end_date:
           description: data final (ex. 2015-03-31)
+        report:
+          type: FILEDOWN
+          extension: pdf
+          name: BalancSumesiSalods-{start_date}-{end_date}.pdf
+
 
 generation:
   description: Generació
