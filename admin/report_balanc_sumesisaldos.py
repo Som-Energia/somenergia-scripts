@@ -10,37 +10,39 @@ import dbconfig
 #ids = [1513047, 1513049, 1513057, 1513042]
 #ids = [1513042]
 
-report = 'account.general.ledger.cumulative'
-ids = [1703] # 572000000002
+
+report = 'account.balance.full'
+ids = account_list = [1] #1703 -  572000000002
 output_file = sys.argv[1]
 start_date = sys.argv[2]
 end_date = sys.argv[3]
 fiscal_year = 10 # '2018'
 state = 'none' # 'none' tots , 'bydate': per dates
+level = 3
 
 params = {
    'report_type': 'pdf', 
    'form': {
-        'sortbydate': 'sort_date',
-        'periods': [[6, 0, []]],
-        'date_to': end_date,
-        'landscape': False,
-        'initial_balance': False,
-        'date_from': start_date,
         'company_id': 1,
+        'account_list': [[6,0,account_list]],
         'state': state,
+        'fiscalyear': fiscal_year,
+        'periods': [[6, 0, []]],
+        'display_account': 'bal_mouvement',
+        'display_account_level': level,
+        'date_from': start_date,
+        'date_to': end_date,
+
         'context': {
             'lang': 'ca_ES',
             'active_ids': [158],
             'tz': 'Europe/Madrid',
             'active_id': 158
         },
-        'amount_currency': False,
-        'display_account': 'bal_mouvement',
-        'fiscalyear': 2},
-        'model': 'account.account',
-        'report_id': False,
-        'id': ids[0]
+   },
+   'model': 'account.account',
+   'report_id': False,
+   'id': ids[0]
 }
 
 O = Client(**dbconfig.erppeek)
