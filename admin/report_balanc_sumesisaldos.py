@@ -3,16 +3,16 @@ import sys
 import base64
 from subprocess import call
 import time
+import sys
 
 #report = 'giscedata.facturacio.factura'
 #ids = [1513047, 1513049, 1513057, 1513042]
 #ids = [1513042]
 
-
 report = 'account.general.ledger.cumulative'
 ids = [1703] # 572000000002
-start_date = '2018-01-01'
-end_date = '2018-07-24'
+start_date = sys.argv[1]
+end_date = sys.argv[2]
 fiscal_year = 10 # '2018'
 state = 'none' # 'none' tots , 'bydate': per dates
 
@@ -58,4 +58,4 @@ sys.stdout.write("\n")
 with open('report.pdf','w') as f:
     f.write(base64.b64decode(res['result']))
 
-call(['evince', 'report.pdf'])
+#call(['evince', 'report.pdf'])
