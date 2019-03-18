@@ -422,7 +422,7 @@ def results(result):
             - Polisses amb factura abonadora i resultat de la rectificacio positiu: {contractsWithABResultPositive_len}
             {contractsWithABResultPositive}
 
-            - Polisses amb factura abonadora i resultat de la rectificacio negatiu: {contractsWithABResultNegative_len}
+            - Polisses amb factura abonadora i resultat de la rectificacio negatiu (cal fer agrupament): {contractsWithABResultNegative_len}
             {contractsWithABResultNegative}
 
     * Polisses en les NO ha estat possible avansar la facturacio: {contractsWithError_len}
@@ -435,7 +435,7 @@ def results(result):
             - Sense factura abonadora: {contractsWithValidationErrorAndNoABDraft_len}
             {contractsWithValidationErrorAndNoABDraft}
 
-         # Perque el wizard NO ha pogut generar factures:
+         # Perque el wizard NO ha pogut generar totes les factures factures corresonents:
 
             - Tenen factura abonadora en esborrany: {contractsStrangedAndABDraft_len}
             {contractsStrangedAndABDraft}
