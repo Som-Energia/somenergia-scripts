@@ -33,5 +33,5 @@ if __name__ == '__main__':
     step("Find if cadastral reference has the proper format")
     try:
         fix_incoherent_cadastral_ref()
-    except:
-        error("Something went wrong... check fix_ref_catastral.py")
+    except Exception as e:
+        error("Something went wrong {}: check fix_ref_catastral.py", e)
