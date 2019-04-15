@@ -20,8 +20,8 @@ f1line_ids = f1line_obj.search(filters)
 f1line_ids = f1line_ids[:process_number]
 f1line_len = len(f1line_ids)
 
-wrong_attachments = []
-bad_xml = []
+no_attachments = []
+many_codes = []
 updated = []
 
 for count,f1line_id in enumerate(f1line_ids):
@@ -29,22 +29,29 @@ for count,f1line_id in enumerate(f1line_ids):
 
     f1line = f1line_obj.get(f1line_id)
     atachments = len(f1line._attachments_field)
-    if atachments != 1:
+    if atachments == 0:
         io.warn("detected {} atatchments!! skipping...",atachments)
-        wrong_attachments.append(f1line_id)
+        no_attachments.append(f1line_id)
         print "id {} detected {} attachments, skiped.".format(f1line_id,atachments)
         continue
 
-    f1_b64 = f1line._attachments_field[0].datas_mongo
-    f1_xml = base64.decodestring(f1_b64)
-    f1_hits = re.findall('<NumeroFactura>.*</NumeroFactura>',f1_xml)
-    if len(f1_hits) != 1:
-        io.warn("detected {} hits searching the NumeroFactura tag in the xml!! skiping...",len(f1_hits))
-        bad_xml.append(f1line_id)
-        print "id {} detected {} hits in xml, skiped.".format(f1line_id,len(f1_hits))
+    found_f1_codes = []
+    for attachment in f1line._attachments_field:
+        f1_xml = base64.decodestring(attachment.datas_mongo)
+        f1_hits = re.findall('<NumeroFactura>.*</NumeroFactura>',f1_xml)
+        for f1_hit in f1_hits:
+            f1_number = f1_hit.replace('<NumeroFactura>','').replace('</NumeroFactura>','')
+            if f1_number:
+                found_f1_codes.append(f1_number)
+
+    found_f1_codes = list(set(found_f1_codes))
+    if len(found_f1_codes) != 1:
+        io.warn("detected {} hits searching the NumeroFactura tag in the xmls!! skipping...",len(found_f1_codes))
+        many_codes.append(f1line_id)
+        print "id {} detected {} hits in xmls, skipped.".format(f1line_id,len(found_f1_codes))
         continue
 
-    f1_number = f1_hits[0].replace('<NumeroFactura>','').replace('</NumeroFactura>','')
+    f1_number = found_f1_codes[0]
     io.step("number found: '{}'",f1_number)
 
     if doit:
@@ -56,14 +63,14 @@ for count,f1line_id in enumerate(f1line_ids):
 io.info('Updated:')
 io.info(' - {}',', '.join([str(i) for i in updated]))
 io.info('')
-io.info('With wrong attachemnts:')
-io.info(' - {}',', '.join([str(i) for i in wrong_attachments]))
+io.info('With no attachemnts:')
+io.info(' - {}',', '.join([str(i) for i in no_attachments]))
 io.info('')
-io.info('With bad xml:')
-io.info(' - {}',', '.join([str(i) for i in bad_xml]))
+io.info('With too many codes:')
+io.info(' - {}',', '.join([str(i) for i in many_codes]))
 print "updated:"
 print updated
-print "wrong attachemnts:"
-print wrong_attachments
-print "bad xml file:"
-print bad_xml
+print "no attachemnts:"
+print no_attachments
+print "too many codes:"
+print many_codes
