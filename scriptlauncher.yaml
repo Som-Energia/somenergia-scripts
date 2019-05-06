@@ -334,7 +334,18 @@ gestiocontractes:
           output:
             type: FILEDOWN
             extension: csv
-
+      sips_comparator:
+        script: SOME_SRC/somenergia-scripts/CUPS/sips_comparator/sips_comparator.py {date_from} {output} 
+        title: Script comparació adreça CUPS - adreça SIPS
+        description: >
+           Dada una data, mostra en un fitxer CSV les direccions sips del 2015 per cups. Utilitza la data "data firma contracte" per trobar els contractes
+        parameters:
+          date_from:
+            description: >
+              Data a partir de la cual realitzar la cerca, en format 'YYYY-mm-dd'
+          output:
+            type: FILEDOWN
+            extension: csv
 admin:
   description: Administració
   scripts:
