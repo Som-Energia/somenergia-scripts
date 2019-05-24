@@ -14,7 +14,7 @@ ATR_CASES = ['C2']
 
 def create_file(c, from_date, file_output):
     p_ids = c.GiscedataPolissa.search(
-        [('data_firma_contracte', '>=', from_date)]
+        [('create_date', '>=', from_date)]
     )
     print "{} contracts found from date {}".format(len(p_ids), from_date)
     print "Dumping data to {}".format(file_output)
