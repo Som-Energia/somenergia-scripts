@@ -71,6 +71,7 @@ new_file = m.parser()
 output = m.build_report(new_file)
 if new_file:
     with open(outputFile,'w') as f:
+        f.write(output)
         print "Fitxer correcte"
 else:
     print "El format del fitxer no coincideix amb el de cap distri"
