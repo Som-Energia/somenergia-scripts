@@ -39,7 +39,7 @@ class CSVParser:
         if any(DISTRI_UFD in s for s in dist_line):
             return self.parseUFD()
         else:
-            return -1
+            return 0
 
     def parser(self):
        return self.getDistribuidora()
@@ -58,6 +58,7 @@ class CSVParser:
 
 
 invoices_file =  sys.argv[1]
+outputFile =  sys.argv[2]
 invoice_list = []
 with open(invoices_file, 'r') as csvfile:
     reader = csv.reader(csvfile, delimiter=';')
@@ -66,4 +67,9 @@ with open(invoices_file, 'r') as csvfile:
 
 m = CSVParser(invoice_list)
 new_file = m.parser()
-print m.build_report(new_file)
+output = m.build_report(new_file)
+if new_file:
+    with open(outputFile,'w') as f:
+        print "Fitxer correcte"
+else:
+    print "El format del fitxer no coincideix amb el de cap distri"
