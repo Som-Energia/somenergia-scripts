@@ -452,7 +452,7 @@ accounting:
           name: LlibreMajorAcumulat-{compte}-{inici}-{final}.pdf
 
     csv_distri_converter:
-      script: SOME_SRC/somenergia-scripts/admin/convert_csv_distris_paymentorder.py {file} {output}
+      script: SOME_SRC/somenergia-scripts/accounting/convert_csv_distris_paymentorder.py {file} {output}
       title: Script conversió CSV distri a CSV ERP
       description: >
            Converteix un CSV amb factures d'una remesa de la distribuidora, al format que es pot carregar al ERP des de Factuació > General > Accions
