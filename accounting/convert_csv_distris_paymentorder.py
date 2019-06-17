@@ -25,20 +25,35 @@ class CSVParser:
             i += 1
         return dist_line[1:]
 
+    def parseERP(self):
+        #"J419004903723";"57.91";"No trobada"
+        i = 0
+        dist_line = []
+        while i<len(self.invoice_list)-1:
+            if len(self.invoice_list[i]) == 3:
+                dist_line.append([self.invoice_list[i][0],self.invoice_list[i][1]])
+            i += 1
+        return dist_line[1:]
+
     def getDistribuidora(self):
         if not self.invoice_list:
             return -1
         i = 0
         dist_line = []
+        erp_line = False #Recàrrega output fitxer ERP
         while i<len(self.invoice_list)-1:
             dist_line = filter(lambda x: 'SOCIEDAD' in x, self.invoice_list[i])
             if dist_line:
-                dist_line
+                break
+            erp_line = filter(lambda x: 'No trobada' in x, self.invoice_list[i])
+            if erp_line:
                 break
             i += 1
 
         if any(DISTRI_UFD in s for s in dist_line):
             return self.parseUFD()
+        elif erp_line:
+            return self.parseERP()
         else:
             return 0
 
@@ -48,6 +63,9 @@ class CSVParser:
     def build_report(self, records):
         csv_doc=StringIO.StringIO()
         writer_report = csv.writer(csv_doc, delimiter=';')
+
+        if not records:
+            return False
 
         for row in records:
             writer_report.writerow(row)
@@ -69,9 +87,9 @@ with open(invoices_file, 'r') as csvfile:
 m = CSVParser(invoice_list)
 new_file = m.parser()
 output = m.build_report(new_file)
-if new_file:
+if new_file and output:
     with open(outputFile,'w') as f:
         f.write(output)
-        print "Fitxer correcte"
+        print "Fitxer correcte creat"
 else:
     print "El format del fitxer no coincideix amb el de cap distri"
