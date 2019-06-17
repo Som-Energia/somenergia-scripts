@@ -282,7 +282,10 @@ def generate_draft_invoices_polissa(polissa):
         aWizard.action_generar_factura()
         step(u"\tState: {0.state}",aWizard)
         step(u"\tInfo: ")
-        print aWizard.info
+        try:
+            print aWizard.info
+        except:
+            pass
 
         if aWizard.state != 'init': break
 
