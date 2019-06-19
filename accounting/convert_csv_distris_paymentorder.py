@@ -46,6 +46,13 @@ class CSVParser:
 
         return 0
 
+    def parseIberdrola(self, xl):
+        #FECHA;SOCIEDAD;CODMULTIS;CODAT/BT;UNIDAD BASICA G;CODUOMSV;CLIENTE;CIF;AGRUPACION;CODIGO REMESA;CONTRATO;REFERCRUZADA...
+        df1 = xl.parse()
+        df1.to_csv(path_or_buf='output.csv', sep=';', columns=['NUMFACTRUA','IMPORTE EUR'], header=True, index=False, decimal=',')
+
+        return 0
+
     def getDistribuidora(self):
         if not self.invoice_list:
             return -1
@@ -90,20 +97,23 @@ class CSVParser:
 invoices_file =  sys.argv[1]
 outputFile =  sys.argv[2]
 invoice_list = []
+
 if invoices_file.endswith('.xlsx'):
+    m = CSVParser([])
     xl = pd.ExcelFile(invoices_file)
     print "Excel creat"
-    endesa_line = filter(lambda x: 'Facturacion' in x, [xl.sheet_names[1]])
-    if endesa_line:
-        m = CSVParser([])
-        m.parseEndesa(xl)
+    if len(xl.sheet_names) < 2:
+       m.parseIberdrola(xl)
+    else:
+        endesa_line = filter(lambda x: 'Facturacion' in x, [xl.sheet_names[1]])
+        if endesa_line:
+            m.parseEndesa(xl)
 
 else:
     with open(invoices_file, 'r') as csvfile:
         reader = csv.reader(csvfile, delimiter=';')
         for row in reader:
             invoice_list.append(row)
-
     m = CSVParser(invoice_list)
     new_file = m.parser()
     output = m.build_report(new_file)
