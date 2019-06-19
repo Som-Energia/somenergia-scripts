@@ -3,6 +3,7 @@
 import StringIO
 import csv
 import sys
+import pandas as pd
 
 ## SYNTAX
 # script.py facturasF55091367_20190603.csv
@@ -34,6 +35,16 @@ class CSVParser:
                 dist_line.append([self.invoice_list[i][0],self.invoice_list[i][1]])
             i += 1
         return dist_line[1:]
+
+    def parseEndesa(self, xl):
+        #Fecha_Factura;Indentificar_Emisora;ComentariosFactua...
+        df1 = xl.parse(xl.sheet_names[1])
+        df_obj = df1.select_dtypes(['object'])
+        df1[df_obj.columns] = df_obj.apply(lambda x: x.str.strip())
+        df1 = df1.iloc[:-2]
+        df1.to_csv(path_or_buf='output.csv', sep=';', columns=['Codigo_Fiscal_de_Factura','Importe_Total_de_la_Factura'], header=False, index=False, decimal=',')
+
+        return 0
 
     def getDistribuidora(self):
         if not self.invoice_list:
@@ -79,17 +90,26 @@ class CSVParser:
 invoices_file =  sys.argv[1]
 outputFile =  sys.argv[2]
 invoice_list = []
-with open(invoices_file, 'r') as csvfile:
-    reader = csv.reader(csvfile, delimiter=';')
-    for row in reader:
-        invoice_list.append(row)
+if invoices_file.endswith('.xlsx'):
+    xl = pd.ExcelFile(invoices_file)
+    print "Excel creat"
+    endesa_line = filter(lambda x: 'Facturacion' in x, [xl.sheet_names[1]])
+    if endesa_line:
+        m = CSVParser([])
+        m.parseEndesa(xl)
 
-m = CSVParser(invoice_list)
-new_file = m.parser()
-output = m.build_report(new_file)
-if new_file and output:
-    with open(outputFile,'w') as f:
-        f.write(output)
-        print "Fitxer correcte creat"
 else:
-    print "El format del fitxer no coincideix amb el de cap distri"
+    with open(invoices_file, 'r') as csvfile:
+        reader = csv.reader(csvfile, delimiter=';')
+        for row in reader:
+            invoice_list.append(row)
+
+    m = CSVParser(invoice_list)
+    new_file = m.parser()
+    output = m.build_report(new_file)
+    if new_file and output:
+        with open(outputFile,'w') as f:
+            f.write(output)
+            print "Fitxer correcte creat"
+    else:
+        print "El format del fitxer no coincideix amb el de cap distri"

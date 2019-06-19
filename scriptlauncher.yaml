@@ -455,7 +455,7 @@ accounting:
       script: SOME_SRC/somenergia-scripts/accounting/convert_csv_distris_paymentorder.py {file} {output}
       title: Script conversió CSV distri a CSV ERP
       description: >
-           Converteix un CSV amb factures d'una remesa de la distribuidora, al format que es pot carregar al ERP des de Factuació > General > Accions
+           Converteix un CSV amb factures d'una remesa de les distribuidores UnionFenosa, Endesa i el format de sortida del ERP. El fitxer output es pot carregar al ERP des de Factuació > General > Accions
       parameters:
         file:
           type: FILE
