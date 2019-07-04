@@ -463,6 +463,14 @@ accounting:
         output:
           type: FILEDOWN
           extension: csv
+    invoice_generator_from_csvr:
+      script: SOME_SRC/somenergia-scripts/accounting/create_invoices_autoproduction.py {file}
+      title: Creació de factures d'Autoproducció
+      description: Script que crea factures d'Autoproducció a partir de el CSV de les inscripcions
+      parameters:
+        file:
+          type: FILE
+          description: CSV del Drive de formulari d'inscripció
 
 validation:
   description: Validació de codis
