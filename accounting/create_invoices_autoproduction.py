@@ -69,6 +69,7 @@ class InvoiceMaker:
         valsLineAdvance = self.getValsLine(invoice.id, '705000000101', DESC_ADVANCE[partner_lang], 82.65)
         invoice_line_services = self.O.AccountInvoiceLine.create(valsLineAdvance)
         self.O.AccountInvoice.button_reset_taxes([invoice.id])
+        return True
 
     def makeInvoices(self):
         n_invoices = 0
@@ -85,7 +86,8 @@ with open(enrolment_file, 'r') as csvfile:
     reader = csv.reader(csvfile, delimiter=',')
     next(reader)
     for row in reader:
-        dni_list.append(row[3])
+        if row[0] and not row[1]:
+            dni_list.append(row[6])
 
 im = InvoiceMaker(O, dni_list)
 im.makeInvoices()
