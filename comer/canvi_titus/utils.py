@@ -3,6 +3,19 @@ import contextlib
 
 from yamlns import namespace as ns
 
+@contextlib.contextmanager
+def transaction(O):
+    t = O.begin()
+    try:
+        yield t
+    except:
+        t.rollback()
+        raise
+    else:
+        t.commit()
+    finally:
+        t.close()
+        del t
 
 @contextlib.contextmanager
 def discarded_transaction(O):

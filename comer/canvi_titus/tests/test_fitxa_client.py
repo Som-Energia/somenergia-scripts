@@ -4,7 +4,7 @@ from unittest import TestCase
 from yamlns import namespace as ns
 
 import configdb
-from fitxa_client import create_fitxa_client
+from fitxa_client import create_fitxa_client, get_cups_address
 from ooop_wst import OOOP_WST
 from utils import NsEqualMixin, discarded_transaction
 
@@ -81,3 +81,23 @@ class TestFitxaClient(Models_Test):
                 address=personaldata.address,
                 existent=False
             ))
+
+    def test__get_cups_address(self):
+        cupsdata = ns(configdb.cupsdata)
+
+        with discarded_transaction(O) as t:
+            cups_address = get_cups_address(t, cupsdata.cups)
+
+            self.assertNsEqual(cups_address, dict(
+                street=cupsdata.street,
+                dp=cupsdata.postal_code,
+                id_municipi=cupsdata.municipi_id,
+                id_state=cupsdata.state_id,
+                id_country=cupsdata.country_id
+            ))
+
+
+
+
+
+
