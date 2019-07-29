@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import argparse
 import csv
+import json
+import xmlrpclib
 from io import open
 
 from consolemsg import error, step, success, warn
@@ -11,6 +13,11 @@ from models import (get_or_create_partner, get_or_create_partner_address,
                     get_or_create_partner_bank)
 from ooop_wst import OOOP_WST
 from utils import transaction
+
+LANG_TABLE = {
+    'CAT': 'ca_ES',
+    'CAST': 'es_ES'
+}
 
 
 def create_fitxa_client(
@@ -55,7 +62,10 @@ def get_cups_address(O, cups):
         id_country = O.ResCountryState.read(id_state, ['country_id'])['country_id'][0]
         cups_address_data['id_country'] = id_country
 
-    except IndexError:
+    except IndexError as e:
+        msg = "There where some problem getting address information of " \
+              "cups {}, reason: {}"
+        warn(msg.format(cups, str(e)))
         cups_address_data = {}
     else:
         cups_address_data['street'] = cups_address_data['direccio']
@@ -75,7 +85,7 @@ def read_canvi_titus_csv(csv_file):
 
 
 def main(csv_file, check_conn=True):
-    O = OOOP_WST(configdb.ooop)
+    O = OOOP_WST(**configdb.ooop)
 
     if check_conn:
         msg = "You are connected to: {}, do you want to continue? (Y/n)"
@@ -91,59 +101,69 @@ def main(csv_file, check_conn=True):
 
     for new_client in csv_content:
         try:
+            msg = "Getting address information of cups {}"
+            step(msg.format(new_client.get('CUPS', '')))
             cups_address = get_cups_address(
-                O, new_client.get('CUPS', None)
+                O, new_client.get('CUPS', '').strip().upper()
             )
             with transaction(O) as t:
+                msg = "Creating new profile of {}, dni: {}"
+                step(msg.format(new_client['Nom nou titu'], new_client['DNI']).strip().upper())
                 profile_data = create_fitxa_client(
                     t,
-                    full_name=new_client['Nom nou titu'],
-                    vat=new_client['DNI'],
-                    lang=new_client['Idioma'],
-                    email=new_client['Mail'],
-                    phone=new_client['Tlf'],
+                    full_name=new_client['Nom nou titu'].strip(),
+                    vat='ES{}'.format(new_client['DNI'].strip().upper()),
+                    lang=LANG_TABLE.get(new_client['Idioma'].strip().upper(), 'es_ES'),
+                    email=new_client['Mail'].strip(),
+                    phone=new_client['Tlf'].strip(),
                     street=cups_address['street'],
-                    postal_code=cups_address['postal_code'],
-                    city_id=cups_address['municipi_id'],
-                    state_id=cups_address['state_id'],
-                    country_id=cups_address['country_id'],
-                    iban=new_client['IBAN']
+                    postal_code=cups_address['dp'],
+                    city_id=cups_address['id_municipi'],
+                    state_id=cups_address['id_state'],
+                    country_id=cups_address['id_country'],
+                    iban=new_client['IBAN'].strip().upper()
                 )
+        except xmlrpclib.Fault as e:
+            msg = "An error ocurred creating {}, dni: {}, contract: {}. Reason: {}"
+            error(msg.format(
+                new_client['Nom nou titu'], new_client['DNI'], new_client['Contracte'], e.faultString.split('\n')[-2]
+            ))
         except Exception as e:
-            msg = "An error ocurred creating {}, dni: {}, contract:{}. Reason: {}"
+            msg = "An error ocurred creating {}, dni: {}, contract: {}. Reason: {}"
+
             error(msg.format(
                 new_client['Nom nou titu'], new_client['DNI'], new_client['Contracte'], str(e)
             ))
         else:
-            msg = "Profile successful created with data: \n {}"
-            success(msg.format(profile_data))
+            msg = "Profile successful created with data:\n {}"
+            success(msg.format(json.dumps(profile_data, indent=4, sort_keys=True)))
 
     step("Closing connection with ERP")
     O.close()
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Automatische Kunde Profile erstellen'
+    )
+
+    parser.add_argument(
+        '--file',
+        dest='csv_file',
+        required=True,
+        help="csv amb les noves fitxes cliente a crear"
+    )
+
+    parser.add_argument(
+        '--check-conn',
+        type=bool,
+        default=True,
+        help="Check para comprobar a que servidor nos estamos conectando"
+    )
+
+    args = parser.parse_args()
+
     try:
-        parser = argparse.ArgumentParser(
-            description='Automatische Kunde Profile erstellen'
-        )
-
-        parser.add_argument(
-            '--file',
-            type=file,
-            dest='csv_file',
-            help="csv amb les noves fitxes cliente a crear"
-        )
-
-        parser.add_argument(
-            '--check-conn',
-            type=bool,
-            default=False,
-            help="Check para comprobar a que servidor nos estamos conectando"
-        )
-
-        args = parser.parse_args()
-
         main(args.csv_file, args.check_conn)
     except (KeyboardInterrupt, SystemExit, SystemError):
         warn("Aarrggghh you kill me :(")
