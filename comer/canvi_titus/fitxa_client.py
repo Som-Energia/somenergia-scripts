@@ -2,6 +2,7 @@
 import argparse
 import csv
 import json
+import re
 import xmlrpclib
 from io import open
 
@@ -75,6 +76,10 @@ def get_cups_address(O, cups):
     return ns(cups_address_data)
 
 
+def sanitize_iban(iban):
+    return re.sub(r'[- ]', '', iban)
+
+
 def read_canvi_titus_csv(csv_file):
     with open(csv_file, 'rb') as f:
         reader = csv.reader(f)
@@ -121,7 +126,7 @@ def main(csv_file, check_conn=True):
                     city_id=cups_address['id_municipi'],
                     state_id=cups_address['id_state'],
                     country_id=cups_address['id_country'],
-                    iban=new_client['IBAN'].strip().upper()
+                    iban=sanitize_iban(new_client['IBAN'])
                 )
         except xmlrpclib.Fault as e:
             msg = "An error ocurred creating {}, dni: {}, contract: {}. Reason: {}"

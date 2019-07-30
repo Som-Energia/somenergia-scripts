@@ -4,7 +4,7 @@ from unittest import TestCase
 from yamlns import namespace as ns
 
 import configdb
-from fitxa_client import create_fitxa_client, get_cups_address
+from fitxa_client import create_fitxa_client, get_cups_address, sanitize_iban
 from ooop_wst import OOOP_WST
 from utils import NsEqualMixin, discarded_transaction
 
@@ -96,8 +96,22 @@ class TestFitxaClient(Models_Test):
                 id_country=cupsdata.country_id
             ))
 
+    def test__sanitize_iban(self):
+        iban_list  = [
+            'ES50-2090-6199-3922-3692-0783',
+            'ES29-30893321714458633295',
+            'ES35-1301 5129 4191 1215 8915',
+            'ES65 0122 9241 3981 8575 2504'
+        ]
 
+        sanitized_ibans = [sanitize_iban(iban) for iban in iban_list]
 
-
-
-
+        self.assertListEqual(
+            sanitized_ibans,
+            [
+                'ES5020906199392236920783',
+                'ES2930893321714458633295',
+                'ES3513015129419112158915',
+                'ES6501229241398185752504'
+            ]
+        )
