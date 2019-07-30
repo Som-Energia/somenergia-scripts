@@ -5,6 +5,7 @@ from yamlns import namespace as ns
 
 import configdb
 from fitxa_client import create_fitxa_client, get_cups_address, sanitize_iban
+from models import InvalidAccount
 from ooop_wst import OOOP_WST
 from utils import NsEqualMixin, discarded_transaction
 
@@ -81,6 +82,22 @@ class TestFitxaClient(Models_Test):
                 address=personaldata.address,
                 existent=False
             ))
+
+    def test__create_fitxa_client__when_invalid_bankaccount(self):
+        personaldata = ns(configdb.personaldata)
+        personaldata.nif = '40057001V'
+        personaldata.iban = 'ES3121000019830104303220'
+
+        fitxa_client_params = self.get_create_fitxa_client_params(personaldata)
+
+        try:
+            with discarded_transaction(O) as t:
+                fitxa_client = ns(
+                    create_fitxa_client(t, **fitxa_client_params)
+                )
+        except InvalidAccount as e:
+            self.assertEquals(e.message, 'Invalid bank account.')
+
 
     def test__get_cups_address(self):
         cupsdata = ns(configdb.cupsdata)

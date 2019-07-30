@@ -4,6 +4,11 @@ from datetime import datetime
 from utils import is_company
 
 
+class InvalidAccount(Exception):
+    def __init__(self, message):
+        super(InvalidAccount, self).__init__(message)
+
+
 def get_or_create_partner(t, name, vat, lang, become_member, proxy_name=None, proxy_vat=None):
     '''
         t: erp_peek instance
@@ -128,14 +133,17 @@ def get_or_create_partner_bank(t, partner_id, iban, country_id, state_id=False):
     if bank_ids: return bank_ids[0]
     vals = t.ResPartnerBank.onchange_banco(
         [], iban[4:], country_id, {})
-    vals = vals['value']
-    vals.update({
-        'name': '',
-        'state': 'iban',
-        'iban': iban,
-        'partner_id': partner_id,
-        'country_id': country_id,
-        'acc_country_id': country_id,
-        'state_id': state_id,
-    })
-    return t.ResPartnerBank.create(vals)
+    if 'value' in vals:
+        vals = vals['value']
+        vals.update({
+            'name': '',
+            'state': 'iban',
+            'iban': iban,
+            'partner_id': partner_id,
+            'country_id': country_id,
+            'acc_country_id': country_id,
+            'state_id': state_id,
+        })
+        return t.ResPartnerBank.create(vals)
+
+    raise InvalidAccount(vals.get('warning', {}).get('message', ''))

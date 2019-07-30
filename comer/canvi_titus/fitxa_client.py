@@ -51,7 +51,10 @@ def create_fitxa_client(
 def get_cups_address(O, cups):
     try:
         cups_address_data = O.GiscedataCupsPs.read(
-            O.GiscedataCupsPs.search([('name', '=', cups)])[0],
+            O.GiscedataCupsPs.search([
+                ('name', 'ilike', cups),
+                ('active', '=', True)
+            ])[0],
             ['direccio', 'dp', 'id_municipi']
         )
         id_municipi = cups_address_data['id_municipi'][0]
@@ -106,14 +109,14 @@ def main(csv_file, check_conn=True):
 
     for new_client in csv_content:
         try:
+            msg = "Creating new profile of {}, dni: {}"
+            step(msg.format(new_client['Nom nou titu'], new_client['DNI'].strip().upper()))
             msg = "Getting address information of cups {}"
             step(msg.format(new_client.get('CUPS', '')))
             cups_address = get_cups_address(
                 O, new_client.get('CUPS', '').strip().upper()
             )
             with transaction(O) as t:
-                msg = "Creating new profile of {}, dni: {}"
-                step(msg.format(new_client['Nom nou titu'], new_client['DNI']).strip().upper())
                 profile_data = create_fitxa_client(
                     t,
                     full_name=new_client['Nom nou titu'].strip(),
@@ -122,7 +125,7 @@ def main(csv_file, check_conn=True):
                     email=new_client['Mail'].strip(),
                     phone=new_client['Tlf'].strip(),
                     street=cups_address['street'],
-                    postal_code=cups_address['dp'],
+                    postal_code=cups_address['dp'] or '',
                     city_id=cups_address['id_municipi'],
                     state_id=cups_address['id_state'],
                     country_id=cups_address['id_country'],
@@ -135,7 +138,6 @@ def main(csv_file, check_conn=True):
             ))
         except Exception as e:
             msg = "An error ocurred creating {}, dni: {}, contract: {}. Reason: {}"
-
             error(msg.format(
                 new_client['Nom nou titu'], new_client['DNI'], new_client['Contracte'], str(e)
             ))
