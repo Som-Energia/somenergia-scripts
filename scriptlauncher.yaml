@@ -240,7 +240,7 @@ gestiocontractes:
     description: Gestió de contractes
     scripts:
       canvistitular_fitxes_client:
-        script: python SOME_SRC/somenergia-scripts/comer/canvi_titus/fitxa_client.py --file {csv_file} --check-conn True
+        script: python SOME_SRC/somenergia-scripts/comer/canvi_titus/fitxa_client.py --file {csv_file}
         title: Canvi titular Creació noves fitxes client
         description: Script que donat un csv amb les dades dels nous clients, crea si cal, la seva fitxa dins del ERP
         parameters:
