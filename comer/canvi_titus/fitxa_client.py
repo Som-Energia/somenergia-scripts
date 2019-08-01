@@ -13,7 +13,8 @@ import configdb
 from models import (get_or_create_partner, get_or_create_partner_address,
                     get_or_create_partner_bank)
 from ooop_wst import OOOP_WST
-from utils import transaction
+from utils import (get_cups_address, read_canvi_titus_csv, sanitize_iban,
+                   transaction)
 
 LANG_TABLE = {
     'CAT': 'ca_ES',
@@ -105,9 +106,9 @@ def main(csv_file, check_conn=True):
         if answer in ['n', 'N']:
             raise KeyboardInterrupt
 
-    csv_content = read_canvi_titus_csv(csv_file)
+def canvi_titus(O, new_owners):
 
-    for new_client in csv_content:
+    for new_client in new_owners:
         try:
             msg = "Creating new profile of {}, dni: {}"
             step(msg.format(new_client['Nom nou titu'], new_client['DNI'].strip().upper()))
@@ -116,6 +117,7 @@ def main(csv_file, check_conn=True):
             cups_address = get_cups_address(
                 O, new_client.get('CUPS', '').strip().upper()
             )
+
             with transaction(O) as t:
                 profile_data = create_fitxa_client(
                     t,
@@ -144,6 +146,24 @@ def main(csv_file, check_conn=True):
         else:
             msg = "Profile successful created with data:\n {}"
             success(msg.format(json.dumps(profile_data, indent=4, sort_keys=True)))
+
+
+def main(csv_file, check_conn=True):
+    O = OOOP_WST(**configdb.ooop)
+
+    if check_conn:
+        msg = "You are connected to: {}, do you want to continue? (Y/n)"
+        step(msg.format(O.uri))
+        answer = raw_input()
+        while answer.lower() not in ['y', 'n', '']:
+            answer = raw_input()
+            step("Do you want to continue? (Y/n)")
+        if answer in ['n', 'N']:
+            raise KeyboardInterrupt
+
+    csv_content = read_canvi_titus_csv(csv_file)
+
+    canvi_titus(O, csv_content)
 
     step("Closing connection with ERP")
     O.close()
