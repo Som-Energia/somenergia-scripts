@@ -13,34 +13,32 @@ ATR_CASES = ['C2']
 
 
 def create_file(c, from_date, file_output):
-    p_ids = c.GiscedataPolissa.search(
-        [('create_date', '>=', from_date)]
-    )
-    print "{} contracts found from date {}".format(len(p_ids), from_date)
+    atr_ids = c.GiscedataSwitching.search([('create_date','>=', from_date),('proces_id.name', 'in', ATR_CASES)])
+
+    print "{} contracts found from date {}".format(len(atr_ids), from_date)
     print "Dumping data to {}".format(file_output)
-    if not p_ids:
-        print "No contracts found"
+
+    if not atr_ids:
+        print "No ATR cases found"
         return
+
+    polisses = c.GiscedataSwitching.read(atr_ids, ['cups_polissa_id'])
+    polisses_ids = set([polissa['cups_polissa_id'][0] for polissa in polisses])
 
     with open(file_output, 'w') as csvfile:
         fields = ['contrato', 'cups', 'data_alta', 'adr_cups', 'adr_sips', 'poblacio_sips', 'titular', 'titular_email']
         csvwriter = csv.writer(csvfile, delimiter=';')
         csvwriter.writerow(fields)
         p_fields = ['name', 'data_alta', 'cups', 'titular']
-        for p_data in tqdm.tqdm(c.GiscedataPolissa.read(p_ids, p_fields)):
+
+        for p_data in tqdm.tqdm(c.GiscedataPolissa.read(list(polisses_ids), p_fields)):
             contract_name = p_data['name']
             contract_id = p_data['id']
             cups_id = p_data['cups'][0]
             titular_id = p_data['titular'][0]
             titular_name = p_data['titular'][1]
             cups_name = p_data['cups'][1]
-            # Only with ATR case
-            atr_ids = c.GiscedataSwitching.search([
-                ('cups_polissa_id', '=', contract_id),
-                ('proces_id.name', 'in', ATR_CASES)
-            ])
-            if not atr_ids:
-                continue
+
             c_data = c.GiscedataCupsPs.read(cups_id, ['name', 'direccio'])
             t_data = c.ResPartner.read(titular_id, ['name', 'lang', 'vat'])
             pa_ids = c.ResPartnerAddress.search([('partner_id', '=', titular_id)])

@@ -282,7 +282,10 @@ def generate_draft_invoices_polissa(polissa):
         aWizard.action_generar_factura()
         step(u"\tState: {0.state}",aWizard)
         step(u"\tInfo: ")
-        print aWizard.info
+        try:
+            print aWizard.info
+        except:
+            pass
 
         if aWizard.state != 'init': break
 
@@ -326,8 +329,6 @@ def send_mail_open_send_invoices(draft_invoice_ids,polissa):
 
     step("Obrir i enviar totes les factures generades, updatarà la data ultima factura a polissa")
     lang = O.ResPartner.read(polissa.pagador[0], ['lang'])['lang']
-    warn("prem entrar per avançar el següent contracte")
-    ignoreme = raw_input("")
 
     # TODO: What if this fails? Mails already sent!
     return open_and_send(draft_invoice_ids, lang)
