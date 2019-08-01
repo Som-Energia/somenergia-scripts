@@ -239,6 +239,15 @@ invoicefixing:
 gestiocontractes:
     description: Gestió de contractes
     scripts:
+      canvistitular_fitxes_client:
+        script: python SOME_SRC/somenergia-scripts/comer/canvi_titus/fitxa_client.py --file {csv_file} --check-conn True
+        title: Canvi titular Creació noves fitxes client
+        description: Script que donat un csv amb les dades dels nous clients, crea si cal, la seva fitxa dins del ERP
+        parameters:
+          csv_file:
+            type: FILE
+            description: "csv amb les dades dels nous titulars, ha de tenir: Contracte,CUPS,Nom nou titu,Idioma,Tlf,Mail,DNI,IBAN"
+
       canvistitular:
         script: execute_send_email.py -C ~/config.py -s canvi_titular -t modifica@somenergia.coop -- python SOME_SRC/somenergia-scripts/Revisions_periodiques/canvi_titular_fase3.py
         title: Canvi de titular. Última fase
