@@ -164,12 +164,13 @@ if __name__ == '__main__':
     parser.add_argument(
         '--check-conn',
         type=bool,
-        default=True,
+        nargs='?',
+        default=False,
+        const=True,
         help="Check para comprobar a que servidor nos estamos conectando"
     )
 
     args = parser.parse_args()
-
     try:
         main(args.csv_file, args.check_conn)
     except (KeyboardInterrupt, SystemExit, SystemError):
