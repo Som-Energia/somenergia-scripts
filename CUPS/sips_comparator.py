@@ -10,10 +10,10 @@ from datetime import datetime, date
 import configdb
 
 ATR_CASES = ['C2']
-
+ATR_STEPS = ['01']
 
 def create_file(c, from_date, file_output):
-    atr_ids = c.GiscedataSwitching.search([('create_date','>=', from_date),('proces_id.name', 'in', ATR_CASES)])
+    atr_ids = c.GiscedataSwitching.search([('create_date','>=', from_date),('proces_id.name', 'in', ATR_CASES),('step_id.name','in',ATR_STEPS)])
 
     print "{} contracts found from date {}".format(len(atr_ids), from_date)
     print "Dumping data to {}".format(file_output)
@@ -23,11 +23,11 @@ def create_file(c, from_date, file_output):
         return
 
     polisses = c.GiscedataSwitching.read(atr_ids, ['cups_polissa_id'])
-    polisses_ids = set([polissa['cups_polissa_id'][0] for polissa in polisses])
+    polisses_ids = set([polissa['cups_polissa_id'][0] for polissa in polisses if polissa['cups_polissa_id']])
 
     with open(file_output, 'w') as csvfile:
-        fields = ['contrato', 'cups', 'data_alta', 'adr_cups', 'adr_sips', 'poblacio_sips', 'titular', 'titular_email']
-        csvwriter = csv.writer(csvfile, delimiter=';')
+        fields = ['contrato', 'cups', 'data_alta', 'adr_cups', 'adr_sips', 'poblacio_sips', 'titular', 'titular_email', 'idioma']
+        csvwriter = csv.writer(csvfile, quoting=csv.QUOTE_NONNUMERIC ,quotechar ='\"', delimiter=';')
         csvwriter.writerow(fields)
         p_fields = ['name', 'data_alta', 'cups', 'titular']
 
