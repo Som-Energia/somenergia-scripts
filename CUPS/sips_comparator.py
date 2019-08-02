@@ -23,7 +23,7 @@ def create_file(c, from_date, file_output):
         return
 
     polisses = c.GiscedataSwitching.read(atr_ids, ['cups_polissa_id'])
-    polisses_ids = set([polissa['cups_polissa_id'][0] for polissa in polisses])
+    polisses_ids = set([polissa['cups_polissa_id'][0] for polissa in polisses if polissa['cups_polissa_id']])
 
     with open(file_output, 'w') as csvfile:
         fields = ['contrato', 'cups', 'data_alta', 'adr_cups', 'adr_sips', 'poblacio_sips', 'titular', 'titular_email', 'idioma']
