@@ -22,11 +22,12 @@ def create_file(c, from_date, file_output):
         print "No ATR cases found"
         return
 
-    polisses = c.GiscedataSwitching.read(atr_ids, ['cups_polissa_id'])
+    polisses = c.GiscedataSwitching.read(atr_ids, ['cups_polissa_id','user_id'])
     polisses_ids = set([polissa['cups_polissa_id'][0] for polissa in polisses if polissa['cups_polissa_id']])
+    polisses_with_resp = dict( [polissa['cups_polissa_id'][0],polissa['user_id'][1]] for polissa in polisses if polissa['cups_polissa_id'] and polissa['user_id'] )
 
     with open(file_output, 'w') as csvfile:
-        fields = ['contrato', 'cups', 'data_alta', 'adr_cups', 'adr_sips', 'poblacio_sips', 'titular', 'titular_email', 'idioma']
+        fields = ['contrato', 'cups', 'data_alta', 'adr_cups', 'adr_sips', 'poblacio_sips', 'titular', 'titular_email', 'responsable', 'idioma']
         csvwriter = csv.writer(csvfile, quoting=csv.QUOTE_NONNUMERIC ,quotechar ='\"', delimiter=';')
         csvwriter.writerow(fields)
         p_fields = ['name', 'data_alta', 'cups', 'titular']
@@ -65,7 +66,8 @@ def create_file(c, from_date, file_output):
             else:
                 extra_sips = ["No SIPS Found", ""]
             data.extend(extra_sips)
-            data.extend([titular_name.encode('utf-8'), email, t_data['lang']])
+            resp = polisses_with_resp[p_data['id']].encode('utf-8') 
+            data.extend([titular_name.encode('utf-8'), email, resp, t_data['lang']])
             csvwriter.writerow(data)
 
 
