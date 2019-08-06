@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+import csv
 import contextlib
+import re
 
+from consolemsg import warn
 from yamlns import namespace as ns
 
 @contextlib.contextmanager
@@ -35,6 +38,50 @@ def is_company(vat):
 def get_default_country(O):
     countryid = O.ResCountry.search([('code', '=', 'ES')])[0]
     return countryid
+
+
+def sanitize_iban(iban):
+    return re.sub(r'[- ]', '', iban)
+
+
+def read_canvi_titus_csv(csv_file):
+    with open(csv_file, 'rb') as f:
+        reader = csv.reader(f)
+        header = reader.next()
+        csv_content = [dict(zip(header, row)) for row in reader if row[0]]
+
+    return csv_content
+
+
+def get_cups_address(O, cups):
+    try:
+        cups_address_data = O.GiscedataCupsPs.read(
+            O.GiscedataCupsPs.search([
+                ('name', 'ilike', cups),
+                ('active', '=', True)
+            ])[0],
+            ['direccio', 'dp', 'id_municipi']
+        )
+        id_municipi = cups_address_data['id_municipi'][0]
+        cups_address_data['id_municipi'] = id_municipi
+
+        id_state = O.ResMunicipi.read(id_municipi, ['state'])['state'][0]
+        cups_address_data['id_state'] = id_state
+
+        id_country = O.ResCountryState.read(id_state, ['country_id'])['country_id'][0]
+        cups_address_data['id_country'] = id_country
+
+    except IndexError as e:
+        msg = "There where some problem getting address information of " \
+              "cups {}, reason: {}"
+        warn(msg.format(cups, str(e)))
+        cups_address_data = {}
+    else:
+        cups_address_data['street'] = cups_address_data['direccio']
+        del cups_address_data['direccio']
+        del cups_address_data['id']
+
+    return ns(cups_address_data)
 
 
 class NsEqualMixin(object):

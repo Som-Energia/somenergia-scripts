@@ -147,3 +147,70 @@ def get_or_create_partner_bank(t, partner_id, iban, country_id, state_id=False):
         return t.ResPartnerBank.create(vals)
 
     raise InvalidAccount(vals.get('warning', {}).get('message', ''))
+
+
+def main_partner_address(O, partner_id):
+    address_ids = O.ResPartnerAddress.search([
+        ('partner_id.id', '=', partner_id),
+        ])
+
+    if address_ids:
+        return address_ids[0]
+
+
+annotation_template = u"""\
+-- webforms diu: --
+****Canvi de titular amb soci vinculat ({soci_name} {soci_number})****
+Data de petició: {request_date}
+Nou Titular: {owner_name}
+NIF: {owner_nif}
+Contacte: {owner_email} {owner_phone}
+IBAN: {iban}
+-- webforms ha dit --
+"""
+
+
+def update_contract_observations(O, contract_id, owner_id, member_id, bank_id, request_date):
+
+    bank = O.ResPartnerBank.read(bank_id, ['iban'])
+    member = O.SomenergiaSoci.read(member_id, ['name', 'ref']) if member_id else {}
+    owner = O.ResPartner.read(owner_id, ['name', 'vat', 'address'])
+    address_id = main_partner_address(O, owner_id)
+    address = O.ResPartnerAddress.read(address_id, ['phone', 'mobile', 'email'])
+
+    observations = annotation_template.format(
+        soci_name=member.get('name', '-'),
+        soci_number=member.get('ref', '-'),
+        request_date=request_date,
+        owner_name=owner['name'],
+        owner_nif=owner['vat'],
+        owner_email=address['email'],
+        owner_phone=address['phone'] or address['mobile'],
+        iban=bank['iban']
+    )
+
+    contract = O.GiscedataPolissa.read(contract_id, ['observacions'])
+    O.GiscedataPolissa.write(
+        [contract_id],
+        dict(
+            observacions=u'{new_obs}\n{old_obs}'.format(
+                old_obs=contract['observacions'],
+                new_obs=observations,
+            )
+        )
+    )
+
+
+def mark_contract_as_not_estimable(O, contract_id, timestamp):
+    reason = u"\n(webforms)[{timestamp}] Canvi de titular".format(
+        timestamp=timestamp
+    )
+    contract = O.GiscedataPolissa.read(contract_id)
+    observations = contract.get('observacions_estimacio') or ''
+    observations += reason
+    new_values = {
+        'es_pot_estimar': False,
+        'no_estimable': True,
+        'observacions_estimacio': observations,
+    }
+    O.GiscedataPolissa.write([contract_id], new_values)

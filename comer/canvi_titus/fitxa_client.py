@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
 import argparse
-import csv
 import json
-import re
 import xmlrpclib
-from io import open
+from datetime import datetime
 
 from consolemsg import error, step, success, warn
 from yamlns import namespace as ns
 
 import configdb
 from models import (get_or_create_partner, get_or_create_partner_address,
-                    get_or_create_partner_bank)
+                    get_or_create_partner_bank, mark_contract_as_not_estimable,
+                    update_contract_observations)
 from ooop_wst import OOOP_WST
-from utils import transaction
+from utils import (get_cups_address, read_canvi_titus_csv, sanitize_iban,
+                   transaction)
 
 LANG_TABLE = {
     'CAT': 'ca_ES',
@@ -48,48 +48,81 @@ def create_fitxa_client(
     ))
 
 
-def get_cups_address(O, cups):
-    try:
-        cups_address_data = O.GiscedataCupsPs.read(
-            O.GiscedataCupsPs.search([
-                ('name', 'ilike', cups),
-                ('active', '=', True)
-            ])[0],
-            ['direccio', 'dp', 'id_municipi']
-        )
-        id_municipi = cups_address_data['id_municipi'][0]
-        cups_address_data['id_municipi'] = id_municipi
+def update_old_contract_information(
+        O,
+        contract_number, cups, new_owner_id, new_bank_id, request_date):
 
-        id_state = O.ResMunicipi.read(id_municipi, ['state'])['state'][0]
-        cups_address_data['id_state'] = id_state
+    contract_id = O.GiscedataPolissa.search([('name', 'ilike', contract_number)])
+    if not contract_id:
+        raise Exception("Contract {} not found".format(contract_number))
 
-        id_country = O.ResCountryState.read(id_state, ['country_id'])['country_id'][0]
-        cups_address_data['id_country'] = id_country
+    assert len(contract_id) <= 1, "More than one contract, I don't now what to do :("
 
-    except IndexError as e:
-        msg = "There where some problem getting address information of " \
-              "cups {}, reason: {}"
-        warn(msg.format(cups, str(e)))
-        cups_address_data = {}
-    else:
-        cups_address_data['street'] = cups_address_data['direccio']
-        del cups_address_data['direccio']
-        del cups_address_data['id']
-
-    return ns(cups_address_data)
+    contract_info = O.GiscedataPolissa.read(contract_id, ['cups'])[0]
+    msg = "Contract has diferent cups {} =/= {}"
+    assert cups == contract_info['cups'][1], msg.format(cups, contract_info['cups'][1])
+    update_contract_observations(
+        O,
+        contract_id=contract_id[0],
+        owner_id=new_owner_id,
+        member_id=None,
+        bank_id=new_bank_id,
+        request_date=request_date
+    )
+    mark_contract_as_not_estimable(O, contract_id[0], str(datetime.now()))
 
 
-def sanitize_iban(iban):
-    return re.sub(r'[- ]', '', iban)
+def canvi_titus(O, new_owners):
 
+    for new_client in new_owners:
+        try:
+            msg = "Creating new profile of {}, dni: {}"
+            step(msg.format(new_client['Nom nou titu'], new_client['DNI'].strip().upper()))
+            msg = "Getting address information of cups {}"
+            step(msg.format(new_client.get('CUPS', '')))
+            cups_address = get_cups_address(
+                O, new_client.get('CUPS', '').strip().upper()
+            )
 
-def read_canvi_titus_csv(csv_file):
-    with open(csv_file, 'rb') as f:
-        reader = csv.reader(f)
-        header = reader.next()
-        csv_content = [dict(zip(header, row)) for row in reader if row[0]]
-
-    return csv_content
+            with transaction(O) as t:
+                profile_data = create_fitxa_client(
+                    t,
+                    full_name=new_client['Nom nou titu'].strip(),
+                    vat='ES{}'.format(new_client['DNI'].strip().upper()),
+                    lang=LANG_TABLE.get(new_client['Idioma'].strip().upper(), 'es_ES'),
+                    email=new_client['Mail'].strip(),
+                    phone=new_client['Tlf'].strip(),
+                    street=cups_address['street'],
+                    postal_code=cups_address['dp'] or '',
+                    city_id=cups_address['id_municipi'],
+                    state_id=cups_address['id_state'],
+                    country_id=cups_address['id_country'],
+                    iban=sanitize_iban(new_client['IBAN'])
+                )
+                msg = "Setting as not 'estimable' and updating observations "\
+                      "from contract: {}"
+                step(msg.format(new_client['Contracte']))
+                update_old_contract_information(
+                    t,
+                    contract_number=new_client['Contracte'],
+                    cups=new_client.get('CUPS', '').strip().upper(),
+                    new_owner_id=profile_data.client_id,
+                    new_bank_id=profile_data.bank_id,
+                    request_date=new_client['Data']
+                )
+        except xmlrpclib.Fault as e:
+            msg = "An error ocurred creating {}, dni: {}, contract: {}. Reason: {}"
+            error(msg.format(
+                new_client['Nom nou titu'], new_client['DNI'], new_client['Contracte'], e.faultString.split('\n')[-2]
+            ))
+        except Exception as e:
+            msg = "An error ocurred creating {}, dni: {}, contract: {}. Reason: {}"
+            error(msg.format(
+                new_client['Nom nou titu'], new_client['DNI'], new_client['Contracte'], str(e)
+            ))
+        else:
+            msg = "Profile successful created with data:\n {}"
+            success(msg.format(json.dumps(profile_data, indent=4, sort_keys=True)))
 
 
 def main(csv_file, check_conn=True):
@@ -107,43 +140,7 @@ def main(csv_file, check_conn=True):
 
     csv_content = read_canvi_titus_csv(csv_file)
 
-    for new_client in csv_content:
-        try:
-            msg = "Creating new profile of {}, dni: {}"
-            step(msg.format(new_client['Nom nou titu'], new_client['DNI'].strip().upper()))
-            msg = "Getting address information of cups {}"
-            step(msg.format(new_client.get('CUPS', '')))
-            cups_address = get_cups_address(
-                O, new_client.get('CUPS', '').strip().upper()
-            )
-            with transaction(O) as t:
-                profile_data = create_fitxa_client(
-                    t,
-                    full_name=new_client['Nom nou titu'].strip(),
-                    vat='ES{}'.format(new_client['DNI'].strip().upper()),
-                    lang=LANG_TABLE.get(new_client['Idioma'].strip().upper(), 'es_ES'),
-                    email=new_client['Mail'].strip(),
-                    phone=new_client['Tlf'].strip(),
-                    street=cups_address['street'],
-                    postal_code=cups_address['dp'] or '',
-                    city_id=cups_address['id_municipi'],
-                    state_id=cups_address['id_state'],
-                    country_id=cups_address['id_country'],
-                    iban=sanitize_iban(new_client['IBAN'])
-                )
-        except xmlrpclib.Fault as e:
-            msg = "An error ocurred creating {}, dni: {}, contract: {}. Reason: {}"
-            error(msg.format(
-                new_client['Nom nou titu'], new_client['DNI'], new_client['Contracte'], e.faultString.split('\n')[-2]
-            ))
-        except Exception as e:
-            msg = "An error ocurred creating {}, dni: {}, contract: {}. Reason: {}"
-            error(msg.format(
-                new_client['Nom nou titu'], new_client['DNI'], new_client['Contracte'], str(e)
-            ))
-        else:
-            msg = "Profile successful created with data:\n {}"
-            success(msg.format(json.dumps(profile_data, indent=4, sort_keys=True)))
+    canvi_titus(O, csv_content)
 
     step("Closing connection with ERP")
     O.close()
