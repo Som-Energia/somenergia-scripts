@@ -206,7 +206,7 @@ def mark_contract_as_not_estimable(O, contract_id, timestamp):
         timestamp=timestamp
     )
     contract = O.GiscedataPolissa.read(contract_id)
-    observations = contract['observacions_estimacio']
+    observations = contract.get('observacions_estimacio') or ''
     observations += reason
     new_values = {
         'es_pot_estimar': False,
