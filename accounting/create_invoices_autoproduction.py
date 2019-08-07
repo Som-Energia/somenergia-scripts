@@ -12,7 +12,7 @@ O = Client(**configdb.erppeek)
 ## SYNTAX
 # script.py inscripcions.csv
 DESC_MANAGE = { "ca_ES" : 'Despeses de Som Energia per la organització i gestió de la compra conjunta',
-        "es_ES" : 'Gastos de Som Energia para la organización y gestió de la compra conjunta'}
+        "es_ES" : 'Gastos de Som Energia para la organización y gestión de la compra conjunta'}
 DESC_ADVANCE = { "ca_ES" : '1r pagament a compte Enginyeria', 
         "es_ES" : '1r pago a cuenta de la Ingenieria'}
 
