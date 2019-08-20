@@ -87,7 +87,7 @@ with open(enrolment_file, 'r') as csvfile:
     next(reader)
     for row in reader:
         if row[0] and not row[1]:
-            dni_list.append(row[6])
+            dni_list.append(row[6].upper())
 
 im = InvoiceMaker(O, dni_list)
 im.makeInvoices()
