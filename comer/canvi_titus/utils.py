@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
-import csv
+from __future__ import print_function
+
 import contextlib
+import csv
 import re
 
+from datetime import datetime
 from consolemsg import warn
 from yamlns import namespace as ns
+
 
 @contextlib.contextmanager
 def transaction(O):
@@ -44,6 +48,11 @@ def sanitize_iban(iban):
     return re.sub(r'[- ]', '', iban)
 
 
+def sanitize_date(date):
+    date = datetime.strptime(date, '%d/%m/%Y %H:%M:%S')
+    return date.strftime('%Y-%m-%d %H:%M:%S')
+
+
 def read_canvi_titus_csv(csv_file):
     with open(csv_file, 'rb') as f:
         reader = csv.reader(f)
@@ -62,6 +71,9 @@ def get_cups_address(O, cups):
             ])[0],
             ['direccio', 'dp', 'id_municipi']
         )
+    except IndexError as e:
+        raise Exception("Cups {} not found".format(cups))
+    else:
         id_municipi = cups_address_data['id_municipi'][0]
         cups_address_data['id_municipi'] = id_municipi
 
@@ -70,18 +82,36 @@ def get_cups_address(O, cups):
 
         id_country = O.ResCountryState.read(id_state, ['country_id'])['country_id'][0]
         cups_address_data['id_country'] = id_country
-
-    except IndexError as e:
-        msg = "There where some problem getting address information of " \
-              "cups {}, reason: {}"
-        warn(msg.format(cups, str(e)))
-        cups_address_data = {}
-    else:
         cups_address_data['street'] = cups_address_data['direccio']
         del cups_address_data['direccio']
         del cups_address_data['id']
 
     return ns(cups_address_data)
+
+
+def get_contract_info(O, contract_number):
+    try:
+        contract_id = O.GiscedataPolissa.search([('name', 'ilike', contract_number)])
+        if not contract_id:
+            raise Exception("Contract {} not found".format(contract_number))
+
+        assert len(contract_id) <= 1, "More than one contract, I don't now what to do :("
+
+        contract_info = ns(O.GiscedataPolissa.read(contract_id[0]))
+    except IndexError as e:
+        msg = "There where some problem getting contract information of " \
+              "contract {}, reason: {}"
+        warn(msg.format(contract_number, str(e)))
+        raise e
+    else:
+        return contract_info
+
+
+def get_memberid_by_partner(O, partner_id):
+    member_ids = O.SomenergiaSoci.search(
+        [('partner_id', '=', partner_id)]
+    )
+    return False if not member_ids or len(member_ids) > 1 else member_ids[0]
 
 
 class NsEqualMixin(object):
