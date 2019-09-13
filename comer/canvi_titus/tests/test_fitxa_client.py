@@ -7,7 +7,8 @@ import configdb
 from fitxa_client import create_fitxa_client, get_cups_address, sanitize_iban
 from models import InvalidAccount
 from ooop_wst import OOOP_WST
-from utils import NsEqualMixin, discarded_transaction
+from utils import (NsEqualMixin, discarded_transaction,
+                   get_memberid_by_partner, sanitize_date)
 
 O = OOOP_WST(**configdb.ooop)
 
@@ -98,7 +99,6 @@ class TestFitxaClient(Models_Test):
         except InvalidAccount as e:
             self.assertEquals(e.message, 'Invalid bank account.')
 
-
     def test__get_cups_address(self):
         cupsdata = ns(configdb.cupsdata)
 
@@ -114,7 +114,7 @@ class TestFitxaClient(Models_Test):
             ))
 
     def test__sanitize_iban(self):
-        iban_list  = [
+        iban_list = [
             'ES50-2090-6199-3922-3692-0783',
             'ES29-30893321714458633295',
             'ES35-1301 5129 4191 1215 8915',
@@ -132,3 +132,25 @@ class TestFitxaClient(Models_Test):
                 'ES6501229241398185752504'
             ]
         )
+
+    def test__get_memberid_by_partner__is_member(self):
+        personaldata = ns(configdb.personaldata)
+
+        member_id = get_memberid_by_partner(O, personaldata.partnerid)
+
+        self.assertEquals(member_id, personaldata.member_id)
+
+    def test__get_memberid_by_partner__not_is_member(self):
+        personaldata = ns(configdb.personaldata)
+        personaldata.partnerid = 112605
+
+        member_id = get_memberid_by_partner(O, personaldata.partnerid)
+
+        self.assertFalse(member_id)
+
+    def test__sanitize_data(self):
+        date = '22/07/2019 14:05:01'
+
+        date = sanitize_date(date)
+
+        self.assertEquals(date, '2019-07-22 14:05:01')
