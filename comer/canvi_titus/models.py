@@ -3,6 +3,11 @@ from datetime import datetime
 
 from utils import is_company
 
+NEW_CONTRACT_OPTIONS = {
+    'T': 'create',
+    'S': 'exists'
+}
+
 
 class InvalidAccount(Exception):
     def __init__(self, message):
@@ -214,3 +219,95 @@ def mark_contract_as_not_estimable(O, contract_id, timestamp):
         'observacions_estimacio': observations,
     }
     O.GiscedataPolissa.write([contract_id], new_values)
+
+
+def get_new_contract_values(
+        owner_id, member_id, address_id, notification_address_id, bank_id,
+        signature_date, cnae_id, other_payer=False
+):
+
+    new_contract_values = dict(
+        titular=owner_id,
+        pagador=owner_id,
+        altre_p=other_payer,
+        soci=member_id,
+        direccio_notificacio=notification_address_id,
+        direccio_pagament=address_id,
+        bank=bank_id,
+        data_firma_contracte=signature_date,
+        empowering_channels_log=[[6, 0, []]],
+        empowering_service=False,
+        empowering_profile_id=False,
+        etag=False,
+        empowering_profile=False,
+        cnae=cnae_id
+    )
+
+    return new_contract_values
+
+
+def get_m1_changeowner_data(
+        t,
+        contract_id,
+        new_owner_vat, new_owner_id, old_owner_id, new_member_id, address_id,
+        notification_address_id, bank_id, signature_date, cnae_id,
+        owner_change_type, other_payer=False
+):
+    fields_dict = t.GiscedataSwitchingModConWizard.fields_view_get(False, 'form')['fields']
+    del fields_dict['new_contract']
+    fields = fields_dict.keys()
+
+    changeowner_data = t.GiscedataSwitchingModConWizard.default_get(
+        fields, {'cas': 'M1', 'pol_id': contract_id}
+    )
+    new_owner_data = t.GiscedataSwitchingModConWizard.onchange_vat(
+        [], new_owner_vat, contract_id, old_owner_id, ''
+    )
+
+    changeowner_data.update(new_owner_data['value'])
+    changeowner_data['bank'] = bank_id
+    changeowner_data['change_type'] = 'owner'
+    changeowner_data['owner_change_type'] = owner_change_type
+    changeowner_data['generate_new_contract'] = NEW_CONTRACT_OPTIONS.get(owner_change_type)
+    changeowner_data['new_contract_values'] =  get_new_contract_values(
+        owner_id=new_owner_id,
+        member_id=new_member_id,
+        address_id=address_id,
+        notification_address_id=notification_address_id,
+        bank_id=bank_id,
+        signature_date=signature_date,
+        cnae_id=cnae_id,
+        other_payer=other_payer
+    )
+
+    return changeowner_data
+
+
+def create_m1_changeowner_case(
+        t,
+        contract_id,
+        new_owner_vat, new_owner_id, old_owner_id, member_id, address_id,
+        notification_address_id, bank_id, signature_date, cnae_id,
+        owner_change_type, lang, other_payer
+):
+    m1_changeowner_data = get_m1_changeowner_data(
+        t,
+        contract_id=contract_id,
+        new_owner_vat=new_owner_vat,
+        new_owner_id=new_owner_id,
+        old_owner_id=old_owner_id,
+        new_member_id=member_id,
+        address_id=address_id,
+        notification_address_id=notification_address_id,
+        bank_id=bank_id,
+        signature_date=signature_date,
+        cnae_id=cnae_id,
+        owner_change_type=owner_change_type
+    )
+    if other_payer:
+        m1_changeowner_data['other_payer'] = True
+
+    res = t.GiscedataPolissa.crear_cas_atr(
+        contract_id, 'M1', m1_changeowner_data, {'lang': lang}
+    )
+    return res
