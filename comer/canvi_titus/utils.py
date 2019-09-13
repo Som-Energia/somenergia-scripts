@@ -114,6 +114,12 @@ def get_memberid_by_partner(O, partner_id):
     return False if not member_ids or len(member_ids) > 1 else member_ids[0]
 
 
+def get_last_contract_on_cups(O, cups):
+    return sorted(O.GiscedataPolissa.search(
+        [('cups.name', '=', cups)]
+    ))[-1]
+
+
 class NsEqualMixin(object):
     def assertNsEqual(self, dict1, dict2):
         """

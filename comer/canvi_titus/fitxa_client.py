@@ -14,8 +14,9 @@ from models import (create_m1_changeowner_case, get_or_create_partner,
                     update_contract_observations)
 from ooop_wst import OOOP_WST
 from utils import (get_contract_info, get_cups_address,
-                   get_memberid_by_partner, read_canvi_titus_csv,
-                   sanitize_date, sanitize_iban, transaction)
+                   get_last_contract_on_cups, get_memberid_by_partner,
+                   read_canvi_titus_csv, sanitize_date, sanitize_iban,
+                   transaction)
 
 LANG_TABLE = {
     'CAT': 'ca_ES',
@@ -113,24 +114,26 @@ def create_m1_chageowner(
         raise Exception(res[1])
 
     success(res[1])
+    return res
 
 
 def canvi_titus(O, new_owners):
 
     for new_client in new_owners:
         try:
+            cups = new_client.get('CUPS', '').strip().upper()
+
             msg = "Creating new profile of {}, dni: {}"
             step(msg.format(new_client['Nom nou titu'], new_client['DNI'].strip().upper()))
 
             msg = "Getting address information of cups {}"
-            step(msg.format(new_client.get('CUPS', '')))
+            step(msg.format(cups))
 
-            cups_address = get_cups_address(
-                O, new_client.get('CUPS', '').strip().upper()
-            )
+            cups_address = get_cups_address(O, cups)
             contract_info = get_contract_info(
                 O, new_client.get('Contracte', '')
             )
+            old_owner_vat = O.ResPartner.read(contract_info.titular[0], ['vat'])['vat']
 
             with transaction(O) as t:
                 profile_data = create_fitxa_client(
@@ -149,11 +152,13 @@ def canvi_titus(O, new_owners):
                 )
                 member_id = get_memberid_by_partner(t, profile_data.client_id)
 
-                step("Creating change owner M1(T) atr case")
-                create_m1_chageowner(
+                msg = "Creating change owner M1(T) atr case {} -> {}"
+                step(msg.format(old_owner_vat, new_client['DNI'].strip().upper()))
+
+                changeowner_res = create_m1_chageowner(
                     t,
                     contract_number=new_client['Contracte'],
-                    cups=new_client.get('CUPS', '').strip().upper(),
+                    cups=cups,
                     new_owner_vat='ES{}'.format(new_client['DNI'].strip().upper()),
                     new_owner_id=profile_data.client_id,
                     old_owner_id=contract_info.titular,
@@ -174,7 +179,7 @@ def canvi_titus(O, new_owners):
                 update_old_contract_information(
                     t,
                     contract_number=new_client['Contracte'],
-                    cups=new_client.get('CUPS', '').strip().upper(),
+                    cups=cups,
                     new_owner_id=profile_data.client_id,
                     new_bank_id=profile_data.bank_id,
                     member_id=member_id,
@@ -193,8 +198,14 @@ def canvi_titus(O, new_owners):
                 new_client['Nom nou titu'], new_client['DNI'], new_client['Contracte'], e.message.encode('utf8')
             ))
         else:
-            msg = "Profile successful created with data:\n {}"
-            success(msg.format(json.dumps(profile_data, indent=4, sort_keys=True)))
+            result = profile_data.deepcopy()
+            contract_id = get_last_contract_on_cups(O, cups)
+
+            result['case_id'] = changeowner_res[2]
+            result['new_contract_id'] = contract_id
+            result['cups'] = cups
+            msg = "M1 ATR case successful created with data:\n {}"
+            success(msg.format(json.dumps(result, indent=4, sort_keys=True)))
 
 
 def main(csv_file, check_conn=True):
