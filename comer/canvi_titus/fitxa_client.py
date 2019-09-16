@@ -192,8 +192,6 @@ def canvi_titus(O, new_owners):
             ))
         except Exception as e:
             msg = "An error ocurred creating {}, dni: {}, contract: {}. Reason: {}"
-            #     new_client['Nom nou titu'], new_client['DNI'], new_client['Contracte'], e.message.encode()
-            # )
             error(msg.format(
                 new_client['Nom nou titu'], new_client['DNI'], new_client['Contracte'], e.message.encode('utf8')
             ))
