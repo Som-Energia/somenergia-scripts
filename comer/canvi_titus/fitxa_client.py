@@ -14,7 +14,7 @@ from models import (create_m1_changeowner_case, get_or_create_partner,
                     update_contract_observations)
 from ooop_wst import OOOP_WST
 from utils import (get_contract_info, get_cups_address,
-                   get_last_contract_on_cups, get_memberid_by_partner,
+                   get_last_contract_on_cups,
                    read_canvi_titus_csv, sanitize_date, sanitize_iban,
                    transaction)
 
@@ -150,7 +150,6 @@ def canvi_titus(O, new_owners):
                     country_id=cups_address['id_country'],
                     iban=sanitize_iban(new_client['IBAN'])
                 )
-                member_id = get_memberid_by_partner(t, profile_data.client_id)
 
                 msg = "Creating change owner M1(T) atr case {} -> {}"
                 step(msg.format(old_owner_vat, new_client['DNI'].strip().upper()))
@@ -162,7 +161,7 @@ def canvi_titus(O, new_owners):
                     new_owner_vat='ES{}'.format(new_client['DNI'].strip().upper()),
                     new_owner_id=profile_data.client_id,
                     old_owner_id=contract_info.titular,
-                    member_id=member_id,
+                    member_id=profile_data.client_id,
                     address_id=profile_data.address_id,
                     notification_address_id=profile_data.address_id,
                     bank_id=profile_data.bank_id,

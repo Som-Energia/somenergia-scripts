@@ -7,8 +7,7 @@ import configdb
 from fitxa_client import create_fitxa_client, get_cups_address, sanitize_iban
 from models import InvalidAccount
 from ooop_wst import OOOP_WST
-from utils import (NsEqualMixin, discarded_transaction,
-                   get_memberid_by_partner, sanitize_date)
+from utils import NsEqualMixin, discarded_transaction, sanitize_date
 
 O = OOOP_WST(**configdb.ooop)
 
@@ -132,21 +131,6 @@ class TestFitxaClient(Models_Test):
                 'ES6501229241398185752504'
             ]
         )
-
-    def test__get_memberid_by_partner__is_member(self):
-        personaldata = ns(configdb.personaldata)
-
-        member_id = get_memberid_by_partner(O, personaldata.partnerid)
-
-        self.assertEquals(member_id, personaldata.member_id)
-
-    def test__get_memberid_by_partner__not_is_member(self):
-        personaldata = ns(configdb.personaldata)
-        personaldata.partnerid = 112605
-
-        member_id = get_memberid_by_partner(O, personaldata.partnerid)
-
-        self.assertFalse(member_id)
 
     def test__sanitize_data(self):
         date = '22/07/2019 14:05:01'

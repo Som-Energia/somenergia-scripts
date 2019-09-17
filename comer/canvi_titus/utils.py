@@ -107,13 +107,6 @@ def get_contract_info(O, contract_number):
         return contract_info
 
 
-def get_memberid_by_partner(O, partner_id):
-    member_ids = O.SomenergiaSoci.search(
-        [('partner_id', '=', partner_id)]
-    )
-    return False if not member_ids or len(member_ids) > 1 else member_ids[0]
-
-
 def get_last_contract_on_cups(O, cups):
     return sorted(O.GiscedataPolissa.search(
         [('cups.name', '=', cups)]
