@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+
 import argparse
 import json
 import xmlrpclib
@@ -13,10 +15,9 @@ from models import (create_m1_changeowner_case, get_or_create_partner,
                     mark_contract_as_not_estimable,
                     update_contract_observations)
 from ooop_wst import OOOP_WST
-from utils import (get_contract_info, get_cups_address,
-                   get_last_contract_on_cups,
-                   read_canvi_titus_csv, sanitize_date, sanitize_iban,
-                   transaction)
+from utils import (get_contract_info, get_cups_address, get_memberid_by_partner,
+                   get_last_contract_on_cups, read_canvi_titus_csv,
+                   sanitize_date, sanitize_iban, transaction)
 
 LANG_TABLE = {
     'CAT': 'ca_ES',
@@ -117,7 +118,7 @@ def create_m1_chageowner(
     return res
 
 
-def canvi_titus(O, new_owners):
+def canvi_titus(O, new_owners, create_case=False):
 
     for new_client in new_owners:
         try:
@@ -150,27 +151,28 @@ def canvi_titus(O, new_owners):
                     country_id=cups_address['id_country'],
                     iban=sanitize_iban(new_client['IBAN'])
                 )
+                member_id = get_memberid_by_partner(t, profile_data.client_id)
+                if create_case:
+                    msg = "Creating change owner M1(T) atr case {} -> {}"
+                    step(msg.format(old_owner_vat, new_client['DNI'].strip().upper()))
 
-                msg = "Creating change owner M1(T) atr case {} -> {}"
-                step(msg.format(old_owner_vat, new_client['DNI'].strip().upper()))
-
-                changeowner_res = create_m1_chageowner(
-                    t,
-                    contract_number=new_client['Contracte'],
-                    cups=cups,
-                    new_owner_vat='ES{}'.format(new_client['DNI'].strip().upper()),
-                    new_owner_id=profile_data.client_id,
-                    old_owner_id=contract_info.titular,
-                    member_id=profile_data.client_id,
-                    address_id=profile_data.address_id,
-                    notification_address_id=profile_data.address_id,
-                    bank_id=profile_data.bank_id,
-                    signature_date=sanitize_date(new_client['Data']),
-                    cnae_id=contract_info.cnae[0],
-                    owner_change_type='T',
-                    lang=LANG_TABLE.get(new_client['Idioma'].strip().upper(), 'es_ES'),
-                    other_payer=False
-                )
+                    changeowner_res = create_m1_chageowner(
+                        t,
+                        contract_number=new_client['Contracte'],
+                        cups=cups,
+                        new_owner_vat='ES{}'.format(new_client['DNI'].strip().upper()),
+                        new_owner_id=profile_data.client_id,
+                        old_owner_id=contract_info.titular,
+                        member_id=profile_data.client_id,
+                        address_id=profile_data.address_id,
+                        notification_address_id=profile_data.address_id,
+                        bank_id=profile_data.bank_id,
+                        signature_date=sanitize_date(new_client['Data']),
+                        cnae_id=contract_info.cnae[0],
+                        owner_change_type='T',
+                        lang=LANG_TABLE.get(new_client['Idioma'].strip().upper(), 'es_ES'),
+                        other_payer=False
+                    )
 
                 msg = "Setting as not 'estimable' and updating observations "\
                       "to contract: {}"
@@ -196,16 +198,17 @@ def canvi_titus(O, new_owners):
             ))
         else:
             result = profile_data.deepcopy()
-            contract_id = get_last_contract_on_cups(O, cups)
+            if create_case:
+                contract_id = get_last_contract_on_cups(O, cups)
+                result['case_id'] = changeowner_res[2]
+                result['new_contract_id'] = contract_id
+                result['cups'] = cups
 
-            result['case_id'] = changeowner_res[2]
-            result['new_contract_id'] = contract_id
-            result['cups'] = cups
             msg = "M1 ATR case successful created with data:\n {}"
             success(msg.format(json.dumps(result, indent=4, sort_keys=True)))
 
 
-def main(csv_file, check_conn=True):
+def main(csv_file, create_case, check_conn=True):
     O = OOOP_WST(**configdb.ooop)
 
     if check_conn:
@@ -220,7 +223,7 @@ def main(csv_file, check_conn=True):
 
     csv_content = read_canvi_titus_csv(csv_file)
 
-    canvi_titus(O, csv_content)
+    canvi_titus(O, csv_content, create_case)
 
     step("Closing connection with ERP")
     O.close()
@@ -247,10 +250,22 @@ if __name__ == '__main__':
         help="Check para comprobar a que servidor nos estamos conectando"
     )
 
+    parser.add_argument(
+        '--create-case',
+        type=str,
+        nargs=1,
+        default='No',
+        help="Check para indicar si se crea o no la M1 de canvio de titular"
+    )
+
     args = parser.parse_args()
+    print("Check conn: ", args.check_conn)
     try:
-        main(args.csv_file, args.check_conn)
+        create_case = True if args.create_case[0].upper() == 'SI' else False
+        main(args.csv_file, create_case, args.check_conn)
     except (KeyboardInterrupt, SystemExit, SystemError):
         warn("Aarrggghh you kill me :(")
+    except IndexError:
+        warn("No se interprear lo que me dices, sorry :'(")
     else:
         success("Chao!")
