@@ -16,7 +16,7 @@ ids = [2190972]
 
 # Helpers
 def generate_pdf_ErpPeek(model, id):
-    report_id = O.report(model, ids)
+    report_id = O.report(model, id)
     res = {'state': False}
     while not res['state']:
         res = O.report_get(report_id)
