@@ -1,50 +1,54 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import sys
 import argparse
+import csv
+
+import requests
+from consolemsg import step, success, warn, error
+from yamlns import namespace as ns
+
 import configdb
-from consolemsg import error, step, success, warn
-from openpyxl import load_workbook
 
-#uri = 'https://api.somenergia.coop/form/contractacio'
-#uri='http://testing.somenergia.coop:5001/form/contractacio'
 
-def add_contract(data):
-    import requests
-    r = requests.post(uri, data=data)
-    return (r.status_code, r.reason, r.text)
+def add_contract(uri, data):
+    try:
+        response = requests.post(uri, data=data)
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        msg = "An error ocurred calling Webforms API, reason: {}"
+        warn(msg, e.message)
+        raise e
+    else:
+        return response.status_code, response.reason, response.text
 
-def crea_contractes(filename = None):
-    if not filename:
-        sys.exit("No hi ha cap arxiu per crear contractes")
-    wb = load_workbook(filename)
-    ws = wb.active
-    valors = []
-    keys = []
-    pols = []
-    column = 1
-    while ws.cell(row=1,column=column).value:
-        keys.append(ws.cell(row=1,column=column).value)
-        column += 1
-    row=2
-    while ws.cell(row=row,column=1).value:
-        column = 1
-        valors = []
-        while ws.cell(row=1,column=column).value:
-            valors.append(ws.cell(row=row,column=column).value)
-            column += 1
-        pols.append(dict(zip(keys,valors)))
-        row+=1 
-    for pol in pols:
-        succes(pol['cups'])
-        status,reason, text = add_contract(pol)
-        step('Status: ' + str(status))
-        step('Reason: ' + str(reason))
-        step('Text: ' + str(text))
+def read_canvi_titus_csv(csv_file):
+    with open(csv_file, 'rb') as f:
+        reader = csv.reader(f)
+        header = reader.next()
+        csv_content = [ns(dict(zip(header, row))) for row in reader if row[0]]
 
-        
+    return csv_content
+
+
+def crea_contractes(uri, filename):
+    contract_petitions = read_canvi_titus_csv(filename)
+
+    for petition in contract_petitions:
+        step('Creating contract for CUPS: {}', petition.cups)
+        try:
+            status, reason, text = add_contract(uri, petition)
+        except requests.exceptions.HTTPError as e:
+            error('I couldn\'t create a new contract for cups: {}', petition.cups)
+        else:
+            success('Status: {} \n Reason: {} \n {}', status, reason, text)
+
+
 def main(csv_file, check_conn=True):
-    uri = configdb.api_contractacio['uri']
+
+    uri = getattr(configdb, 'API_URI', False)
+
+    if not uri:
+        raise KeyboardInterrupt
 
     if check_conn:
         msg = "You are requesting to: {}, do you want to continue? (Y/n)"
@@ -57,10 +61,8 @@ def main(csv_file, check_conn=True):
         if answer in ['n', 'N']:
             raise KeyboardInterrupt
         else:
-            try:
-                crea_contractes(csv_file)
-            except Exception as e:
-                warn(e)    
+            crea_contractes(uri, csv_file)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -91,5 +93,7 @@ if __name__ == '__main__':
         warn("Aarrggghh you kill me :(")
     except IndexError:
         warn("No se interprear lo que me dices, sorry :'(")
+    except Exception as e:
+        warn("Ka pachao?: {}", str(e))
     else:
         success("Chao!")
