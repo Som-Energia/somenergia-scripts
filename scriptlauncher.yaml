@@ -360,6 +360,15 @@ gestiocontractes:
 admin:
   description: Administració
   scripts:
+    massive_contract:
+      script: python SOME_SRC/somenergia-scripts/admin/creacio_contractes_massiu.py --file {csv_file}
+      title: Script de contractació massiva
+      description: Script que donat un csv amb les dades dels nous clients, crea nous contractes ERP
+      parameters:
+        csv_file:
+          type: FILE
+          description: "csv amb les dades dels nous contractes"
+
     municipaltax:
       script: python SOME_SRC/somenergia-scripts/Taxes/municipaltax.py {file} {start_date} {end_date} {filetype}
       title: Generació fitxers agrupats impost municipal 1.5%
