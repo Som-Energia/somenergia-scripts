@@ -10,7 +10,7 @@ from utils import get_data_from_erp
 def fix_members_without_entry():
     '''
     Finds those members with Client entry, member category and
-    SXXXXXX like code which doesn't have entry in somenergia_soci
+    SXXXXXX like code which do not have entry in somenergia_soci
     and creates them.
     '''
     erp_client = Client(**configdb.erppeek)
@@ -32,7 +32,7 @@ def fix_members_without_entry():
 
 if __name__ == '__main__':
 
-    step("Starting...")
+    step("Starting fix_members_without_entry")
     try:
         fix_members_without_entry()
     except Exception as e:
