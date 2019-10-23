@@ -413,9 +413,12 @@ admin:
         end_date:
           description: data final (ex. 2019-03-31)
     tempsAlTrello:
-      script: python SOME_SRC/somenergia-scripts/admin/reportrello.py
+      script: python SOME_SRC/somenergia-scripts/admin/reportrello.py --num_ronda {num_ronda}
       title: Consulta l'esforç dels Fogons
-      description: Consulta la suma de esforç (spend/expected) i agrupa per Label i per Member de totes les targetes dels Fogons
+      description: Consulta la suma de esforç (spend/expected) i agrupa per Label i per Member de totes les targetes de la columna Done amb número de ronda entrat per paràmetre
+      parameters:
+        num_ronda:
+          description: Número de ronda (ex. R43)
     balancSiS:
       script: python SOME_SRC/somenergia-scripts/admin/report_balanc_sumesisaldos.py {report} {start_date} {end_date}
       title: Informe Balanç Sumes i Saldo
