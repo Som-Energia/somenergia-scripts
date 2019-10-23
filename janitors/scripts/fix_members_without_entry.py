@@ -25,10 +25,11 @@ def fix_members_without_entry():
     data = get_data_from_erp(str(queryfile))
 
     soci_obj = erp_client.SomenergiaSoci
-    id_list = [elem.id for elem in data]
+    id_partner_list = [elem.id for elem in data]
 
+    step("Following Partner id's have no membership file {} ", id_partner_list)
     try:
-        id_socis_list = soci_obj.create_socis(id_list)
+        id_socis_list = soci_obj.create_socis(id_partner_list)
     except Exception as e:
         error("An error has occurred creating Members, {}", e)
     else:
