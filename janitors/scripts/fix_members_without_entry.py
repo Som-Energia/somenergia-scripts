@@ -6,6 +6,10 @@ import os, configdb
 from consolemsg import step, error, warn, fail, success
 from erppeek import Client
 from utils import get_data_from_erp
+try:
+    from pathlib2 import Path
+except ImportError:
+    from pathlib import Path
 
 def fix_members_without_entry():
     '''
@@ -15,9 +19,10 @@ def fix_members_without_entry():
     '''
     erp_client = Client(**configdb.erppeek)
 
-    ROOT_DIR = os.path.dirname(os.getcwd())
-    queryfile = ROOT_DIR + "/sql/find_members_without_entry.sql"
-    data = get_data_from_erp(queryfile)
+    scriptsDir = Path(__file__).parent
+    queryfile = scriptsDir.parent / "sql/find_members_without_entry.sql"
+
+    data = get_data_from_erp(str(queryfile))
 
     soci_obj = erp_client.SomenergiaSoci
     id_list = [elem.id for elem in data]
