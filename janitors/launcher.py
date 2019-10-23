@@ -4,32 +4,23 @@ import sys, io, os
 import csv
 import collections
 import traceback
-from dbutils import nsList, csvTable
 from operator import itemgetter
 from datetime import datetime
 
-import psycopg2
 import configdb
 from ooop import OOOP
 from sheetfetcher import SheetFetcher
 from consolemsg import step, error, warn, fail, success
 from emili import sendMail
+from scripts.utils import get_data_from_erp
 
-def get_data_from_erp(queryfile, pfilename):
+
+def process_records(erp_data, pfilename):
     '''
     This function retrieves the incoherent data
     from ERP
     '''
-    with io.open(queryfile) as f:
-        query = f.read()
-    db = psycopg2.connect(**configdb.psycopg)
-    with db.cursor() as cursor :
-        try:
-            cursor.execute(query)
-        except KeyError as e:
-            fail("Missing variable '{key}'. Specify it in the YAML file or by using the --{key} option"
-                .format(key=e.args[0]))
-        erp_data =  nsList(cursor)
+
     erp_data = [dict(data) for data in erp_data]
     filename = pfilename+datetime.now().strftime("%Y%m%d")+'.csv'
     if erp_data:
@@ -69,8 +60,9 @@ def janitor_execution(config):
             continue
         step("Running janitor: {description}",**janitor)
         if janitor.get('query', True):
-            allData, filename = get_data_from_erp(
-                janitor.sql,
+            erp_data = get_data_from_erp(janitor.sql)
+            allData, filename = process_records(
+                erp_data,
                 janitor.output
                 )
             if allData:
