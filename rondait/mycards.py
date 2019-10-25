@@ -32,7 +32,7 @@ mycards = [
     if any(arg.lower() in card.description.lower() for arg in sys.argv)
 ]
 
-print dir(it_board)
+#print dir(it_board)
 
 for card in mycards:
     printStdOut(color('32;1', "== {.name}", card))
