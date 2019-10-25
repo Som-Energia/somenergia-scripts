@@ -35,7 +35,8 @@ mycards = [
 #print dir(it_board)
 
 for card in mycards:
-    printStdOut(color('32;1', "== {.name}", card))
+    printStdOut(color('32;1', card.name))
+    out("")
     printStdOut(color('34;1', "{.url}",card))
     printStdOut("Status: " + color('33', it_board.get_list(card.list_id).name))
     out("")
