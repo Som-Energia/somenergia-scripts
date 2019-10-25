@@ -370,6 +370,14 @@ it:
         num_ronda:
           description: Número de ronda (ex. R43)
 
+    mycards:
+      script: python SOME_SRC/somenergia-scripts/rondait/mycards.py {search}
+      title: Les meves targetes
+      description: Cerca un string a la descripció de les targetes de ronda
+      parameters:
+        search:
+          description: Cerca a la descripcio
+
 admin:
   description: Administració
   scripts:
