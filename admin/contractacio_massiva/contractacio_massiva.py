@@ -21,24 +21,35 @@ def add_contract(uri, data):
     else:
         return response.status_code, response.reason, response.text
 
-def read_canvi_titus_csv(csv_file):
+
+def read_contracts_data_csv(csv_file):
     with open(csv_file, 'rb') as f:
-        reader = csv.reader(f)
+        reader = csv.reader(f, delimiter=';')
         header = reader.next()
+        if len(header) == 1:
+            reader = csv.reader(f, delimiter=',')
+            header = header[0].split(',')
+
         csv_content = [ns(dict(zip(header, row))) for row in reader if row[0]]
 
     return csv_content
 
 
 def crea_contractes(uri, filename):
-    contract_petitions = read_canvi_titus_csv(filename)
+    contract_petitions = read_contracts_data_csv(filename)
 
     for petition in contract_petitions:
-        step('Creating contract for CUPS: {}', petition.cups)
+        if getattr(configdb, 'TESTING', False):
+            petition.id_soci = configdb.personaldata['nsoci']
+            petition.dni = configdb.personaldata['nif']
+            petition.soci_titular = 0
+        msg = "Creating contract for vat {}, soci {}, CUPS {}"
+        step(msg, petition.dni, petition.id_soci, petition.cups)
         try:
             status, reason, text = add_contract(uri, petition)
         except requests.exceptions.HTTPError as e:
-            error('I couldn\'t create a new contract for cups: {}', petition.cups)
+            msg = "I couldn\'t create a new contract for cups {}, reason {}"
+            error(msg, petition.cups, e)
         else:
             success('Status: {} \n Reason: {} \n {}', status, reason, text)
 
@@ -48,7 +59,7 @@ def main(csv_file, check_conn=True):
     uri = getattr(configdb, 'API_URI', False)
 
     if not uri:
-        raise KeyboardInterrupt
+        raise KeyboardInterrupt("No URI, no money")
 
     if check_conn:
         msg = "You are requesting to: {}, do you want to continue? (Y/n)"
