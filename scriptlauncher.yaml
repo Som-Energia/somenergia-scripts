@@ -381,7 +381,7 @@ admin:
   description: Administració
   scripts:
     massive_contract:
-      script: python SOME_SRC/somenergia-scripts/admin/creacio_contractes_massiu.py --file {csv_file}
+      script: python SOME_SRC/somenergia-scripts/admin/contractacio_massiva/contractacio_massiva.py --file {csv_file}
       title: Script de contractació massiva
       description: Script que donat un csv amb les dades dels nous clients, crea nous contractes ERP
       parameters:
