@@ -21,16 +21,16 @@ f1_obj = Obj.GiscedataFacturacioImportacioLinia
 
 pol_ids = pol_obj.search([('autoconsumo', 'in', TENEN_AUTOCONSUM)])
 
-for pol_id in pol_ids:
+for count,pol_id in enumerate(pol_ids):
     pol = pol_obj.browse(pol_id)
 
     last_pool = "No."
     if pol.comptadors and pol.comptadors[0].pool_lectures:
         last_pool = pol.comptadors[0].pool_lectures[0].name
 
-    success("Polissa amb autoconsum {} , data ultima lectura facturada {} " +
+    success("({}/{}) Polissa amb autoconsum {} , data ultima lectura facturada {} " +
             "i ultima lectura a pool {}",
-            pol.name, pol.data_ultima_lectura, last_pool)
+            count+1,len(pol_ids),pol.name, pol.data_ultima_lectura, last_pool)
 
     f1_ids = f1_obj.search([('cups_id', '=', pol.cups.id)])
     if f1_ids:
