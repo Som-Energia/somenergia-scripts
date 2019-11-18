@@ -2,13 +2,12 @@ general:
   description: Informació General
   scripts:
     quadrecontrolgeneral:
-      script: reportrun -a -C SOMESRC/dbconfig.py -s Quadre_de_Control -t {mail} -- python SOME_SRC/somenergia-scripts/Informacio/General_Quadre_control.py -d {date}
+      script: reportrun -a -C SOME_SRC/somenergia-scripts/dbconfig.py -s Quadre_de_Control -t {mail} -- python SOME_SRC/somenergia-scripts/Informacio/General_Quadre_control.py -d {date}
       title: Quadre de control de comercializació
       description: >
         Aquest quadre de control et permet veure la situació molt genèrica
         de com està la comercialitació.
         Ens serveix per omplir el Quadre de Control del drive.
-        Si teniu peticions de noves coses a controlar podeu escriure a en Pere.
       parameters:
         mail:
           description: Introdueix el correu electrònic # TODO, si vols rebre la informació per correu
@@ -53,7 +52,7 @@ measurefixing:
   scripts:
 
     quadrecontrolvalidacio:
-#      script: reportrun -a -C SOMESRC/dbconfig.py -s [Web_Scripts]_Quadre_de_control_validacio -t {mail} -- SOME_SRC/somenergia-scripts/invoicing/measurefixing/Validacio_Quadre_control.py
+#      script: reportrun -a -C SOME_SRC/somenergia-scripts/dbconfig.py -s [Web_Scripts]_Quadre_de_control_validacio -t {mail} -- SOME_SRC/somenergia-scripts/invoicing/measurefixing/Validacio_Quadre_control.py
       script: SOME_SRC/somenergia-scripts/invoicing/measurefixing/Validacio_Quadre_control.py
       title: Quadre de control Validació
       description: Serveix per quantificar els errors que actualment tenim en el validació de les lectures. 
@@ -86,7 +85,7 @@ measurefixing:
       description: 
 
     sobrestimacions_ab_re:
-      script: reportrun -a -C SOMESRC/dbconfig.py -s [Web_Scripts]_Resultat_sobreestimacions_AB_i_RE -t {mail} -- python SOME_SRC/somenergia-scripts/invoicing/invoicefixing/fix_detained_invoicing.py
+      script: reportrun -a -C SOME_SRC/somenergia-scripts/dbconfig.py -s [Web_Scripts]_Resultat_sobreestimacions_AB_i_RE -t {mail} -- python SOME_SRC/somenergia-scripts/invoicing/invoicefixing/fix_detained_invoicing.py
       title: Corregir Sobreestimaciones amb AB i RE
       description: >
          Identifiquem tots els casos que hem fet sobreestimacions,
@@ -251,7 +250,7 @@ gestiocontractes:
             description: "Si -> crea la M101 de canvi de titular per traspàs. No -> Solo crea la fitxa client"
 
       canvistitular:
-        script: reportrun -a -C SOMESRC/dbconfig.py -s canvi_titular -t modifica@somenergia.coop -- python SOME_SRC/somenergia-scripts/Revisions_periodiques/canvi_titular_fase3.py
+        script: reportrun -a -C SOME_SRC/somenergia-scripts/dbconfig.py -s canvi_titular -t modifica@somenergia.coop -- python SOME_SRC/somenergia-scripts/Revisions_periodiques/canvi_titular_fase3.py
         title: Canvi de titular. Última fase
         description: Un cop ens arriben els M102 d'accpetació de canvi de titular, fem totes les accions per donar de baixa el contracte vell i crear el nou amb el nou titular.
       quadrecontrolsw:
