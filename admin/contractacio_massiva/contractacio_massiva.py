@@ -54,13 +54,12 @@ def crea_contractes(uri, filename):
             success('Status: {} \n Reason: {} \n {}', status, reason, text)
 
 
-def main(csv_file, check_conn=True):
+def main(csv_file, check_conn=False):
 
     uri = getattr(configdb, 'API_URI', False)
 
     if not uri:
         raise KeyboardInterrupt("No URI, no money")
-
     if check_conn:
         msg = "You are requesting to: {}, do you want to continue? (Y/n)"
         step(msg.format(uri))
@@ -71,8 +70,8 @@ def main(csv_file, check_conn=True):
 
         if answer in ['n', 'N']:
             raise KeyboardInterrupt
-        else:
-            crea_contractes(uri, csv_file)
+    
+    crea_contractes(uri, csv_file)
 
 
 if __name__ == '__main__':
@@ -91,8 +90,8 @@ if __name__ == '__main__':
         '--check-conn',
         type=bool,
         nargs='?',
+        dest='check_conn',
         default=False,
-        const=True,
         help="Check para comprobar que URL queremos atacar"
     )
 
