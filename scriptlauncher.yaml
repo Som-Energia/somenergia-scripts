@@ -550,4 +550,13 @@ benchmarks:
           description: Cuants registres
 
 
+mailchimp:
+  description: Dades per generacio massiva de correus amb MailChimp
+  scripts:
+    recomanacioInversio:
+      title: Recomanació d'inversió
+      script: python SOME_SRC/somenergia-scripts/mailchimp/mchimp_generationsocis-sql.py
+
+
+
 # vim: et ts=2 sw=2
