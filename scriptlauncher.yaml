@@ -551,11 +551,17 @@ benchmarks:
 
 
 mailchimp:
-  description: Dades per generacio massiva de correus amb MailChimp
+  description: MailChimp, dades per generacio massiva de correus
   scripts:
     recomanacioInversio:
       title: Recomanació d'inversió
-      script: python SOME_SRC/somenergia-scripts/mailchimp/mchimp_generationsocis-sql.py
+      script: python SOME_SRC/somenergia-scripts/mchimp/mchimp_generationsocis-sql.py {output}
+
+      parameters:
+        output:
+          type: FILEDOWN
+          filename: recomanacioInversio.csv
+          extension: csv
 
 
 
