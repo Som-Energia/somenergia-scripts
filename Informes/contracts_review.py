@@ -71,7 +71,14 @@ def dump_contracts(contracts, filename, lang):
                     for field in fields]
             writer.writerow(row)
 
+def date_in(d,s,e):
+    d = datetime.datetime.strptime(d,'%Y-%m-%d').date()
+    return d >= s and d < e
+
 def dump_bills(contracts, start, end, filename, lang):
+    start = datetime.datetime.strptime(start,'%Y-%m-%d').date()
+    end = datetime.datetime.strptime(end,'%Y-%m-%d').date()
+
     contract_fields = ['vat','titular','adreca','cups','name']
     bill_fields = ['number','data_inici','data_final','type',
             'total_potencia','total_energia','total_reactiva','total_lloguers',
@@ -98,12 +105,12 @@ def dump_bills(contracts, start, end, filename, lang):
         
         for contract in contracts:
             search_params = [('polissa_id','=', contract['id']),
-                    ('invoice_id.type','in', ['out_invoice','out_refund']),
-                    ('invoice_id.date_invoice','>=', start),
-                    ('invoice_id.date_invoice','<', end)]
+                    ('invoice_id.type','in', ['out_invoice','out_refund'])]
             bills_id = bill_obj.search(search_params)
             for bill_id in bills_id:
                 bill = get_bill(bill_id)
+                if not date_in(bill['date_invoice'],start,end):
+                    continue
                 row = [contract.get(field)
                         for field in contract_fields]
                 row += [bill.get(field)
@@ -183,14 +190,15 @@ def get_bill(bill_id):
             'total_energia','total_potencia','total_lloguers','total_reactiva']
     bill = bill_obj.read(bill_id, fields)
 
-    fields = ['number','amount_untaxed','amounth_tax','amount_total','type']
+    fields = ['number','amount_untaxed','amounth_tax','amount_total','type','date_invoice']
     invoice = invoice_obj.read(bill['invoice_id'][0], fields)
     bill.update({
         'number': invoice['number'],
         'amount_untaxed': invoice['amount_untaxed'],
         'amount_tax': invoice['amount_untaxed'],
         'amount_total': invoice['amount_total'],
-        'type': invoice['type']})
+        'type': invoice['type'],
+        'date_invoice': invoice['date_invoice']})
 
     bill_lines_id = bill_line_obj.search([('factura_id','=',bill_id)])
     fields = ['tipus','name','price_subtotal','quantity', 'price_unit_multi']
