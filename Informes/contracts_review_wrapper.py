@@ -60,7 +60,7 @@ def wrapper(partner, date, output):
     with ZipFile(output, 'w') as zipObj:
         zipObj.write(contractsfile)
         zipObj.write(billsfile)
-    step("zip file generated .... {}", contractsfile)
+    step("zip file generated .... {}", output)
 
 
 def parseArguments():

@@ -238,7 +238,7 @@ invoicefixing:
     csvcontractinvoicesreport:
       title: Genera un zip amb els csv amb informe mensual de contractes i factures
       description: Genera un zip amb els 2 fitxers csv que es generen mensualment via cron amb l'informe de polisses i factures emeses.
-      script: python SOME_SRC/somenergia-scripts/Informes/contracts_review_wapper.py {soci} {date} {output}
+      script: python SOME_SRC/somenergia-scripts/Informes/contracts_review_wrapper.py {soci} {date} {output}
       parameters:
         soci:
           description: Identificacio del titular dels contractes, per exemple S666999 o T666999
