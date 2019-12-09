@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import shutil
 import datetime
 import erppeek
 import dbconfig
@@ -10,6 +11,7 @@ from consolemsg import step, fail
 from yamlns import namespace as ns
 from contracts_review import build
 from zipfile import ZipFile
+from os.path import basename
 
 
 def getDateRange(date):
@@ -58,9 +60,10 @@ def wrapper(partner, date, output):
     step("contract file ......... {}", contractsfile)
     step("invoices file ......... {}", billsfile)
     with ZipFile(output, 'w') as zipObj:
-        zipObj.write(contractsfile)
-        zipObj.write(billsfile)
+        zipObj.write(contractsfile, basename(contractsfile))
+        zipObj.write(billsfile, basename(billsfile))
     step("zip file generated .... {}", output)
+    shutil.rmtree(tmp_dir)
 
 
 def parseArguments():
