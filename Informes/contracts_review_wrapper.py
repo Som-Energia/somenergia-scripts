@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import sys
+reload(sys) # dirty hack for the underlay script
+sys.setdefaultencoding('utf8')
+
 import os
 import shutil
 import datetime
