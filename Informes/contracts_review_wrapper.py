@@ -18,10 +18,13 @@ from zipfile import ZipFile
 from os.path import basename
 
 
-def getDateRange(date):
-    date = datetime.datetime.strptime(date, "%Y-%m-%d")
-    start_date = date.replace(day=1)
-    end_date = (start_date + datetime.timedelta(days=32)).replace(day=1)
+def getDateRange(start, end):
+    start = datetime.datetime.strptime(start, "%Y-%m-%d")
+    start_date = start.replace(day=1)
+
+    end = datetime.datetime.strptime(end, "%Y-%m-%d")
+    end_date = end.replace(day=1)
+    end_date = (end_date + datetime.timedelta(days=32)).replace(day=1)
     return start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")
 
 
@@ -34,8 +37,8 @@ def getPartnerLang(partner):
     return partner_obj.read(partners_ids[0], ['lang'])['lang']
 
 
-def wrapper(partner, date, output):
-    start_date, end_date = getDateRange(date)
+def wrapper(partner, start, end, output):
+    start_date, end_date = getDateRange(start, end)
     partner_lang = getPartnerLang(partner)
     if not partner_lang:
         fail("Identificador de titular no trobat! {}", partner)
@@ -79,7 +82,12 @@ def parseArguments():
         help="Partner",
         )
     parser.add_argument(
-        'date',
+        'start',
+        type=str,
+        help="Date (isoformat)",
+        )
+    parser.add_argument(
+        'end',
         type=str,
         help="Date (isoformat)",
         )
@@ -99,3 +107,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# vim: et ts=4 sw=4
