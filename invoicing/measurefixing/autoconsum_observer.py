@@ -8,6 +8,8 @@ from validacio_eines import lazyOOOP
 from gestionatr.defs import TENEN_AUTOCONSUM
 from gestionatr.input.messages.F1 import CODIS_AUTOCONSUM
 
+found = {}
+
 tag = 'ConceptoRepercutible'
 tag_head = '<'+tag+'>'
 tag_tail = '</'+tag+'>'
@@ -48,5 +50,23 @@ for count,pol_id in enumerate(pol_ids):
                     warn("Tag {} trobat amb valor {} dades autoconsum que " +
                          "indiquen --> {}",
                          tag, tag_data, CODIS_AUTOCONSUM[tag_data])
+                    found[pol_id] = {
+                        'polissa':pol.name,
+                        'last_pool':last_pool,
+                        'ultima_lect':pol.data_ultima_lectura,
+                        'import':f1_ids[0],
+                        'import_data':f1line.data_carrega,
+                        'f1_date':f1line.f1_date[:10],
+                        }
+
+for count,pol in enumerate(sorted(found.keys())):
+    success("({}/{}) Polissa {} amb autoconsum i f1 amb dades" +
+            " importació {} feta el {} fitxer F1 del {}",
+            count+1,
+            len(found.keys()),
+            found[pol]["polissa"],
+            found[pol]["import"],
+            found[pol]["import_data"],
+            found[pol]["f1_date"])
 
 # vim: et ts=4 sw=4
