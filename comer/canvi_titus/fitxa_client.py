@@ -173,6 +173,7 @@ def canvi_titus(O, new_owners, create_case=False):
                         lang=LANG_TABLE.get(new_client['Idioma'].strip().upper(), 'es_ES'),
                         other_payer=False
                     )
+                    t.GiscedataSwitching.write(changeowner_res[2], dict(state='draft'))
 
                 msg = "Setting as not 'estimable' and updating observations "\
                       "to contract: {}"
