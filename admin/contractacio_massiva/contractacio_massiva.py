@@ -4,6 +4,7 @@ import argparse
 import csv
 
 import requests
+import contextlib
 from consolemsg import step, success, warn, error
 from ooop_wst import OOOP_WST
 from yamlns import namespace as ns
@@ -51,30 +52,32 @@ def read_contracts_data_csv(csv_file):
     return csv_content
 
 
-def create_contract_address(O, cups, contact_email):
-    contract_id = get_last_contract_on_cups(O, cups)
+def create_contact_address(O, petition):
+    contract_id = get_last_contract_on_cups(O, petition.cups)
 
-    _, partner_id = O.GiscedataPolissa.read(contract_id, ['titular'])['titular']
+    partner_id, _ = O.GiscedataPolissa.read(contract_id, ['titular'])['titular']
+
+    country_id = O.ResCountry.search([('code','like','ES')])[0]
 
     new_parner_address_id, created = get_or_create_partner_address(
         O,
         partner_id=partner_id,
-        street='',
-        postal_code='',
-        city_id='',
-        state_id='',
-        country_id='',
-        email=contact_email,
+        street='Adreça electronica - ' + petition.notification_email,
+        postal_code=petition.titular_cp,
+        city_id=int(petition.titular_municipi),
+        state_id=petition.titular_provincia,
+        country_id=country_id,
+        email=petition.notificacion_email,
         phone=''
     )
 
+    values={
+        'notificacio': 'altre_p',
+        'direccio_notificacio': new_parner_address_id,
+        'altre_p': partner_id
+    }
     O.GiscedataPolissa.write(
-        contract_id,
-        values={
-            'notificacio': 'altre_p',
-            'direccio_notificacio': new_parner_address_id,
-            'altre_p': partner_id
-        }
+        contract_id, values
     )
 
 def crea_contractes(uri, filename):
@@ -96,30 +99,20 @@ def crea_contractes(uri, filename):
         else:
             try:
                 with transaction(O) as t:
-                    create_contact_address(t, petition.cups, petition.notifiacion_email)
+                    create_contact_address(t, petition)
             except Exception as e:
-                msg = "An uncontroled exception ocurred, reason: %s"
+                msg = "An uncontroled exception ocurred, reason: {}"
                 error(msg, str(e))
             else:
                 success('Status: {} \n Reason: {} \n {}', status, reason, text)
 
 
-def main(csv_file, check_conn=False):
+def main(csv_file):
 
     uri = getattr(configdb, 'API_URI', False)
 
     if not uri:
         raise KeyboardInterrupt("No URI, no money")
-    if check_conn:
-        msg = "You are requesting to: {}, do you want to continue? (Y/n)"
-        step(msg.format(uri))
-        answer = raw_input()
-        while answer.lower() not in ['y', 'n', '']:
-            answer = raw_input()
-            step("Do you want to continue? (Y/n)")
-
-        if answer in ['n', 'N']:
-            raise KeyboardInterrupt
     
     crea_contractes(uri, csv_file)
 
@@ -136,19 +129,9 @@ if __name__ == '__main__':
         help="csv amb les noves fitxes cliente a crear"
     )
 
-    parser.add_argument(
-        '--check-conn',
-        type=bool,
-        nargs='?',
-        dest='check_conn',
-        default=False,
-        help="Check para comprobar que URL queremos atacar"
-    )
-
     args = parser.parse_args()
-    print("Check conn: ", args.check_conn)
     try:
-        main(args.csv_file, args.check_conn)
+        main(args.csv_file)
     except (KeyboardInterrupt, SystemExit, SystemError):
         warn("Aarrggghh you kill me :(")
     except IndexError:
