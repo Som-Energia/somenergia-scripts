@@ -5,10 +5,26 @@ import csv
 
 import requests
 from consolemsg import step, success, warn, error
+from ooop_wst import OOOP_WST
 from yamlns import namespace as ns
 
+from comer.canvi_titus.models import get_or_create_partner_address
+from comer.canvi_titus.utils import get_last_contract_on_cups
 import configdb
 
+@contextlib.contextmanager
+def transaction(O):
+    t = O.begin()
+    try:
+        yield t
+    except:
+        t.rollback()
+        raise
+    else:
+        t.commit()
+    finally:
+        t.close()
+        del t
 
 def add_contract(uri, data):
     try:
@@ -35,7 +51,34 @@ def read_contracts_data_csv(csv_file):
     return csv_content
 
 
+def create_contract_address(O, cups, contact_email):
+    contract_id = get_last_contract_on_cups(O, cups)
+
+    _, partner_id = O.GiscedataPolissa.read(contract_id, ['titular'])['titular']
+
+    new_parner_address_id, created = get_or_create_partner_address(
+        O,
+        partner_id=partner_id,
+        street='',
+        postal_code='',
+        city_id='',
+        state_id='',
+        country_id='',
+        email=contact_email,
+        phone=''
+    )
+
+    O.GiscedataPolissa.write(
+        contract_id,
+        values={
+            'notificacio': 'altre_p',
+            'direccio_notificacio': new_parner_address_id,
+            'altre_p': partner_id
+        }
+    )
+
 def crea_contractes(uri, filename):
+    O = OOOP_WST(**configdb.ooop)
     contract_petitions = read_contracts_data_csv(filename)
 
     for petition in contract_petitions:
@@ -51,7 +94,14 @@ def crea_contractes(uri, filename):
             msg = "I couldn\'t create a new contract for cups {}, reason {}"
             error(msg, petition.cups, e)
         else:
-            success('Status: {} \n Reason: {} \n {}', status, reason, text)
+            try:
+                with transaction(O) as t:
+                    create_contact_address(t, petition.cups, petition.notifiacion_email)
+            except Exception as e:
+                msg = "An uncontroled exception ocurred, reason: %s"
+                error(msg, str(e))
+            else:
+                success('Status: {} \n Reason: {} \n {}', status, reason, text)
 
 
 def main(csv_file, check_conn=False):
