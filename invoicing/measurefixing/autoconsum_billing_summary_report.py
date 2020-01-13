@@ -3,7 +3,36 @@
 
 from consolemsg import step, success
 from validacio_eines import lazyOOOP
-from gestionatr.defs import TENEN_AUTOCONSUM, TABLA_113
+#from gestionatr.defs import TENEN_AUTOCONSUM, TABLA_113
+
+TABLA_113 = [
+    ('00', u'Sin Autoconsumo'),
+    ('01', u'Autoconsumo Tipo 1'),
+    ('2A', u'Autoconsumo tipo 2 (según el Art. 13. 2. a) RD 900/2015)'),
+    ('2B', u'Autoconsumo tipo 2 (según el Art. 13. 2. b) RD 900/2015)'),
+    ('2G', u'Servicios auxiliares de generación ligada a un autoconsumo tipo 2'),
+    ('31', u'Sin Excedentes Individual – Consumo'),
+    ('32', u'Sin Excedentes Colectivo – Consumo'),
+    ('33', u'Sin Excedentes Colectivo con acuerdo de compensación – Consumo'),
+    ('41', u'Con excedentes y compensación Individual - Consumo '),
+    ('42', u'Con excedentes y compensación Colectivo– Consumo'),
+    ('51', u'Con excedentes sin compensación Individual sin cto de SSAA en Red Interior– Consumo'),
+    ('52', u'Con excedentes sin compensación Colectivo sin cto de SSAA en Red Interior– Consumo'),
+    ('53', u'Con excedentes sin compensación Individual con cto SSAA en Red Interior– Consumo'),
+    ('54', u'Con excedentes sin compensación individual con cto SSAA en Red Interior– SSAA'),
+    ('55', u'Con excedentes sin compensación Colectivo/en Red Interior– Consumo'),
+    ('56', u'Con excedentes sin compensación Colectivo/en Red Interior - SSAA'),
+    ('61', u'Con excedentes sin compensación Individual con cto SSAA a través de red – Consumo'),
+    ('62', u'Con excedentes sin compensación individual con cto SSAA a través de red – SSAA'),
+    ('63', u'Con excedentes sin compensación Colectivo a través de red – Consumo'),
+    ('64', u'Con excedentes sin compensación Colectivo a través de red - SSAA'),
+    ('71', u'Con excedentes sin compensación Individual con cto SSAA a través de red y red interior – Consumo'),
+    ('72', u'Con excedentes sin compensación individual con cto SSAA a través de red y red interior – SSAA'),
+    ('73', u'Con excedentes sin compensación Colectivo con cto de SSAA  a través de red y red interior – Consumo'),
+    ('74', u'Con excedentes sin compensación Colectivo con cto de SSAA a través de red y red interior - SSAA'),
+]
+
+TENEN_AUTOCONSUM = [x[0] for x in TABLA_113 if x[0] not in ['00', '01', '2A', '2B', '2G']]
 
 TABLA_113_dic = {k: v for k, v in TABLA_113}
 
