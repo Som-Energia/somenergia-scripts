@@ -251,6 +251,11 @@ invoicefixing:
           extension: zip
           filename: files-{soci}-{start}-{end}.zip
 
+    autoconsumreport:
+      title: Genera el report sobre els contractes amb autoconsum
+      description: Genera el report sobre els contractes amb autoconsum amb resum global
+      script: python SOME_SRC/somenergia-scripts/invoicing/measurefixing/autoconsum_billing_summary_report.py
+
 gestiocontractes:
     description: Gestió de contractes
     scripts:
