@@ -5,6 +5,7 @@ import csv
 
 import requests
 import contextlib
+import sys, traceback
 from consolemsg import step, success, warn, error
 from ooop_wst import OOOP_WST
 from yamlns import namespace as ns
@@ -116,6 +117,7 @@ def crea_contractes(uri, filename):
                 with transaction(O) as t:
                     create_contact_address(t, petition)
             except Exception as e:
+                traceback.print_exc(file=sys.stdout)
                 msg = "An uncontroled exception ocurred, reason: {}"
                 error(msg, str(e))
             else:
@@ -148,8 +150,10 @@ if __name__ == '__main__':
     try:
         main(args.csv_file)
     except IOError as e:
+        traceback.print_exc(file=sys.stdout)
         error("El formato del fichero tiene que ser UTF-8 sin BOM: {}", str(e))
     except Exception as e:
+        traceback.print_exc(file=sys.stdout)
         error("El proceso no ha finalizado correctamente: {}", str(e))
     else:
         success("Script finalizado")
