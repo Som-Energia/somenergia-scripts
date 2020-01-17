@@ -88,9 +88,9 @@ def create_contact_address(O, petition):
     )
 
     values={
-        'notificacio': 'altre_p',
+        'notificacio': 'titular',
         'direccio_notificacio': new_partner_address_id,
-        'altre_p': partner_id
+        'titular': partner_id
     }
     O.GiscedataPolissa.write(
         contract_id, values
