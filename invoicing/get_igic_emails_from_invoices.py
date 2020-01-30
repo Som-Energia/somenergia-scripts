@@ -15,8 +15,8 @@ obj_add = O.ResPartnerAddress
 
 
 def search_igic_ids():
-	ids_a = obj_fact.search([('date_invoice','>=','2020-01-01'),('cups_id.name','like','ES00316%')])
-	ids_b = obj_fact.search([('date_invoice','>=','2020-01-01'),('cups_id.name','like','ES0401%')])
+	ids_a = obj_fact.search([('date_invoice','>=','2020-01-01'),(('type', 'in', ['out_invoice','out_refund'])),('cups_id.name','like','ES00316%')])
+	ids_b = obj_fact.search([('date_invoice','>=','2020-01-01'),(('type', 'in', ['out_invoice','out_refund'])),('cups_id.name','like','ES0401%')])
 	return ids_a + ids_b
 
 def get_invoices_emails(ids):
