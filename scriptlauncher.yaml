@@ -259,6 +259,7 @@ invoicefixing:
         output:
           type: FILEDOWN
           extension: csv
+          filename: autoconsum.csv
 
 gestiocontractes:
     description: Gestió de contractes
