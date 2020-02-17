@@ -1,9 +1,24 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
+import csv
+import codecs
+from yamlns import namespace as ns
 from consolemsg import step, success
 from validacio_eines import lazyOOOP
 #from gestionatr.defs import TENEN_AUTOCONSUM, TABLA_113
+
+def parseArguments():
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        'output',
+        type=str,
+        help="Output csv file",
+        )
+    return parser.parse_args(namespace=ns())
+
+filename = parseArguments().output
 
 TABLA_113 = [
     ('00', u'Sin Autoconsumo'),
@@ -48,6 +63,24 @@ auto_invoices = 0
 auto_kwh = 0
 auto_price = 0
 
+header = [
+    'Polissa',
+    'Codi Distri',
+    'Distri',
+    'Data ultima facturada (polissa)',
+    'Tipus autoconsum',
+    'Te autoconsum ass.',
+    'Estat autoconsum ass.',
+    'Data inici autoconsum ass.',
+    'Te modcon autoconsum (polissa)',
+    'Data inici modcon autoconsum (polissa)',
+    'Factures generades',
+    'Factures des de alta autoconsum ass. generades',
+    'Factures des de alta autoconsum ass. amb linies de generacio',
+    'kWh excedents',
+    '€ per kWh excedents',
+    ]
+report = [header]
 
 def findAutoconsumModContractual(p):
     for m in p.modcontractuals_ids:
@@ -55,47 +88,67 @@ def findAutoconsumModContractual(p):
             return m
     return None
 
-
 for count, pol_id in enumerate(pol_ids):
+    line = []
     pol = pol_obj.browse(pol_id)
 
     success("({}/{}) Polissa {}",
             count+1,
             len(pol_ids),
             pol.name)
+    line.append(pol.name)
 
     step("Distri {}/{}",
          pol.distribuidora.ref,
          pol.distribuidora.name)
+    line.extend([pol.distribuidora.ref,pol.distribuidora.name])
 
     step("Data ultima lectura facturada {}",
          pol.data_ultima_lectura)
+    line.append(pol.data_ultima_lectura)
 
     step("Tipus autoconsum {}/{}",
          pol.autoconsumo,
          TABLA_113_dic[pol.autoconsumo])
+    line.append(TABLA_113_dic[pol.autoconsumo])
 
     if not pol.autoconsum_id:
         step("Dades d'autoconsum: autoconsum no actiu")
+        line.extend(['No','',''])
     else:
         step("Dades d'autoconsum: autoconsum actiu , estat {}, alta {}",
              pol.autoconsum_id.state,
              pol.autoconsum_id.data_alta)
+        line.extend(['Si',pol.autoconsum_id.state,pol.autoconsum_id.data_alta])
 
     mod = findAutoconsumModContractual(pol)
     if not mod:
         step("Dades de modificacio contractual: no trobades")
+        line.extend(['No',''])
     else:
         step("Dades de modificacio contractual: data inici {}", mod.data_inici)
+        line.extend(['Si',mod.data_inici])
 
     fact_ids = fact_obj.search([
         ('polissa_id', '=', pol.id),
         ('type', 'in', ['out_refund', 'out_invoice']),
         ])
     step("Factures totals: {}", len(fact_ids))
+    line.append(len(fact_ids))
 
-    if fact_ids:
-        fact_data = fact_obj.read(fact_ids, ['linies_generacio'])
+    if pol.autoconsum_id:
+        fact_auto_ids = fact_obj.search([
+            ('polissa_id', '=', pol.id),
+            ('type', 'in', ['out_refund', 'out_invoice']),
+            ('data_inici','>=',pol.autoconsum_id.data_alta),
+            ])
+    else:
+        fact_auto_ids = []
+    step("Factures des d'autoconsum totals: {}", len(fact_auto_ids))
+    line.append(len(fact_auto_ids))
+
+    if fact_auto_ids:
+        fact_data = fact_obj.read(fact_auto_ids, ['linies_generacio'])
         fact_linies = [data['linies_generacio'] for data in fact_data]
     else:
         fact_linies = []
@@ -108,6 +161,7 @@ for count, pol_id in enumerate(pol_ids):
             invoices_with_lines += 1
 
     step("Factures amb exedents: {}", invoices_with_lines)
+    line.append(invoices_with_lines)
 
     if all_generacio_lines:
         all_lines_data = line_obj.read(all_generacio_lines,
@@ -121,6 +175,9 @@ for count, pol_id in enumerate(pol_ids):
     step("kWh excedents: {}", quantity)
     step("preu per kWh excedents: {}", price)
 
+    line.extend([quantity,price])
+    report.append(line)
+
     auto_invoices += invoices_with_lines
     auto_kwh += quantity
     auto_price += price
@@ -129,3 +186,13 @@ success("Finalitzat -------------------------")
 success("Factures totals amb excedents: ..... {}", auto_invoices)
 success("kWh excedentaris totals: ........... {} kwh", auto_kwh)
 success("Preu per kWh exedentaris totals: ... {} €", auto_price)
+
+with codecs.open(filename, 'wb', 'utf-8') as csvfile:
+    writer = csv.writer(csvfile,
+                        delimiter=';',
+                        quotechar='|',
+                        quoting=csv.QUOTE_MINIMAL)
+    writer.writerows(report)
+
+# vim: et ts=4 sw=4
+

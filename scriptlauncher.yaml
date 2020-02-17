@@ -255,6 +255,10 @@ invoicefixing:
       title: Genera el report sobre els contractes amb autoconsum
       description: Genera el report sobre els contractes amb autoconsum amb resum global
       script: python SOME_SRC/somenergia-scripts/invoicing/measurefixing/autoconsum_billing_summary_report.py
+      parameters:
+        output:
+          type: FILEDOWN
+          extension: csv
 
 gestiocontractes:
     description: Gestió de contractes
