@@ -254,7 +254,7 @@ invoicefixing:
     autoconsumreport:
       title: Genera el report sobre els contractes amb autoconsum
       description: Genera el report sobre els contractes amb autoconsum amb resum global
-      script: python SOME_SRC/somenergia-scripts/invoicing/measurefixing/autoconsum_billing_summary_report.py
+      script: python SOME_SRC/somenergia-scripts/invoicing/measurefixing/autoconsum_billing_summary_report.py {output}
       parameters:
         output:
           type: FILEDOWN
