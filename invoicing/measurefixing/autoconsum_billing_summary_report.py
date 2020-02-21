@@ -1,8 +1,8 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
+import StringIO
 import csv
-import codecs
 from yamlns import namespace as ns
 from consolemsg import step, success
 from validacio_eines import lazyOOOP
@@ -82,6 +82,9 @@ header = [
     ]
 report = [header]
 
+def adapt(text):
+    return type(u'')(text).encode('utf8')
+
 def findAutoconsumModContractual(p):
     for m in p.modcontractuals_ids:
         if m.autoconsum_id:
@@ -101,7 +104,7 @@ for count, pol_id in enumerate(pol_ids):
     step("Distri {}/{}",
          pol.distribuidora.ref,
          pol.distribuidora.name)
-    line.extend([pol.distribuidora.ref,pol.distribuidora.name])
+    line.extend([pol.distribuidora.ref,adapt(pol.distribuidora.name)])
 
     step("Data ultima lectura facturada {}",
          pol.data_ultima_lectura)
@@ -110,7 +113,7 @@ for count, pol_id in enumerate(pol_ids):
     step("Tipus autoconsum {}/{}",
          pol.autoconsumo,
          TABLA_113_dic[pol.autoconsumo])
-    line.append(TABLA_113_dic[pol.autoconsumo])
+    line.append(adapt(TABLA_113_dic[pol.autoconsumo]))
 
     if not pol.autoconsum_id:
         step("Dades d'autoconsum: autoconsum no actiu")
@@ -187,12 +190,12 @@ success("Factures totals amb excedents: ..... {}", auto_invoices)
 success("kWh excedentaris totals: ........... {} kwh", auto_kwh)
 success("Preu per kWh exedentaris totals: ... {} €", auto_price)
 
-with codecs.open(filename, 'wb', 'utf-8') as csvfile:
-    writer = csv.writer(csvfile,
-                        delimiter=';',
-                        quotechar='|',
-                        quoting=csv.QUOTE_MINIMAL)
-    writer.writerows(report)
+csv_doc=StringIO.StringIO()
+writer_report = csv.writer(csv_doc, delimiter=';')
+writer_report.writerows(report)
+doc = csv_doc.getvalue()
+with open(filename,'w') as f:
+    f.write(doc)
 
 # vim: et ts=4 sw=4
 
