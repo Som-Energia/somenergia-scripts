@@ -68,6 +68,7 @@ header = [
     'Codi Distri',
     'Distri',
     'Data ultima facturada (polissa)',
+    'Facturacio suspesa ',
     'Tipus autoconsum',
     'Te autoconsum ass.',
     'Estat autoconsum ass.',
@@ -109,6 +110,10 @@ for count, pol_id in enumerate(pol_ids):
     step("Data ultima lectura facturada {}",
          pol.data_ultima_lectura)
     line.append(pol.data_ultima_lectura)
+
+    step("Facturacio suspesa {}",
+         pol.facturacio_suspesa and 'Si' or 'No')
+    line.append(pol.facturacio_suspesa and 'Si' or 'No')
 
     step("Tipus autoconsum {}/{}",
          pol.autoconsumo,
