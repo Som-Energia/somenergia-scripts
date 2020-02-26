@@ -85,20 +85,19 @@ writer_report.writerow([
 
 for day in sorted(all_dates.keys()):
     day_import = all_dates[day]
+
+    diff = None
+    secs = None
+    ratio = None
+    min_hour = None
     if day_import.min and day_import.max:
         diff = day_import.max - day_import.min
-        if day_import.elapsed:
-            secs = int(day_import.elapsed.total_seconds())
-        else:
-            secs = None
-        if secs:
-            ratio = day_import.elapsed_c/float(secs)
-        else:
-            ratio = None
-    else:
-        diff = None
-        secs = None
-        ratio = None
+    if day_import.elapsed:
+        secs = int(day_import.elapsed.total_seconds())
+    if secs and day_import.elapsed_c:
+        ratio = day_import.elapsed_c/float(secs)
+    if day_import.min:
+        min_hour = day_import.min.strftime('%H:%M:%S')
 
     step("Day {}  total imported xml {:6}  first {}  last {}  elapsed {:10}  \
  work count {:6} work time {:6} s  work rate {:<14} xml/s",
@@ -108,7 +107,7 @@ for day in sorted(all_dates.keys()):
                             day,
                             day_import.num_xml,
                             day_import.min,
-                            day_import.min[-8:],
+                            min_hour,
                             day_import.max,
                             diff,
                             day_import.elapsed_c,
