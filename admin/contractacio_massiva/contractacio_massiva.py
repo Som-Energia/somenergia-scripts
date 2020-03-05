@@ -32,6 +32,10 @@ def add_contract(uri, data):
     try:
         response = requests.post(uri, data=data)
         response.raise_for_status()
+        keys = [key for key in  response.json()['data']]
+        if 'invalid_fields' in keys:
+            raise requests.exceptions.HTTPError('invalid fields')
+
     except requests.exceptions.HTTPError as e:
         # check if we have invalid fields
         json_response = response.json()
@@ -69,12 +73,16 @@ def read_contracts_data_csv(csv_file):
 
 
 def create_contact_address(O, petition):
-    contract_id = get_last_contract_on_cups(O, petition.cups)
+    contract_id = None
+    try:
+        contract_id = get_last_contract_on_cups(O, petition.cups)
+    except:
+        error = "This cups did not have any previous contract in somenergia"
+        raise Exception(error)
 
     partner_id, _ = O.GiscedataPolissa.read(contract_id, ['titular'])['titular']
 
     country_id = O.ResCountry.search([('code','like','ES')])[0]
-
     new_partner_address_id, created  = get_or_create_partner_address(
         O,
         partner_id=partner_id,
@@ -95,6 +103,7 @@ def create_contact_address(O, petition):
     O.GiscedataPolissa.write(
         contract_id, values
     )
+    return O.GiscedataPolissa.read(contract_id, ['name'])['name']
 
 def crea_contractes(uri, filename):
     O = OOOP_WST(**configdb.ooop)
@@ -109,20 +118,25 @@ def crea_contractes(uri, filename):
         step(msg, petition.dni, petition.id_soci, petition.cups)
         try:
             status, reason, text = add_contract(uri, petition)
+            # comprovació manual ja que sempre retorna 200 el webforms
+            if len(O.GiscedataPolissa.search([('cups', '=', petition.cups)])) == 0:
+                raise requests.exceptions.HTTPError("Error en resposta del webforms")
         except requests.exceptions.HTTPError as e:
             msg = "I couldn\'t create a new contract for cups {}, reason {}"
-            error(msg, petition.cups, e)
+            if 'cups exist' in e.message:
+                warn(msg, petition.cups, e)
+            else:
+                error(msg, petition.cups, e)
         else:
             try:
                 with transaction(O) as t:
-                    create_contact_address(t, petition)
+                    contracte = create_contact_address(O, petition)
             except Exception as e:
                 traceback.print_exc(file=sys.stdout)
                 msg = "An uncontroled exception ocurred, reason: {}"
                 error(msg, str(e))
             else:
-                success('Status: {} \n Reason: {} \n {}', status, reason, text)
-
+                success("S'ha creat un nou contracte amb numero: {} pel CUPS {}".format(contracte, petition.cups))
 
 def main(csv_file):
 
