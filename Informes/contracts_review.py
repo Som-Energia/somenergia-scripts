@@ -173,16 +173,17 @@ def get_power(bill_id):
     power_lines = power_line_obj.read(power_lines_id, ['name','pot_maximetre','exces'])
     maximetre = {}
     exces = {}
-    for line in power_lines:
-        period = line['name']
-        maximetre_ = line['pot_maximetre']
-        exces_ = line['exces']
-        if period not in maximetre:
-            maximetre.setdefault(period, maximetre_)
-            exces.setdefault(period, exces_)
-        else:
-            maximetre[period] = max(maximetre[period],maximetre_) 
-            exces[period] += exces_ 
+    if power_lines:
+        for line in power_lines:
+            period = line['name']
+            maximetre_ = line['pot_maximetre']
+            exces_ = line['exces']
+            if period not in maximetre:
+                maximetre.setdefault(period, maximetre_)
+                exces.setdefault(period, exces_)
+            else:
+                maximetre[period] = max(maximetre[period],maximetre_)
+                exces[period] += exces_
     return maximetre,exces 
 
 def get_bill(bill_id):
