@@ -60,7 +60,7 @@ if len(matchinglists)>1:
 chosenlist = matchinglists[0]
 effortre = r'\s*\(\s*[0-9]+\s*/\s*[0-9]\s*\)\s*'
 
-for i,card in enumerate(chosenlist.list_cards_iter()):
+for i,card in enumerate(chosenlist.list_cards()):
     printStdOut(color('34;1', card.url))
     printStdOut(color('32;1', "Old: "+card.name))
     cleaned = re.sub(r'\s*\[P[0-9]+\]\s*', ' ', card.name)
