@@ -403,6 +403,31 @@ it:
         search:
           description: Cerca a la descripcio
 
+    prioritize:
+      script: python SOME_SRC/somenergia-scripts/rondait/prioritize.py {action} {subaction} {board} {list}
+      title: Posa la marca de prioritat a una llista ordenada de trello
+      description: Assigna (o neteja) les marques de prioritat [Pn] a una llista ordenada del trello
+      parameters:
+        action:
+          description: Posa o neteja les existents
+          type: enum
+          options:
+            Posa les marques de prioritat: prioritize
+            Neteja les marques de prioritat: clean
+          default: apply
+        subaction:
+          description: Ho apliquem o no
+          type: enum
+          options:
+            Nomes mostra-ho: show
+            Aplica els canvis: apply
+          default: show
+        board:
+          description: Nom del taulell de Trello (pot ser parcial)
+        list:
+          description: Nom de la llista de Trello (pot ser parcial)
+
+
 admin:
   description: Administració
   scripts:
