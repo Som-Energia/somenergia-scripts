@@ -14,37 +14,6 @@ general:
         date:
           description: Introdueix la data (inclosa) fins a la que vols fer l'estudi amb el format 'YYYY-mm-dd'
 
-tomatic:
-
-  description: Tomàtic (Centraleta)
-  scripts:
-    resum:
-      script: SOME_SRC/somenergia-tomatic/tomatic_calls.py  summary
-      title: Resum de trucades del dia
-      description: >
-        Resum de les trucades rebudes del dia.
-
-    perdudes:
-      script: SOME_SRC/somenergia-tomatic/tomatic_calls.py  unanswered
-      title: Detall de trucades fallides del dia
-      description: >
-        Un llistat bastan cru de les trucades fallides del dia
-
-    detall:
-      script: SOME_SRC/somenergia-tomatic/tomatic_calls.py all
-      title: Detall de totes les trucades del dia
-      description: >
-        Un llistat bastan cru de totes les trucades del dia
-
-    says:
-      script: SOME_SRC/somenergia-tomatic/tomatic_says.py  {quelcom}
-      title: Tomàtic diu
-      description: Digues quelcom com si fossis en Tomàtic
-      parameters:
-        quelcom:
-          description: Text enviat
-          default: Hola Supers!
-
 
 measurefixing:
 
