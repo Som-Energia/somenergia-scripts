@@ -69,7 +69,6 @@ for i,card in enumerate(chosenlist.list_cards()):
         warn("Card without effort setting it to (0/0)")
         effort = '(0/0)'
     else:
-        step(effort.group())
         effort = ''.join(effort.group().strip().split())
     cleaned = re.sub(effortre, ' ', cleaned).strip()
     if action == 'clean':
@@ -77,7 +76,7 @@ for i,card in enumerate(chosenlist.list_cards()):
     else:
         newname = u'[P{}] {} {}'.format(i, effort, cleaned)
 
-    printStdOut(color('33;1', "New: "+newname))
+    printStdOut(color('35;1', "New: "+newname))
     if subaction == 'apply':
         step("Applying change")
         card.set_name(newname)
