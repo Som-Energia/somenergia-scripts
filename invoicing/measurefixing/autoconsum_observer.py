@@ -36,28 +36,31 @@ for count,pol_id in enumerate(pol_ids):
 
     f1_ids = f1_obj.search([('cups_id', '=', pol.cups.id)])
     if f1_ids:
-        f1line = f1_obj.browse(f1_ids[0])
-        step(" última importacio id {} feta el {} , fitxer F1 de {}",
-             f1_ids[0], f1line.data_carrega, f1line.f1_date[:10])
-        step(" {} fitxers adjunts, analitzant...",
-             len(f1line._attachments_field))
-        for attachment in f1line._attachments_field:
-            f1_xml = base64.decodestring(attachment.datas_mongo)
-            f1_hits = re.findall(tag_head + '..' + tag_tail, f1_xml)
-            for f1_hit in f1_hits:
-                tag_data = f1_hit[tag_head_len:-tag_tail_len]
-                if tag_data in CODIS_AUTOCONSUM:
-                    warn("Tag {} trobat amb valor {} dades autoconsum que " +
-                         "indiquen --> {}",
-                         tag, tag_data, CODIS_AUTOCONSUM[tag_data])
-                    found[pol_id] = {
-                        'polissa':pol.name,
-                        'last_pool':last_pool,
-                        'ultima_lect':pol.data_ultima_lectura,
-                        'import':f1_ids[0],
-                        'import_data':f1line.data_carrega,
-                        'f1_date':f1line.f1_date[:10],
-                        }
+        try:
+            f1line = f1_obj.browse(f1_ids[0])
+            step(" última importacio id {} feta el {} , fitxer F1 de {}",
+                 f1_ids[0], f1line.data_carrega, f1line.f1_date[:10])
+            step(" {} fitxers adjunts, analitzant...",
+                 len(f1line._attachments_field))
+            for attachment in f1line._attachments_field:
+                f1_xml = base64.decodestring(attachment.datas_mongo)
+                f1_hits = re.findall(tag_head + '..' + tag_tail, f1_xml)
+                for f1_hit in f1_hits:
+                    tag_data = f1_hit[tag_head_len:-tag_tail_len]
+                    if tag_data in CODIS_AUTOCONSUM:
+                        warn("Tag {} trobat amb valor {} dades autoconsum que " +
+                             "indiquen --> {}",
+                             tag, tag_data, CODIS_AUTOCONSUM[tag_data])
+                        found[pol_id] = {
+                            'polissa':pol.name,
+                            'last_pool':last_pool,
+                            'ultima_lect':pol.data_ultima_lectura,
+                            'import':f1_ids[0],
+                            'import_data':f1line.data_carrega,
+                            'f1_date':f1line.f1_date[:10],
+                            }
+        except:
+            warn("Error llegint F1!")
 
 for count,pol in enumerate(sorted(found.keys())):
     success("({}/{}) Polissa {} amb autoconsum i f1 amb dades" +
