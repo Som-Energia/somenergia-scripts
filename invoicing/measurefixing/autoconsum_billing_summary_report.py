@@ -65,6 +65,9 @@ auto_price = 0
 
 header = [
     'Polissa',
+    'idioma del pagador',
+    'email pagador',
+    'email notificacio',
     'Codi Distri',
     'Distri',
     'Data ultima facturada (polissa)',
@@ -101,6 +104,13 @@ for count, pol_id in enumerate(pol_ids):
             len(pol_ids),
             pol.name)
     line.append(pol.name)
+
+    step("Idioma pagador {}",pol.pagador.lang)
+    line.append(pol.pagador.lang)
+    step("Mail Pagador {}",pol.pagador_email)
+    line.append(pol.pagador_email)
+    step("Mail notificacio contracte {}",pol.direccio_notificacio.email)
+    line.append(pol.direccio_notificacio.email)
 
     step("Distri {}/{}",
          pol.distribuidora.ref,
