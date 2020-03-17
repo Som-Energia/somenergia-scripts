@@ -65,9 +65,9 @@ auto_price = 0
 
 header = [
     'Polissa',
-    'idioma del pagador',
-    'email pagador',
-    'email notificacio',
+    'Idioma del titular',
+    'Email del titular',
+    'Email de notificacio',
     'Codi Distri',
     'Distri',
     'Data ultima facturada (polissa)',
@@ -91,7 +91,7 @@ def adapt(text):
 
 def findAutoconsumModContractual(p):
     for m in p.modcontractuals_ids:
-        if m.autoconsum_id:
+        if m.autoconsum_id or m.autoconsumo in TENEN_AUTOCONSUM:
             return m
     return None
 
@@ -105,10 +105,10 @@ for count, pol_id in enumerate(pol_ids):
             pol.name)
     line.append(pol.name)
 
-    step("Idioma pagador {}",pol.pagador.lang)
-    line.append(pol.pagador.lang)
-    step("Mail Pagador {}",pol.pagador_email)
-    line.append(pol.pagador_email)
+    step("Idioma titular {}",pol.titular.lang)
+    line.append(pol.titular.lang)
+    step("Mail Pagador {}",pol.titular.www_email)
+    line.append(pol.titular.www_email)
     step("Mail notificacio contracte {}",pol.direccio_notificacio.email)
     line.append(pol.direccio_notificacio.email)
 
