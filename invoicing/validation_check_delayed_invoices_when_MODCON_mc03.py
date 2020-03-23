@@ -53,7 +53,7 @@ def check_delayed_invoices_when_MODCON_mc03(polissa_id, delayed_limit):
     - contract has a modification with the invoice end date
     - contract is not finished in the invoice end date
     """
-    checked_invoice_id = []
+    checked_invoice_ids = []
 
     polissa = pol_obj.browse( polissa_id)
 
@@ -68,9 +68,9 @@ def check_delayed_invoices_when_MODCON_mc03(polissa_id, delayed_limit):
         if (len(delayed_invoices) == 1 and
             polissa.data_baixa != delayed_invoices[0]['data_final'] and
             check_last_modcon_breaks_invoicing_cycle(polissa, delayed_invoices[0]['data_final'])):
-                checked_invoice_id.append(delayed_invoices[0]['id'])
+                checked_invoice_ids.append(delayed_invoices[0]['id'])
 
-    return checked_invoice_id
+    return checked_invoice_ids
 
 
 def seach_polisses_with_daft_invoices():
@@ -84,7 +84,7 @@ def get_hit_data(pol_id, fac_id):
     data_polissa = pol_obj.read(pol_id,['name'])
     data['polissa'] = data_polissa['name']
     data['factura'] = fac_id
-    data_factura = fac_obj.read(fac_id, ['data_inici', 'data_final'])
+    data_factura = fac_obj.read(fac_id[0], ['data_inici', 'data_final'])
     data['inici'] = data_factura['data_inici']
     data['fi'] =  data_factura['data_final']
     return data
@@ -94,10 +94,10 @@ def get_validation_hits(delayed_limit):
 
     pol_ids = seach_polisses_with_daft_invoices()
     for pol_id in pol_ids:
-        fac_id = check_delayed_invoices_when_MODCON_mc03(pol_id, delayed_limit)
+        fac_ids = check_delayed_invoices_when_MODCON_mc03(pol_id, delayed_limit)
 
-        if fac_id:
-            data = get_hit_data(pol_id,fac_id)
+        if fac_ids:
+            data = get_hit_data(pol_id,fac_ids)
             step("La polissa {polissa} te una factura en esborrany que trenca el cicle de facturacio: id factura {factura} periode {inici} fins {fi}",**data)
         else:
             noFactures = True
