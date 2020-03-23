@@ -230,6 +230,14 @@ invoicefixing:
           extension: csv
           filename: autoconsum.csv
 
+    validation_check_delayed_invoices_when_MODCON_mc03:
+      title: Validacio externa de factures petites que provoquen facturacio endarrerida
+      description: Validacio externa per fer el testing del fix de factura check_delayed_invoices_when_MODCON_mc03
+      script: python SOME_SRC/somenergia-scripts/invoicing/validation_check_delayed_invoices_when_MODCON_mc03.py {delayed_limit}
+      parameters:
+        delayed_limit:
+          description: dies màxims de factura curta
+
 gestiocontractes:
     description: Gestió de contractes
     scripts:
