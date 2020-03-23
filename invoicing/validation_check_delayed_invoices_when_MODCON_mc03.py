@@ -59,16 +59,17 @@ def check_delayed_invoices_when_MODCON_mc03(polissa_id, delayed_limit):
 
     delayed_invoices = []
     draft_invoices_ids = fac_obj.search([('polissa_id', '=', polissa_id), ('state', '=', 'draft'), ('type', '=', 'out_invoice')])
-    draft_invoices_data = fac_obj.read(draft_invoices_ids, ['data_inici', 'data_final'])
+    if draft_invoices_ids:
+        draft_invoices_data = fac_obj.read(draft_invoices_ids, ['data_inici', 'data_final'])
 
-    for draft_invoice_data in draft_invoices_data:
-        if (isodate(draft_invoice_data['data_final']) - isodate(draft_invoice_data['data_inici'])).days <= delayed_limit:
-            delayed_invoices.append(draft_invoice_data)
+        for draft_invoice_data in draft_invoices_data:
+            if (isodate(draft_invoice_data['data_final']) - isodate(draft_invoice_data['data_inici'])).days <= delayed_limit:
+                delayed_invoices.append(draft_invoice_data)
 
-        if (len(delayed_invoices) == 1 and
-            polissa.data_baixa != delayed_invoices[0]['data_final'] and
-            check_last_modcon_breaks_invoicing_cycle(polissa, delayed_invoices[0]['data_final'])):
-                checked_invoice_ids.append(delayed_invoices[0]['id'])
+            if (len(delayed_invoices) == 1 and
+                polissa.data_baixa != delayed_invoices[0]['data_final'] and
+                check_last_modcon_breaks_invoicing_cycle(polissa, delayed_invoices[0]['data_final'])):
+                    checked_invoice_ids.append(delayed_invoices[0]['id'])
 
     return checked_invoice_ids
 
