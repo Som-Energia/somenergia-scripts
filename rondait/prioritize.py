@@ -74,7 +74,7 @@ for i,card in enumerate(chosenlist.list_cards()):
     if action == 'clean':
         newname = u'{} {}'.format(effort, cleaned)
     else:
-        newname = u'[P{}] {} {}'.format(i, effort, cleaned)
+        newname = u'{} [P{}] {}'.format(effort, i, cleaned)
 
     printStdOut(color('35;1', "New: "+newname))
     if subaction == 'apply':
