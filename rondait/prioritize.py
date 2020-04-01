@@ -58,7 +58,7 @@ if len(matchinglists)>1:
         len(matchinglists), '\n'.join(l.name for l in matchinglists))
 
 chosenlist = matchinglists[0]
-effortre = r'\s*\(\s*[0-9]+\s*/\s*[0-9]\s*\)\s*'
+effort_re = r'\s*\(\s*[0-9]+\s*/\s*[0-9]+\s*\)\s*'
 
 listcards = (
     card
@@ -70,13 +70,13 @@ for i,card in enumerate(listcards):
     printStdOut(color('34;1', card.url))
     printStdOut(color('32;1', "Old: "+card.name))
     cleaned = re.sub(r'\s*\[P[0-9]+\]\s*', ' ', card.name)
-    effort = re.search(effortre, cleaned)
+    effort = re.search(effort_re, cleaned)
     if not effort:
         warn("Card without effort setting it to (0/0)")
         effort = '(0/0)'
     else:
         effort = ''.join(effort.group().strip().split())
-    cleaned = re.sub(effortre, ' ', cleaned).strip()
+    cleaned = re.sub(effort_re, ' ', cleaned).strip()
     if action == 'clean':
         newname = u'{} {}'.format(effort, cleaned)
     else:
