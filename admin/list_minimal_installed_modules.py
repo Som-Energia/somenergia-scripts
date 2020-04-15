@@ -56,14 +56,12 @@ def reduce_list_of_modules(modules):
 
 def get_reduced_list_of_modules():
     modules = get_all_installed_modules()
-    print modules
     expanded = expand_submodules(modules)
-    print expanded
     return reduce_list_of_modules(expanded), expanded
 
 
 def main():
-    success('Obtaing instaled and to be updated modules ...')
+    success('Obtaining all installed and to be updated modules ...')
     min_modules, all_modules = get_reduced_list_of_modules()
 
     success('set of {} modules found of total {}',
