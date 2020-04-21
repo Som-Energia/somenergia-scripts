@@ -56,12 +56,17 @@ Obj = lazyOOOP()
 pol_obj = Obj.GiscedataPolissa
 fact_obj = Obj.GiscedataFacturacioFactura
 line_obj = Obj.GiscedataFacturacioFacturaLinia
+model_obj = Obj.IrModelData
+
+autoconsum_excedents_product_id = model_obj.get_object_reference('giscedata_facturacio_comer', 'saldo_excedents_autoconsum')[1]
 
 pol_ids = pol_obj.search([('autoconsumo', 'in', TENEN_AUTOCONSUM)])
 
 auto_invoices = 0
 auto_kwh = 0
 auto_price = 0
+auto_co_kwh = 0
+auto_co_price = 0
 
 header = [
     'Polissa',
@@ -84,6 +89,8 @@ header = [
     'Factures des de alta autoconsum ass. amb linies de generacio',
     'kWh excedents',
     '€ per kWh excedents',
+    'kWh excedents compensats',
+    '€ per kWh excedents compensats',
     ]
 report = [header]
 
@@ -186,29 +193,43 @@ for count, pol_id in enumerate(pol_ids):
     step("Factures amb exedents: {}", invoices_with_lines)
     line.append(invoices_with_lines)
 
+    quantity = 0
+    price = 0
+    co_quantity = 0
+    co_price = 0
     if all_generacio_lines:
-        all_lines_data = line_obj.read(all_generacio_lines,
-                                       ['quantity', 'price_subtotal'])
-        quantity = sum([q['quantity'] for q in all_lines_data])
-        price = sum([q['price_subtotal'] for q in all_lines_data])
-    else:
-        quantity = 0
-        price = 0
+        all_lines_data = line_obj.read(all_generacio_lines, [
+                                       'quantity',
+                                       'price_subtotal',
+                                       'product_id'])
+        for q in all_lines_data:
+            if q['product_id'][0] != autoconsum_excedents_product_id:
+                quantity += q['quantity']
+                price += q['price_subtotal']
+            else:
+                co_quantity += q['quantity']
+                co_price += q['price_subtotal']
 
     step("kWh excedents: {}", quantity)
     step("preu per kWh excedents: {}", price)
+    step("kWh excedents compensats: {}", co_quantity)
+    step("preu per kWh excedents compensats: {}", co_price)
 
-    line.extend([quantity,price])
+    line.extend([quantity, price, co_quantity, co_price])
     report.append(line)
 
     auto_invoices += invoices_with_lines
     auto_kwh += quantity
     auto_price += price
+    auto_co_kwh += co_quantity
+    auto_co_price += co_price
 
 success("Finalitzat -------------------------")
-success("Factures totals amb excedents: ..... {}", auto_invoices)
-success("kWh excedentaris totals: ........... {} kwh", auto_kwh)
-success("Preu per kWh exedentaris totals: ... {} €", auto_price)
+success("Factures totals amb excedents: ................ {}", auto_invoices)
+success("kWh excedentaris totals: ...................... {} kwh", auto_kwh)
+success("Preu per kWh exedentaris totals: .............. {} €", auto_price)
+success("kWh excedentaris compensats totals: ........... {} kwh", auto_co_kwh)
+success("Preu per kWh exedentaris compensats totals: ... {} €", auto_co_price)
 
 csv_doc=StringIO.StringIO()
 writer_report = csv.writer(csv_doc, delimiter=';')
