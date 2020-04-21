@@ -73,7 +73,7 @@ def main():
              module,
              len(all_modules[module]),
              (len(all_modules[module]) * 100.0) / len(all_modules),
-             (','.join(sorted(all_modules[module])))[:120])
+             (','.join(sorted(all_modules[module]))))
 
     success('set of {} modules found of total {}',
             len(min_modules), len(all_modules))
