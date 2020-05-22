@@ -1,12 +1,15 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
+import re
+import base64
 import StringIO
 import csv
 from yamlns import namespace as ns
-from consolemsg import step, success
+from consolemsg import step, success, warn
 from validacio_eines import lazyOOOP
 #from gestionatr.defs import TENEN_AUTOCONSUM, TABLA_113
+#from gestionatr.input.messages.F1 import CODIS_AUTOCONSUM
 
 def parseArguments():
     import argparse
@@ -51,12 +54,43 @@ TENEN_AUTOCONSUM = [x[0] for x in TABLA_113 if x[0] not in ['00', '01', '2A', '2
 
 TABLA_113_dic = {k: v for k, v in TABLA_113}
 
+CODIS_AUTOCONSUM = {
+    '51': 'autoconsum',
+    '52': 'autoconsum',
+    '53': 'autoconsum',
+    '54': 'autoconsum',
+    '55': 'autoconsum',
+    '56': 'autoconsum',
+    '61': 'generacio',
+    '62': 'generacio',
+    '63': 'generacio',
+    '64': 'generacio',
+    '65': 'generacio',
+    '66': 'generacio',
+    '71': 'excedent',
+    '72': 'excedent',
+    '73': 'excedent',
+    '74': 'excedent',
+    '75': 'excedent',
+    '76': 'excedent',
+    '81': 'informacio',
+    '82': 'informacio',
+}
+
+
+tag = 'ConceptoRepercutible'
+tag_head = '<'+tag+'>'
+tag_tail = '</'+tag+'>'
+tag_head_len = len(tag_head)
+tag_tail_len = len(tag_tail)
+
 Obj = lazyOOOP()
 
 pol_obj = Obj.GiscedataPolissa
 fact_obj = Obj.GiscedataFacturacioFactura
 line_obj = Obj.GiscedataFacturacioFacturaLinia
 model_obj = Obj.IrModelData
+f1_obj = Obj.GiscedataFacturacioImportacioLinia
 
 autoconsum_excedents_product_id = model_obj.get_object_reference('giscedata_facturacio_comer', 'saldo_excedents_autoconsum')[1]
 
@@ -91,6 +125,15 @@ header = [
     '€ per kWh excedents',
     'kWh excedents compensats',
     '€ per kWh excedents compensats',
+    'Ùltim F1',
+    'Fase',
+    'Data carrega',
+    'Data lectura actual',
+    'Numero F1s totals',
+    'Data inici autoconsum per F1s',
+    'F1s desde data inici autoconsum',
+    'F1s amb lectura',
+    'F1s sospitosos autoconsum',
     ]
 report = [header]
 
@@ -102,6 +145,23 @@ def findAutoconsumModContractual(p):
         if m.autoconsum_id or m.autoconsumo in TENEN_AUTOCONSUM:
             return m
     return None
+
+def is_F1_sospitos_autoconsum(f1):
+    return False
+    for attachment in f1._attachments_field:
+        try:
+            f1_xml = base64.decodestring(attachment.datas_mongo)
+            f1_hits = re.findall(tag_head + '..' + tag_tail, f1_xml)
+            for f1_hit in f1_hits:
+                tag_data = f1_hit[tag_head_len:-tag_tail_len]
+                if tag_data in CODIS_AUTOCONSUM:
+                    return True
+        except Exception, e:
+            step("no mongo!?")
+            warn(str(e))
+
+    return False
+
 
 for count, pol_id in enumerate(pol_ids):
     line = []
@@ -223,6 +283,52 @@ for count, pol_id in enumerate(pol_ids):
     auto_price += price
     auto_co_kwh += co_quantity
     auto_co_price += co_price
+
+    step("Ùltim F1")
+    f1_ids = f1_obj.search([('cups_id', '=', pol.cups.id)])
+    if f1_ids:
+        last_f1 = f1_obj.browse(f1_ids[0])
+        line.extend([last_f1.name,last_f1.import_phase,last_f1.data_carrega])
+        if len(last_f1.importacio_lectures_ids) > 0:
+            line.append(last_f1.importacio_lectures_ids[0].fecha_actual)
+        else:
+            line.append('')
+    else:
+        line.extend(['','','',''])
+
+    step("Ùltim F1 desde autoconsum")
+
+    if mod:
+        data_inici_auto = mod.data_inici
+    elif pol.autoconsum_id:
+        data_inici_auto = pol.autoconsum_id.data_alta
+    else:
+        data_inici_auto = pol.data_alta
+
+    F1_until_autoconsum = 0
+    F1_lect = []
+    F1_auto = []
+    for f1_id in f1_ids:
+        f1 = f1_obj.browse(f1_id)
+        if len(f1.importacio_lectures_ids) > 0:
+            if f1.importacio_lectures_ids[0].fecha_actual >= data_inici_auto:
+                F1_until_autoconsum += 1
+                F1_lect.append('X')
+            else:
+                F1_lect.append('.')
+        else:
+            F1_lect.append('E')
+
+        if is_F1_sospitos_autoconsum(f1):
+            F1_auto.append('X')
+        else:
+            F1_auto.append('.')
+
+    line.append(len(f1_ids))
+    line.append(data_inici_auto)
+    line.append(F1_until_autoconsum)
+    line.append('>'+''.join(F1_lect)+'<')
+    line.append('>'+''.join(F1_auto)+'<')
 
 success("Finalitzat -------------------------")
 success("Factures totals amb excedents: ................ {}", auto_invoices)
