@@ -474,7 +474,7 @@ admin:
           type: FILEDOWN
           extension: pdf
           name: BalancSumesiSalods-{start_date}-{end_date}.pdf
-
+    
 
 generation:
   description: Generació
@@ -579,18 +579,28 @@ benchmarks:
 
 
 mailchimp:
-  description: MailChimp, dades per generacio massiva de correus
+  description: MailChimp scripts massius per gestionar correus
   scripts:
     recomanacioInversio:
       title: Recomanació d'inversió
       script: python SOME_SRC/somenergia-scripts/mchimp/mchimp_generationsocis-sql.py {output}
-
       parameters:
         output:
           type: FILEDOWN
           filename: recomanacioInversio.csv
           extension: csv
 
+    archive_socis_mailchimp:
+      title: Arxivar mails de antics socis/sòcies 
+      description: Genera un zip amb el resultat d'arxivar els emails d'una lista de mailchimp. Si no existeix el email, a la llista de resultats apareixerà l'error 404 (Resource not found). Si l'email s'havia eliminat anteriorment, l'error que apareix és el 405 (Method not allowed). 
+      script: python SOME_SRC/somenergia-scripts/admin/Baixa_Socis/unsubscribe_members.py --list {list_name} --output {output}
+      parameters:
+        list_name:
+          description: Nom de la llista de correu on arxivar antics socis/sòcies
+        output:
+          type: FILEDOWN
+          extension: tar
+          filename: archieve_resultarchieve_results.tar
 
 
 # vim: et ts=2 sw=2

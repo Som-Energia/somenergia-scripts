@@ -1,3 +1,7 @@
+# -*- encoding: utf-8 -*-
+import argparse
+import sys
+import traceback
 from hashlib import md5
 
 import mailchimp_marketing as MailchimpMarketing
@@ -11,8 +15,9 @@ import configdb
 
 ERP_CLIENT = Client(**configdb.erppeek)
 MAILCHIMP_CLIENT = MailchimpMarketing.Client(
-            dict(api_key=configdb.MAILCHIMP_APIKEY, server=configdb.MAILCHIMP_SERVER_PREFIX)
-        )
+    dict(api_key=configdb.MAILCHIMP_APIKEY, server=configdb.MAILCHIMP_SERVER_PREFIX)
+)
+
 
 def get_member_category_id():
     module = 'som_partner_account'
@@ -86,15 +91,15 @@ def archive_members_from_list(list_name, email_list):
         response = MAILCHIMP_CLIENT.batches.start(payload)
     except ApiClientError as error:
         msg = "An error occurred an archiving batch request, reason: {}"
-        print(msg.format(error.text))
+        error(msg.format(error.text))
     else:
         batch_id = response['id']
         while response['status'] != 'finished':
             time.sleep(2)
             response = MAILCHIMP_CLIENT.batches.status(batch_id)
 
-        print("Archived operation finished!!")
-        print("Total operations: {}, finished operations: {}, errored operations: {}".format(
+        step("Archived operation finished!!")
+        step("Total operations: {}, finished operations: {}, errored operations: {}".format(
             response['total_operations'],
             response['finished_operations'],
             response['errored_operations']
@@ -102,3 +107,47 @@ def archive_members_from_list(list_name, email_list):
         result_summary = requests.get(response['response_body_url'])
         result_summary.raise_for_status()
         return result_summary.content
+
+
+def archieve_members_in_list(list_name):
+    email_list = get_not_members_email_list()
+    result = archive_members_from_list(list_name, email_list)
+
+    return result
+
+
+def main(list_name, output):
+
+    result =  archieve_members_in_list(list_name.strip())
+
+    with open(output, 'w') as f:
+        f.write(result)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+            description='Archivieren Sie E-Mails in großen Mengen'
+    )
+
+    parser.add_argument(
+        '--list',
+        dest='list_name',
+        required=True,
+        help="nom de la llista de mailchimp"
+    )
+
+    parser.add_argument(
+        '--output',
+        dest='output',
+        required=True,
+        help="Fitxer de sortida amb els resultats"
+    )
+
+    args = parser.parse_args()
+    try:
+        main(args.list_name, args.output)
+    except Exception as e:
+        traceback.print_exc(file=sys.stdout)
+        error("El proceso no ha finalizado correctamente: {}", str(e))
+    else:
+        success("Script finalizado")
