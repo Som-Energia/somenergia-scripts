@@ -7,7 +7,11 @@ from mailchimp_marketing.api_client import ApiClientError
 
 
 import configdb
-from unsubscribe_members import get_member_category_id
+from unsubscribe_members import (
+    get_member_category_id,
+    get_mailchimp_list_id,
+    archive_members_from_list,
+)
 
 
 class TestUnsusbcribeEmailMembers(TestCase):
@@ -18,6 +22,7 @@ class TestUnsusbcribeEmailMembers(TestCase):
         self.Soci = self.erp_client.model('somenergia.soci')
         self.ResPartnerAddress = self.erp_client.model('res.partner.address')
 
+    @skip("NO")
     def test__get_member_category_id(self):
         
         category_id = get_member_category_id()
@@ -28,6 +33,7 @@ class TestUnsusbcribeEmailMembers(TestCase):
         ).read(category_id, ['name'])['name']
         self.assertEqual(category_name, 'Soci')
 
+    @skip("NO")
     def test__get_not_members_addresses(self):
         category_id = 8
         query = [
@@ -49,7 +55,7 @@ class TestUnsusbcribeEmailMembers(TestCase):
 
         self.assertTrue(bool(emails_list))
 
-
+@skip("Discovery tests, they don't restore the initial state")
 class TestMailChimpApi(TestCase):
 
     def setUp(self):
@@ -116,7 +122,7 @@ class TestMailChimpApi(TestCase):
         subscriber_hash = md5(
             mailchimp_member['email_address'].lower()
         ).hexdigest()
-        
+
         try:
             response = self.client.lists.delete_list_member(
                 list_id=self.somenergia_member_list['id'],
@@ -124,5 +130,28 @@ class TestMailChimpApi(TestCase):
             )
         except ApiClientError as error:
             import pdb; pdb.set_trace()
-  
+
         self.assertEqual(response, {})
+
+    @skip("NO")
+    def test__get_mailchimp_list_id(self):
+        list_name = configdb.mailchimp_member_list_info['name']
+        list_id = get_mailchimp_list_id(list_name)
+        self.assertEqual(list_id, configdb.mailchimp_member_list_info['id'])
+
+    @skip("NO")
+    def test__get_mailchimp_list_id_notFound(self):
+        list_name = "Wrong list"
+        with self.assertRaises(Exception) as e:
+            get_mailchimp_list_id(list_name)
+        self.assertEqual(e.exception.message, "List: <Wrong list> not found")
+
+    @skip("NO")
+    def test__archive_members_from_list(self):
+
+        response = archive_members_from_list(
+           configdb.mailchimp_member_list_info['name'],
+           [configdb.mailchimp_member_email, 'nono@false.com']
+        )
+        import pdb; pdb.set_trace()
+        self.assertIsNone(response)
