@@ -5,6 +5,7 @@ scripts_crontab.sh
 *.pyc
 *.swp
 *.ipynb
+*vscode*
 
 ## Baixa Socis
 admin/Baixa_Socis/CredencialsBaixaSocis.json
