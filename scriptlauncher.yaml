@@ -592,7 +592,8 @@ mailchimp:
 
     archive_socis_mailchimp:
       title: Arxivar mails de antics socis/sòcies 
-      description: Genera un zip amb el resultat d'arxivar els emails d'una lista de mailchimp. Si no existeix el email, a la llista de resultats apareixerà l'error 404 (Resource not found). Si l'email s'havia eliminat anteriorment, l'error que apareix és el 405 (Method not allowed). 
+      description: "Aquest script, quan s’activa, actua sobre la llista de Mailchimp que se li hagi indicat (ex: “Soci/a de Som Energia”). El que fa és que arxiva (dessubscriu però manté les dades antigues) les adreces de correu de les persones que abans eren sòcies i ara ja no ho són, segons dades de l’ERP.
+      <h5>OBSERVACIONS: Si no hi ha emails amb aquestes característiques, a la llista de resultats apareixerà un error 404 (no s'ha trobat res a arxivar). Si les adreces d'email s'havien eliminat anteriorment, l'error que apareixerà serà el 405 (acció no permesa).</h5>"
       script: python SOME_SRC/somenergia-scripts/admin/Baixa_Socis/unsubscribe_members.py --list {list_name} --output {output}
       parameters:
         list_name:
