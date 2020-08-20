@@ -71,14 +71,7 @@ def dump_contracts(contracts, filename, lang):
                     for field in fields]
             writer.writerow(row)
 
-def date_in(d,s,e):
-    d = datetime.datetime.strptime(d,'%Y-%m-%d').date()
-    return d >= s and d < e
-
 def dump_bills(contracts, start, end, filename, lang):
-    start = datetime.datetime.strptime(start,'%Y-%m-%d').date()
-    end = datetime.datetime.strptime(end,'%Y-%m-%d').date()
-
     contract_fields = ['vat','titular','adreca','cups','name']
     bill_fields = ['number','data_inici','data_final','type',
             'total_potencia','total_energia','total_reactiva','total_lloguers',
@@ -105,12 +98,11 @@ def dump_bills(contracts, start, end, filename, lang):
         
         for contract in contracts:
             search_params = [('polissa_id','=', contract['id']),
-                    ('invoice_id.type','in', ['out_invoice','out_refund'])]
+                    ('type','in', ['out_invoice','out_refund']),
+                    ('date_invoice','>=', start),('date_invoice','<', end)]
             bills_id = bill_obj.search(search_params)
             for bill_id in bills_id:
                 bill = get_bill(bill_id)
-                if not date_in(bill['date_invoice'],start,end):
-                    continue
                 row = [contract.get(field)
                         for field in contract_fields]
                 row += [bill.get(field)
