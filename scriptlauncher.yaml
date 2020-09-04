@@ -359,7 +359,14 @@ gestiocontractes:
           output:
             type: FILEDOWN
             extension: csv
-
+      killingPayerWarning:
+        script: SOME_SRC/somenergia-scripts/comer/mort_al_pagador/avis_mort_al_pagador.py --file {contracts}
+        title: Script per enviament massiu de correus d'avis de mort al pagador
+        description: Agafa un fitxer csv amb els números de pòlissa i envia els correus de la plantilla d'avis de mort al pagador del ERP.
+        parameters:
+          contracts:
+            type: FILE
+            description: Fitxer csv amb els nùmeros de contractes
 it:
   description: Ronda IT
   scripts:
