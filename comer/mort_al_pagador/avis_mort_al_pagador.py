@@ -3,7 +3,7 @@
 from erppeek import Client
 import configdb
 from yamlns import namespace as ns
-from consolemsg import step, success, error, warn
+from consolemsg import step, success, warn
 import csv
 import time
 import argparse
@@ -12,8 +12,8 @@ O = None
 doit = False
 EMAIL_TEMPLATE_ID = 666
 EMAIL_FROM_ACCOUNT = 666
-CONTRACTS_PER_BATCH = 500
-TIME_BETWEEN_BATCHS = 100
+CONTRACTS_PER_BATCH = 100
+TIME_BETWEEN_BATCHS = 1
 
 
 def connect_erp():
@@ -80,14 +80,17 @@ def get_polissa_ids_from_csv(filename):
     pol_ids = []
     for contract_name in read_data_from_csv(filename):
         pol_obj = O.GiscedataPolissa
-        pol_id = pol_obj.search([('name', '=', contract_name.contracte)])
+
+        name = contract_name.contracte.zfill(7)
+        pol_id = pol_obj.search([('name', '=', name)])
         if len(pol_id) > 1:
             warn("Multiples resultats per polissa {} : {}",
-                 contract_name.contracte, pol_id)
+                 name, pol_id)
         elif len(pol_id) == 0:
-            warn("Sense resultats per polissa {}", contract_name.contracte)
+            warn("Sense resultats per polissa {}", name)
         else:
-            pol_ids.extend(pol_id)
+            if pol_id[0] not in pol_ids:
+                pol_ids.extend(pol_id)
     return pol_ids
 
 
