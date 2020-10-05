@@ -86,11 +86,39 @@ def get_polissa_ids_from_csv(filename):
     return pol_ids
 
 
+def kill_pagador(pol_ids):
+    pol_obj = O.GiscedataPolissa
+    partner_obj = O.ResPartner
+
+    for pol_id in pol_ids:
+        pol_vals = pol_obj.read(pol_id, ['titular', 'pagador', 'name'])
+
+        num_pol = pol_vals['name']
+        titular_id = pol_vals['titular'][0]
+        pagador_id = pol_vals['pagador'][0]
+
+        if titular_id == pagador_id:
+            warn("El titular i el pagador de la pòlissa són iguals per " + \
+                 "la pòlissa {}".format(num_pol))
+            continue
+
+        try:
+            titular_address_id = partner_obj.address_get(titular_id)['default']
+            pol_obj.write(pol_id, {'pagador_sel': 'altre_p', 'pagador': titular_id, 
+                'direccio_pagament': titular_address_id})
+            success("Pòlissa {} modificada correctament".format(num_pol))
+        except Exception as e:
+            error("Error al escriure els canvis per la pòlissa {}: {}".format(num_pol, str(e)))
+
+
 if __name__ == '__main__':
     args = parse_arguments()
     O = connect_erp()
 
     pol_ids = get_polissa_ids_from_csv(args.csv_file)
+    success("Extrets {} id's de polisses del csv", len(pol_ids))
+    kill_pagador(pol_ids)
+    success("Script finalitzat")
 
 
 # vim: et ts=4 sw=4
