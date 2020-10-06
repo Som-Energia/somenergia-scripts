@@ -104,7 +104,7 @@ def kill_pagador(pol_ids):
 
         try:
             titular_address_id = partner_obj.address_get(titular_id)['default']
-            pol_obj.write(pol_id, {'pagador_sel': 'altre_p', 'pagador': titular_id, 
+            pol_obj.write(pol_id, {'pagador_sel': 'titular', 'pagador': titular_id,
                 'direccio_pagament': titular_address_id})
             success("Pòlissa {} modificada correctament".format(num_pol))
         except Exception as e:
