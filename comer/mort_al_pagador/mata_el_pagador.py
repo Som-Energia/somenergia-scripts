@@ -89,6 +89,7 @@ def get_polissa_ids_from_csv(filename):
 def kill_pagador(pol_ids):
     pol_obj = O.GiscedataPolissa
     partner_obj = O.ResPartner
+    partner_bank_obj = O.ResPartnerBank
 
     for pol_id in pol_ids:
         pol_vals = pol_obj.read(pol_id, ['titular', 'pagador', 'name'])
@@ -103,6 +104,9 @@ def kill_pagador(pol_ids):
             continue
 
         try:
+            pbank_ids = partner_bank_obj.search([('partner_id','=',pagador_id)])
+            for pbank_id in pbank_ids:
+                partner_bank_obj.write(pbank_id, {'owner_id': pagador_id, 'partner_id': titular_id})
             titular_address_id = partner_obj.address_get(titular_id)['default']
             pol_obj.write(pol_id, {'pagador_sel': 'titular', 'pagador': titular_id,
                 'direccio_pagament': titular_address_id})
