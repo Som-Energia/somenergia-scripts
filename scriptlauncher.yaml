@@ -367,6 +367,14 @@ gestiocontractes:
           contracts:
             type: FILE
             description: Fitxer csv amb els nùmeros de contractes
+      killingPayer:
+        script: SOME_SRC/somenergia-scripts/comer/mort_al_pagador/mata_al_pagador.py --file {contracts} --doit
+        title: Script per matar el pagador (no utilitzar)
+        description: Agafa un fitxer csv amb els números de pòlissa i si el pagador és diferent al titular, posa el titular de pagador.
+        parameters:
+          contracts:
+            type: FILE
+            description: Fitxer csv amb els nùmeros de contractes
 it:
   description: Ronda IT
   scripts:
