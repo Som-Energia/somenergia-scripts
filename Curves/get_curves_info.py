@@ -1,12 +1,33 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import configdb
 import csv
+from consolemsg import step, error, warn, fail, success
 from erppeek import Client
+from emili import sendMail
 import pymongo
 from datetime import datetime
 from pymongo import DESCENDING
 
 
 CURVES_SOURCE_TYPES = [1, 2, 3, 4, 5, 6]
+
+
+def sendmail2all(user, attachment):
+    '''
+    Sends csv by email 
+    '''
+    warn('User info: {}'.format(user))
+    sendMail(
+        sender = user['sender'],
+        to =  user['recipients'],
+        bcc = user['bcc'],
+        subject = "[Analisi Indexada] Disponibilitat Corbes ",
+        md = "Hola, Os fem arribar el csv d'aquesta setmana :)",
+        attachments = [attachment],
+        config = 'configdb.py',
+    )
 
 
 def create_csv(csv_name, headers):
@@ -86,6 +107,7 @@ def main():
         'ultima_data_creacio_{curve_type}', 'data_ultim_registre_{curve_type}'
     ]
     mongo_fields = []
+    step('Getting f5d and f1')
     for curve_type in ['f5d', 'f1']:
         mongo_fields = mongo_fields + [
             curve_field.format(curve_type=curve_type) for curve_field in curve_fields
@@ -103,7 +125,7 @@ def main():
     for polissa_id in polissas:
         polissa = polissa_obj.read(polissa_id, erp_fields)
         cleared_polissa = {
-            key:value if value.__class__ != list else value[1]
+            key:value if value.__class__ != list else value[1].encode('utf-8')
             for key,value in polissa.items()
         }
         del cleared_polissa['id']
@@ -112,10 +134,14 @@ def main():
             curve_type='f5d', cups=cleared_polissa.get('cups')
         )
         cleared_polissa.update(mongo_data)
+	step(cleared_polissa)
         add_row_in_csv(
             csv_name, header=erp_fields + mongo_fields,
             element=cleared_polissa
         )
+    step('ready to send the email')
+    sendmail2all(configdb.user, csv_name)
+
 
 if __name__ == '__main__':
     main()
