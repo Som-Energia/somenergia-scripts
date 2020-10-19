@@ -1,0 +1,17 @@
+
+ooop = dict(
+   dbname = 'dbname',
+   port = port,
+   user = 'user',
+   uri = 'http://localhost',
+   pwd = 'password',
+)
+
+erppeek = dict(
+   server='{uri}:{port}'.format(**ooop),
+   db=ooop['dbname'],
+   user=ooop['user'],
+   password=ooop['pwd'],
+)
+
+mongodb = 'mongodb://user:password@host:port/dbname'
