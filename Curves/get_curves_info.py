@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from future import standard_library
+standard_library.install_aliases()
+
 
 import configdb
 import csv
@@ -49,13 +52,9 @@ def get_mongo_data(mongo_db, mongo_collection, curve_type, cups):
         'name': {'$regex': '^{}'.format(cups[:20])},
         'datetime': {'$gte': datetime(datetime.now().year, 1, 1)}
     }
-    count_all_curves = mongo_db[mongo_collection].count_documents(
-        filter=all_curves_search_query
-    )
+    count_all_curves = mongo_db[mongo_collection].find(all_curves_search_query).count()
     data['count_{}'.format(curve_type)] = count_all_curves
-    data['count_any_actual_{}'.format(curve_type)] = mongo_db[mongo_collection].count_documents(
-        filter=this_year_curves_search_query
-    )
+    data['count_any_actual_{}'.format(curve_type)] = mongo_db[mongo_collection].find(this_year_curves_search_query).count()
     cursor = mongo_db[mongo_collection].find(
         all_curves_search_query,
         {'_id': False, 'datetime': True, 'create_at': True, 'source': True}
@@ -77,11 +76,9 @@ def get_mongo_data(mongo_db, mongo_collection, curve_type, cups):
                 data['count_source_type_{source_type}_{curve_type}'.format(
                     source_type=source_type,
                     curve_type=curve_type
-                )] = mongo_db[mongo_collection].count_documents(
-                    filter={
+                )] = mongo_db[mongo_collection].find({
                         'name': {'$regex':'^{}'.format(cups[:20])},
-                        'source': {'$eq': source_type}}
-                    )
+                        'source': {'$eq': source_type}}).count()
 
     return data
 
@@ -121,7 +118,7 @@ def main():
     polissas = polissa_obj.search(filters)
     csv_name = 'curves_info_{}.csv'.format(datetime.now().strftime("%Y-%m-%d"))
     create_csv(csv_name, erp_fields + mongo_fields)
-
+    step('writting down csv')
     for polissa_id in polissas:
         polissa = polissa_obj.read(polissa_id, erp_fields)
         cleared_polissa = {
@@ -129,12 +126,17 @@ def main():
             for key,value in polissa.items()
         }
         del cleared_polissa['id']
-        mongo_data = get_mongo_data(
+        mongo_data_f5d = get_mongo_data(
             mongo_db=mongo_db, mongo_collection='tg_cchfact',
             curve_type='f5d', cups=cleared_polissa.get('cups')
         )
-        cleared_polissa.update(mongo_data)
-	step(cleared_polissa)
+        mongo_data_f1 = get_mongo_data(
+            mongo_db=mongo_db, mongo_collection='tg_cchfact',
+            curve_type='f1', cups=cleared_polissa.get('cups')
+        )
+
+        cleared_polissa.update(mongo_data_f5d)
+        cleared_polissa.update(mongo_data_f1)
         add_row_in_csv(
             csv_name, header=erp_fields + mongo_fields,
             element=cleared_polissa
