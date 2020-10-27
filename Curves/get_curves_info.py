@@ -223,16 +223,31 @@ def main():
             date_F1ATR=lectura_F1ATR['data_ultima_lectura_F1ATR']
         )
         mongo_data_f1 = get_mongo_data(
-            mongo_db=mongo_db, mongo_collection='tg_cchfact',
-            curve_type='f1', cups=cleared_polissa.get('cups')
+            mongo_db=mongo_db, mongo_collection='tg_f1',
+            curve_type='f1', cups=polissa['cups'][1],
+            date_F1ATR=lectura_F1ATR['data_ultima_lectura_F1ATR']
         )
-
+        mongo_data_p5d = get_mongo_data(
+            mongo_db=mongo_db, mongo_collection='tg_cchval',
+            curve_type='p5d', cups=polissa['cups'][1],
+            date_F1ATR=lectura_F1ATR['data_ultima_lectura_F1ATR']
+        )
+        mongo_data_p1 = get_mongo_data(
+            mongo_db=mongo_db, mongo_collection='tg_p1',
+            curve_type='p1', cups=polissa['cups'][1],
+            date_F1ATR=lectura_F1ATR['data_ultima_lectura_F1ATR']
+        )
+        mongo_data_auto = get_mongo_data(
+            mongo_db=mongo_db, mongo_collection='tg_cch_autocons',
+            curve_type='auto', cups=polissa['cups'][1],
+            date_F1ATR=lectura_F1ATR['data_ultima_lectura_F1ATR']
+        )
         cleared_polissa.update(mongo_data_f5d)
         cleared_polissa.update(mongo_data_f1)
-        add_row_in_csv(
-            csv_name, header=erp_fields + mongo_fields,
-            element=cleared_polissa
-        )
+        cleared_polissa.update(mongo_data_p5d)
+        cleared_polissa.update(mongo_data_p1)
+        cleared_polissa.update(mongo_data_auto)
+        add_row_in_csv(csv_name, header=csv_fields, element=cleared_polissa)
     step('ready to send the email')
     sendmail2all(configdb.user, csv_name)
 
