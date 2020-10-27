@@ -46,30 +46,24 @@ def add_row_in_csv(csv_name, header, element):
 
 
 def get_count(mongo_db, mongo_collection, start_date, end_date, cups, source_type=False):
+
+    queryparms = {
+        "name": {'$regex': '^{}'.format(cups[:20])},
+        "datetime" : {
+            "$gte": start_date,
+            "$lte": end_date
+        }
+    }
     if source_type:
-        queryparms = {
-            "name": {'$regex': '^{}'.format(cups[:20])},
-            "datetime" : {
-                "$gte": start_date,
-                "$lte": end_date
-            },
-            "source": {'$eq': source_type}
-        }
-    else:
-        queryparms = {
-            "name": {'$regex': '^{}'.format(cups[:20])},
-            "datetime" : {
-                "$gte": start_date,
-                "$lte": end_date
-            }
-        }
+        queryparms.update({"source": {'$eq': source_type}})
+    if mongo_collection == 'tg_p1':
+        queryparms.update({"type": "p"})
     count_curves = mongo_db[mongo_collection].find(queryparms).count()
     return count_curves
 
 
 def get_mongo_data(mongo_db, mongo_collection, curve_type, cups, date_F1ATR):
     data = dict()
-
     all_curves_search_query = {'name': {'$regex': '^{}'.format(cups[:20])}}
     fields = {'_id': False, 'datetime': True, 'create_at': True, 'source': True}
     curves =  mongo_db[mongo_collection].find(
