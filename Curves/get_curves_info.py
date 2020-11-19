@@ -147,10 +147,12 @@ def get_data_ultima_lectura_F1ATR(erp_client, contractId):
         ('type', '=', 'in_invoice'),
         ('polissa_id.name', '=', contractId),
     ]
-    _F1ATR = sorted(factura_obj.search(filters))[-1]
-    return {
-        'data_ultima_lectura_F1ATR': factura_obj.read(_F1ATR)['data_final']
-    }
+    factura = factura_obj.search(filters)
+    if factura:
+        _F1ATR = sorted(factura)[-1]
+        return {
+            'data_ultima_lectura_F1ATR': factura_obj.read(_F1ATR)['data_final']
+        }
 
 def get_mongo_fields():
     mongo_fields = []
