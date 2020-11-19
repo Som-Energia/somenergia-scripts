@@ -8,14 +8,15 @@ from yamlns import namespace as ns
 import mailchimp_marketing as MailchimpMarketing
 from consolemsg import step, error, success
 from erppeek import Client
-import configdb
+import dbconfig
 
 
-ERP_CLIENT = Client(**configdb.erppeek)
+ERP_CLIENT = Client(**dbconfig.erppeek)
 MAILCHIMP_CLIENT = MailchimpMarketing.Client(
-    dict(api_key=configdb.MAILCHIMP_APIKEY, server=configdb.MAILCHIMP_SERVER_PREFIX)
+    dict(api_key=dbconfig.MAILCHIMP_APIKEY, server=dbconfig.MAILCHIMP_SERVER_PREFIX)
 )
 
+doit = False
 
 def get_mailchimp_list_id(list_name):
     all_lists = MAILCHIMP_CLIENT.lists.get_all_lists(
@@ -52,6 +53,9 @@ def get_subscriber_hash(email):
 
 
 def archive_members_from_list(list_name, email_list):
+    if not doit:
+        return ""
+
     list_id = get_mailchimp_list_id(list_name)
     operations = []
     for email in email_list:
@@ -106,29 +110,32 @@ def is_titular_partner_mail(email):
 
 def get_not_active(emails):
     to_archive = []
-    for email in emails:
-        print email
+    total = len(emails)
+    for counter, email in enumerate(emails):
         if not is_titular_partner_mail(email):
             to_archive.append(email)
-            print "no titular"
+            step("{}/{} - {} --> no titular", counter+1, total, email)
         else:
-            print "titular"
+            step("{}/{} - {} --> titular", counter+1, total, email)
     return to_archive
 
 def main(list_name, mailchimp_export_file, output):
 
     csv_data = read_data_from_csv(mailchimp_export_file)
+    step("{} lines read from input csv", len(csv_data))
 
     mails = [item['Email Address'] for item in csv_data]
-
-    print "*-"*50
-    print len(mails)
-    print mails
+    step("{} emails extracted from input csv", len(mails))
 
     to_archive = get_not_active(mails)
-    result = ''
-    #result = archive_members_from_list(list_name.strip(), to_archive)
+    step("{} emails to archive found", len(to_archive))
 
+    result = ''
+    if doit:
+        step("archiving...")
+        result = archive_members_from_list(list_name.strip(), to_archive)
+
+    step("storing result {}", len(result))
     with open(mailchimp_export_file, 'w') as f:
         f.write(result)
 
@@ -158,7 +165,24 @@ if __name__ == '__main__':
         help="Fitxer de sortida amb els resultats"
     )
 
+    parser.add_argument(
+        '--doit',
+        type=bool,
+        default=False,
+        const=True,
+        nargs='?',
+        help='realitza les accions'
+    )
+
     args = parser.parse_args()
+
+    global doit
+    doit = args.doit
+    if doit:
+        success("Es faran canvis a les polisses (--doit)")
+    else:
+        success("No es faran canvis a les polisses (sense opció --doit)")
+
     try:
         main(args.list_name, args.mailchimp_export_file, args.output)
     except Exception as e:
