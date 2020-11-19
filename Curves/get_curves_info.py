@@ -14,9 +14,6 @@ from datetime import datetime, timedelta, date, time
 from pymongo import DESCENDING
 
 
-CURVES_SOURCE_TYPES = [1, 2, 3, 4, 5, 6]
-
-
 def sendmail2all(user, attachment):
     '''
     Sends csv by email
@@ -45,7 +42,7 @@ def add_row_in_csv(csv_name, header, element):
         writer.writerow(element)
 
 
-def get_count(mongo_db, mongo_collection, start_date, end_date, cups, source_type=False):
+def get_count(mongo_db, mongo_collection, start_date, end_date, cups):
 
     queryparms = {
         "name": {'$regex': '^{}'.format(cups[:20])},
@@ -54,8 +51,6 @@ def get_count(mongo_db, mongo_collection, start_date, end_date, cups, source_typ
             "$lte": end_date
         }
     }
-    if source_type:
-        queryparms.update({"source": {'$eq': source_type}})
     if mongo_collection == 'tg_p1':
         queryparms.update({"type": "p"})
     count_curves = mongo_db[mongo_collection].find(queryparms).count()
@@ -76,7 +71,6 @@ def get_mongo_data(mongo_db, mongo_collection, curve_type, cups, date_F1ATR):
     ).days * 24.
 
     if curves.count() > 0:
-        source_types = curves.distinct('source')
         if curves[0]['datetime'] < last_year:
             count_curves = get_count(
                 mongo_db=mongo_db,
@@ -86,35 +80,16 @@ def get_mongo_data(mongo_db, mongo_collection, curve_type, cups, date_F1ATR):
                 cups=cups
             )
             data['count_cch_period_{}'.format(curve_type)] = count_curves
-            for source_type in source_types:
-                data['count_source_type_{source_type}_{curve_type}'.format(
-                    source_type=source_type,
-                    curve_type=curve_type)] =  get_count(
-                        mongo_db=mongo_db,
-                        mongo_collection=mongo_collection,
-                        start_date=last_year,
-                        end_date=datetime.strptime(date_F1ATR,"%Y-%m-%d"),
-                        cups=cups,
-                        source_type=source_type)
 
         if curves[0]['datetime'] > last_year:
-            data['count_cch_period_{}'.format(curve_type)] = get_count_curves(
+            count_curves = get_count(
                 mongo_db=mongo_db,
                 mongo_collection=mongo_collection,
                 start_date=datetime.strptime(date_F1ATR,"%Y-%m-%d"),
                 end_date=curves[0]['datetime'],
                 cups=cups
             )
-            for source_type in source_types:
-                data['count_source_type_{source_type}_{curve_type}'.format(
-                    source_type=source_type,
-                    curve_type=curve_type)] = get_count(
-                        mongo_db=mongo_db,
-                        mongo_collection=mongo_collection,
-                        start_date=datetime.strptime(date_F1ATR,"%Y-%m-%d"),
-                        end_date=curves[0]['datetime'],
-                        cups=cups,
-                        source_type=source_type)
+            data['count_cch_period_{}'.format(curve_type)] = count_curves
 
         cursor = mongo_db[mongo_collection].find(all_curves_search_query, fields
                 ).sort('datetime', pymongo.DESCENDING)
@@ -145,11 +120,12 @@ def get_data_ultima_lectura_F1ATR(erp_client, contractId):
         ('polissa_state', '=', 'activa'),
         ('type', '=', 'in_invoice'),
         ('polissa_id.name', '=', contractId),
+        ('data_final', '!=', False)
     ]
-    _F1ATR = sorted(factura_obj.search(filters))[-1]
-    return {
-        'data_ultima_lectura_F1ATR': factura_obj.read(_F1ATR)['data_final']
-    }
+    factura = factura_obj.search(filters)
+    if factura:
+        _F1ATR = sorted(factura)[-1]
+        return factura_obj.read(_F1ATR)['data_final']
 
 def get_mongo_fields():
     mongo_fields = []
@@ -160,15 +136,11 @@ def get_mongo_fields():
         'ultima_data_creacio_{curve_type}', 'data_ultim_registre_{curve_type}'
     ]
 
-    for curve_type in ['f5d', 'f1', 'p5d', 'p1', 'auto']:
+    for curve_type in ['f5d', 'f1', 'p5d', 'p1']:
         mongo_fields = mongo_fields + [
             curve_field.format(curve_type=curve_type) for curve_field in curve_fields
         ]
-        mongo_fields = mongo_fields + [
-            'count_source_type_{source_type}_{curve_type}'.format(
-                source_type=source_type, curve_type=curve_type
-            ) for source_type in CURVES_SOURCE_TYPES
-        ]
+
     return mongo_fields
 
 
@@ -204,44 +176,40 @@ def main():
         cleared_polissa['cups'] = cleared_polissa['cups'][:6]
 
 
+        cleared_polissa['data_avui'] = today
         lectura_F1ATR = get_data_ultima_lectura_F1ATR(
             erp_client, polissa['name']
         )
-        cleared_polissa.update(lectura_F1ATR)
-        cleared_polissa['data_avui'] = today
         del cleared_polissa['id']
 
-        mongo_data_f5d = get_mongo_data(
-            mongo_db=mongo_db, mongo_collection='tg_cchfact',
-            curve_type='f5d', cups=polissa['cups'][1],
-            date_F1ATR=lectura_F1ATR['data_ultima_lectura_F1ATR']
-        )
-        mongo_data_f1 = get_mongo_data(
-            mongo_db=mongo_db, mongo_collection='tg_f1',
-            curve_type='f1', cups=polissa['cups'][1],
-            date_F1ATR=lectura_F1ATR['data_ultima_lectura_F1ATR']
-        )
-        mongo_data_p5d = get_mongo_data(
-            mongo_db=mongo_db, mongo_collection='tg_cchval',
-            curve_type='p5d', cups=polissa['cups'][1],
-            date_F1ATR=lectura_F1ATR['data_ultima_lectura_F1ATR']
-        )
-        mongo_data_p1 = get_mongo_data(
-            mongo_db=mongo_db, mongo_collection='tg_p1',
-            curve_type='p1', cups=polissa['cups'][1],
-            date_F1ATR=lectura_F1ATR['data_ultima_lectura_F1ATR']
-        )
-        mongo_data_auto = get_mongo_data(
-            mongo_db=mongo_db, mongo_collection='tg_cch_autocons',
-            curve_type='auto', cups=polissa['cups'][1],
-            date_F1ATR=lectura_F1ATR['data_ultima_lectura_F1ATR']
-        )
-        cleared_polissa.update(mongo_data_f5d)
-        cleared_polissa.update(mongo_data_f1)
-        cleared_polissa.update(mongo_data_p5d)
-        cleared_polissa.update(mongo_data_p1)
-        cleared_polissa.update(mongo_data_auto)
-        add_row_in_csv(csv_name, header=csv_fields, element=cleared_polissa)
+        if bool(lectura_F1ATR):
+            cleared_polissa.update(dict(data_ultima_lectura_F1ATR=lectura_F1ATR))
+            mongo_data_f5d = get_mongo_data(
+                mongo_db=mongo_db, mongo_collection='tg_cchfact',
+                curve_type='f5d', cups=polissa['cups'][1],
+                date_F1ATR=lectura_F1ATR
+            )
+            mongo_data_f1 = get_mongo_data(
+                mongo_db=mongo_db, mongo_collection='tg_f1',
+                curve_type='f1', cups=polissa['cups'][1],
+                date_F1ATR=lectura_F1ATR
+            )
+            mongo_data_p5d = get_mongo_data(
+                mongo_db=mongo_db, mongo_collection='tg_cchval',
+                curve_type='p5d', cups=polissa['cups'][1],
+                date_F1ATR=lectura_F1ATR
+            )
+            mongo_data_p1 = get_mongo_data(
+                mongo_db=mongo_db, mongo_collection='tg_p1',
+                curve_type='p1', cups=polissa['cups'][1],
+                date_F1ATR=lectura_F1ATR
+            )
+
+            cleared_polissa.update(mongo_data_f5d)
+            cleared_polissa.update(mongo_data_f1)
+            cleared_polissa.update(mongo_data_p5d)
+            cleared_polissa.update(mongo_data_p1)
+            add_row_in_csv(csv_name, header=csv_fields, element=cleared_polissa)
     step('ready to send the email')
     sendmail2all(configdb.user, csv_name)
 
