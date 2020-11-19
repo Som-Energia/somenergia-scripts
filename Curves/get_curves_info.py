@@ -14,9 +14,6 @@ from datetime import datetime, timedelta, date, time
 from pymongo import DESCENDING
 
 
-CURVES_SOURCE_TYPES = [1, 2, 3, 4, 5, 6, 7]
-
-
 def sendmail2all(user, attachment):
     '''
     Sends csv by email
@@ -45,7 +42,7 @@ def add_row_in_csv(csv_name, header, element):
         writer.writerow(element)
 
 
-def get_count(mongo_db, mongo_collection, start_date, end_date, cups, source_type=False):
+def get_count(mongo_db, mongo_collection, start_date, end_date, cups):
 
     queryparms = {
         "name": {'$regex': '^{}'.format(cups[:20])},
@@ -54,8 +51,6 @@ def get_count(mongo_db, mongo_collection, start_date, end_date, cups, source_typ
             "$lte": end_date
         }
     }
-    if source_type:
-        queryparms.update({"source": {'$eq': source_type}})
     if mongo_collection == 'tg_p1':
         queryparms.update({"type": "p"})
     count_curves = mongo_db[mongo_collection].find(queryparms).count()
@@ -76,7 +71,6 @@ def get_mongo_data(mongo_db, mongo_collection, curve_type, cups, date_F1ATR):
     ).days * 24.
 
     if curves.count() > 0:
-        source_types = curves.distinct('source')
         if curves[0]['datetime'] < last_year:
             count_curves = get_count(
                 mongo_db=mongo_db,
@@ -86,16 +80,6 @@ def get_mongo_data(mongo_db, mongo_collection, curve_type, cups, date_F1ATR):
                 cups=cups
             )
             data['count_cch_period_{}'.format(curve_type)] = count_curves
-            for source_type in source_types:
-                data['count_source_type_{source_type}_{curve_type}'.format(
-                    source_type=source_type,
-                    curve_type=curve_type)] = get_count(
-                        mongo_db=mongo_db,
-                        mongo_collection=mongo_collection,
-                        start_date=last_year,
-                        end_date=datetime.strptime(date_F1ATR,"%Y-%m-%d"),
-                        cups=cups,
-                        source_type=source_type)
 
         if curves[0]['datetime'] > last_year:
             count_curves = get_count(
@@ -106,16 +90,6 @@ def get_mongo_data(mongo_db, mongo_collection, curve_type, cups, date_F1ATR):
                 cups=cups
             )
             data['count_cch_period_{}'.format(curve_type)] = count_curves
-            for source_type in source_types:
-                data['count_source_type_{source_type}_{curve_type}'.format(
-                    source_type=source_type,
-                    curve_type=curve_type)] = get_count(
-                        mongo_db=mongo_db,
-                        mongo_collection=mongo_collection,
-                        start_date=datetime.strptime(date_F1ATR,"%Y-%m-%d"),
-                        end_date=curves[0]['datetime'],
-                        cups=cups,
-                        source_type=source_type)
 
         cursor = mongo_db[mongo_collection].find(all_curves_search_query, fields
                 ).sort('datetime', pymongo.DESCENDING)
@@ -162,15 +136,11 @@ def get_mongo_fields():
         'ultima_data_creacio_{curve_type}', 'data_ultim_registre_{curve_type}'
     ]
 
-    for curve_type in ['f5d', 'f1', 'p5d', 'p1', 'auto']:
+    for curve_type in ['f5d', 'f1', 'p5d', 'p1']:
         mongo_fields = mongo_fields + [
             curve_field.format(curve_type=curve_type) for curve_field in curve_fields
         ]
-        mongo_fields = mongo_fields + [
-            'count_source_type_{source_type}_{curve_type}'.format(
-                source_type=source_type, curve_type=curve_type
-            ) for source_type in CURVES_SOURCE_TYPES
-        ]
+
     return mongo_fields
 
 
