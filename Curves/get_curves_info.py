@@ -146,13 +146,12 @@ def get_data_ultima_lectura_F1ATR(erp_client, contractId):
         ('polissa_state', '=', 'activa'),
         ('type', '=', 'in_invoice'),
         ('polissa_id.name', '=', contractId),
+        ('data_final', '!=', False)
     ]
     factura = factura_obj.search(filters)
     if factura:
         _F1ATR = sorted(factura)[-1]
-        return {
-            'data_ultima_lectura_F1ATR': factura_obj.read(_F1ATR)['data_final']
-        }
+        return factura_obj.read(_F1ATR)['data_final']
 
 def get_mongo_fields():
     mongo_fields = []
@@ -213,38 +212,33 @@ def main():
         )
         del cleared_polissa['id']
 
-        if bool(lectura_F1ATR) and bool(lectura_F1ATR['data_ultima_lectura_F1ATR']):
-            cleared_polissa.update(lectura_F1ATR)
+        if bool(lectura_F1ATR):
+            cleared_polissa.update(dict(data_ultima_lectura_F1ATR=lectura_F1ATR))
             mongo_data_f5d = get_mongo_data(
                 mongo_db=mongo_db, mongo_collection='tg_cchfact',
                 curve_type='f5d', cups=polissa['cups'][1],
-                date_F1ATR=lectura_F1ATR['data_ultima_lectura_F1ATR']
+                date_F1ATR=lectura_F1ATR
             )
             mongo_data_f1 = get_mongo_data(
                 mongo_db=mongo_db, mongo_collection='tg_f1',
                 curve_type='f1', cups=polissa['cups'][1],
-                date_F1ATR=lectura_F1ATR['data_ultima_lectura_F1ATR']
+                date_F1ATR=lectura_F1ATR
             )
             mongo_data_p5d = get_mongo_data(
                 mongo_db=mongo_db, mongo_collection='tg_cchval',
                 curve_type='p5d', cups=polissa['cups'][1],
-                date_F1ATR=lectura_F1ATR['data_ultima_lectura_F1ATR']
+                date_F1ATR=lectura_F1ATR
             )
             mongo_data_p1 = get_mongo_data(
                 mongo_db=mongo_db, mongo_collection='tg_p1',
                 curve_type='p1', cups=polissa['cups'][1],
-                date_F1ATR=lectura_F1ATR['data_ultima_lectura_F1ATR']
+                date_F1ATR=lectura_F1ATR
             )
-            mongo_data_auto = get_mongo_data(
-                mongo_db=mongo_db, mongo_collection='tg_cch_autocons',
-                curve_type='auto', cups=polissa['cups'][1],
-                date_F1ATR=lectura_F1ATR['data_ultima_lectura_F1ATR']
-            )
+
             cleared_polissa.update(mongo_data_f5d)
             cleared_polissa.update(mongo_data_f1)
             cleared_polissa.update(mongo_data_p5d)
             cleared_polissa.update(mongo_data_p1)
-            cleared_polissa.update(mongo_data_auto)
             add_row_in_csv(csv_name, header=csv_fields, element=cleared_polissa)
     step('ready to send the email')
     sendmail2all(configdb.user, csv_name)
