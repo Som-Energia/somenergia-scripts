@@ -3,9 +3,10 @@
 from future import standard_library
 standard_library.install_aliases()
 
-
+import os
 import configdb
 import csv
+import tarfile
 from consolemsg import step, error, warn, fail, success
 from erppeek import Client
 from emili import sendMail
@@ -29,6 +30,9 @@ def sendmail2all(user, attachment):
         config = 'configdb.py',
     )
 
+def make_tarfile(output_filename, source_filename):
+    with tarfile.open(output_filename, "w:gz") as tar:
+        tar.add(source_filename, arcname=os.path.basename(source_filename))
 
 def create_csv(csv_name, headers):
     with open(csv_name, mode='w') as csv_file:
@@ -211,7 +215,9 @@ def main():
             cleared_polissa.update(mongo_data_p1)
             add_row_in_csv(csv_name, header=csv_fields, element=cleared_polissa)
     step('ready to send the email')
-    sendmail2all(configdb.user, csv_name)
+    tar_filename = 'curves_molonguis_{}.tar.gz'.format(datetime.now().strftime("%Y-%m-%d"))
+    make_tarfile(tar_filename, csv_name)
+    sendmail2all(configdb.user, tar_filename)
 
 
 if __name__ == '__main__':
