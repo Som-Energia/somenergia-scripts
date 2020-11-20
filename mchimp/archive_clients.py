@@ -52,7 +52,7 @@ def get_subscriber_hash(email):
     return subscriber_hash
 
 
-def archive_members_from_list(list_name, email_list):
+def archive_clients_from_list(list_name, email_list):
     if not doit:
         return ""
 
@@ -100,6 +100,7 @@ def is_titular_partner_mail(email):
     partners_ids = [
         item['partner_id'][0]
         for item in ERP_CLIENT.ResPartnerAddress.read(email_ids, ['partner_id'])
+        if item and 'partner_id' in item and item['partner_id']
     ]
 
     polisses_ids = ERP_CLIENT.GiscedataPolissa.search([('titular','in',partners_ids)])
@@ -133,7 +134,7 @@ def main(list_name, mailchimp_export_file, output):
     result = ''
     if doit:
         step("archiving...")
-        result = archive_members_from_list(list_name.strip(), to_archive)
+        result = archive_clients_from_list(list_name.strip(), to_archive)
 
     step("storing result {}", len(result))
     with open(mailchimp_export_file, 'w') as f:
