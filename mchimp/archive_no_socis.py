@@ -12,32 +12,49 @@ ERP_CLIENT = Client(**dbconfig.erppeek)
 
 doit = False
 
-def is_titular_partner_mail(email):
+def get_member_category_id():
+    module = 'som_partner_account'
+    semantic_id = 'res_partner_category_soci'
+    IrModelData = ERP_CLIENT.model('ir.model.data')
+    
+    member_category_relation = IrModelData.get_object_reference(
+        module, semantic_id
+    )
+    if member_category_relation:
+        return member_category_relation[-1]
 
+def is_soci_partner_mail(email, category_id):
     email_ids = ERP_CLIENT.ResPartnerAddress.search([('email', '=', email)])
     if not email_ids:
         return False
+
     partners_ids = [
         item['partner_id'][0]
         for item in ERP_CLIENT.ResPartnerAddress.read(email_ids, ['partner_id'])
         if item and 'partner_id' in item and item['partner_id']
     ]
-
-    polisses_ids = ERP_CLIENT.GiscedataPolissa.search([('titular','in',partners_ids)])
-    if not polisses_ids:
+    if not partners_ids:
         return False
 
+    member_ids = ERP_CLIENT.ResPartner.search([
+        ('category_id', 'in', [category_id]),
+        ('id', 'in', partners_ids)
+    ])
+
+    if not member_ids:
+        return False
     return True
 
-def get_not_active(emails):
+def get_soci_no_soci(emails):
     to_archive = []
     total = len(emails)
+    category_id = get_member_category_id()
     for counter, email in enumerate(emails):
-        if not is_titular_partner_mail(email):
+        if not is_soci_partner_mail(email, category_id):
             to_archive.append(email)
-            step("{}/{} - {} --> no titular", counter+1, total, email)
+            step("{}/{} - {} --> soci no soci", counter+1, total, email)
         else:
-            step("{}/{} - {} --> titular", counter+1, total, email)
+            step("{}/{} - {} --> soci", counter+1, total, email)
     return to_archive
 
 def main(list_name, mailchimp_export_file, output):
@@ -48,7 +65,7 @@ def main(list_name, mailchimp_export_file, output):
     mails = [item['Email Address'] for item in csv_data]
     step("{} emails extracted from input csv", len(mails))
 
-    to_archive = get_not_active(mails)
+    to_archive = get_soci_no_soci(mails)
     step("{} emails to archive found", len(to_archive))
 
     result = ''
