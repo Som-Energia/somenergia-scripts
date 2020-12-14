@@ -47,7 +47,7 @@ lectures_pool_minimes = 4
 lectures_pool_ultimes = 4
 min_days = 20
 max_days = 40
-versio = "v2.0"
+versio = "v3.0"
 allowed_origins = [
     12, # Telegestió"
     #11, # Estimada amb factor d'utilització"
@@ -62,7 +62,7 @@ allowed_origins = [
     2, # Telemesura corregida"
     1, # Telemesura"
     ]
-filtres = "tg=1, origens {}, minim {} lectures a pool amb distancia entre {} i {}".format(allowed_origins,lectures_pool_minimes,min_days,max_days)
+filtres = "origens {}, minim {} lectures a pool amb distancia entre {} i {}".format(allowed_origins,lectures_pool_minimes,min_days,max_days)
 missatge = "Desactivem el sistema d'estimació ja que té telegestió "
 missatge += "-- [{versio}][{filtres}]".format(**locals())
 
@@ -120,7 +120,6 @@ def search_candidates_to_tg(measure_origins,days):
         })
 
     pol_ids = pol_obj.search([
-        ('tg','=','1'), # operativa amb cch
         ('data_ultima_lectura','>',today_minus_days(days)), # ultima factura a 40 dies enradera
         ('no_estimable','=',False), # estimable
         ('facturacio_potencia','=','icp'), # no maximeter
