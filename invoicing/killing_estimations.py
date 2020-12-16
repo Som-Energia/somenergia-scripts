@@ -117,6 +117,8 @@ def search_candidates_to_tg(measure_origins,days):
         'wrong_days_pool':[],
         'no_grown_days_pool':[],
         'errors':[],
+        'esborranys_no_ultimalectura': [],
+        'activa_no_ultimalectura': [],
         })
 
     pol_ids = pol_obj.search([
@@ -125,6 +127,23 @@ def search_candidates_to_tg(measure_origins,days):
         ('facturacio_potencia','=','icp'), # no maximeter
         ]) 
     totals = len(pol_ids)
+
+
+    draft_no_lect_ids = pol_obj.search([
+        ('state','=','draft'),
+        ('data_ultima_lectura','=',None),
+        ('no_estimable','=',False), # estimable
+        ('facturacio_potencia','=','icp'), # no maximeter
+        ])
+    res.esborranys_no_ultimalectura = draft_no_lect_ids
+
+    active_no_lect_ids = pol_obj.search([
+        ('state','=','active'),
+        ('data_ultima_lectura','=',None),
+        ('no_estimable','=',False), # estimable
+        ('facturacio_potencia','=','icp'), # no maximeter
+        ])
+    res.activa_no_ultimalectura = active_no_lect_ids
 
     success('')
     success('Cercant candiats a passar a no estimable:')
@@ -177,8 +196,13 @@ def search_candidates_to_tg(measure_origins,days):
     success("Dies entre lectures fora de [{}..{}] .. {}",min_days,max_days,len(res.wrong_days_pool))
     success("Dies entre lectures no creix .......... {} , {}",len(res.no_grown_days_pool),res.no_grown_days_pool)
     success("Errors ................................ {} , {}",len(res.errors),res.errors)
+    success("Candidats: esborranys no ultimalectura  {}",len(res.esborranys_no_ultimalectura))
+    success("Candidats: activa_no_ultimalectura .... {}",len(res.activa_no_ultimalectura))
+
     if query:
         success("Candidats: {}",res.candidates)
+        success("Candidats: esborranys no ultimalectura  {}",res.esborranys_no_ultimalectura)
+        success("Candidats: activa_no_ultimalectura .... {}",res.activa_no_ultimalectura)
     return res
 
 def search_candidates_to_tg_default():
@@ -218,7 +242,10 @@ def candidates_to_tg():
     res = search_candidates_to_tg_default()
     if not doit:
         return res
-    ret = change_to_tg(res.candidates)
+    ret1 = change_to_tg(res.candidates)
+    ret2 = change_to_tg(res.esborranys_no_ultimalectura)
+    ret3 = change_to_tg(res.observacions_estimacio)
+    res = ret1 + ret2 + ret3
     success('')
     success("S'han modificat {} polisses",len(ret))
     return ret
