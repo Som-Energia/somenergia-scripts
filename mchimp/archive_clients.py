@@ -57,7 +57,10 @@ def main(list_name, mailchimp_export_file, output):
         result = archive_clients_from_list(list_name.strip(), to_archive)
 
     step("storing result {}", len(result))
-    with open(mailchimp_export_file, 'w') as f:
+    with open(output, 'w') as f:
+        f.write("Emails to be archived\n---------------------\n")
+        f.write("\n".join(to_archive))
+        f.write("\nMailchimp Api responses\n-----------------------\n")
         f.write(result)
 
 if __name__ == '__main__':

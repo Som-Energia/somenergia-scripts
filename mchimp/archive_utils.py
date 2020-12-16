@@ -2,6 +2,8 @@
 import csv
 from hashlib import md5
 from yamlns import namespace as ns
+import requests
+import time
 import dbconfig
 import mailchimp_marketing as MailchimpMarketing
 
@@ -12,7 +14,7 @@ MAILCHIMP_CLIENT = MailchimpMarketing.Client(
 
 def read_data_from_csv(csv_file):
     with open(csv_file, 'rb') as f:
-        reader = csv.reader(f, delimiter=';')
+        reader = csv.reader(f)
         header = reader.next()
 
         # check if file is utf8 + BOM

@@ -45,14 +45,14 @@ def is_soci_partner_mail(email, category_id):
         return False
     return True
 
-def get_soci_no_soci(emails):
+def get_soci_or_not_soci(emails):
     to_archive = []
     total = len(emails)
     category_id = get_member_category_id()
     for counter, email in enumerate(emails):
         if not is_soci_partner_mail(email, category_id):
             to_archive.append(email)
-            step("{}/{} - {} --> soci no soci", counter+1, total, email)
+            step("{}/{} - {} --> no soci", counter+1, total, email)
         else:
             step("{}/{} - {} --> soci", counter+1, total, email)
     return to_archive
@@ -62,10 +62,10 @@ def main(list_name, mailchimp_export_file, output):
     csv_data = read_data_from_csv(mailchimp_export_file)
     step("{} lines read from input csv", len(csv_data))
 
-    mails = [item['Email Address'] for item in csv_data]
+    mails = [item['E-mail'] for item in csv_data]
     step("{} emails extracted from input csv", len(mails))
 
-    to_archive = get_soci_no_soci(mails)
+    to_archive = get_soci_or_not_soci(mails)
     step("{} emails to archive found", len(to_archive))
 
     result = ''
@@ -74,7 +74,10 @@ def main(list_name, mailchimp_export_file, output):
         result = archive_clients_from_list(list_name.strip(), to_archive)
 
     step("storing result {}", len(result))
-    with open(mailchimp_export_file, 'w') as f:
+    with open(output, 'w') as f:
+        f.write("Emails to be archived\n---------------------\n")
+        f.write("\n".join(to_archive))
+        f.write("\nMailchimp Api responses\n-----------------------\n")
         f.write(result)
 
 if __name__ == '__main__':
