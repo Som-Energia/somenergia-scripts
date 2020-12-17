@@ -47,7 +47,11 @@ lectures_pool_minimes = 4
 lectures_pool_ultimes = 4
 min_days = 20
 max_days = 40
-versio = "v3.0"
+versio = "v4.0"
+allowed_origins_comer =[
+    7, # Gestió ATR"
+    2, # Fitxer de factura F1"
+]
 allowed_origins = [
     12, # Telegestió"
     #11, # Estimada amb factor d'utilització"
@@ -62,7 +66,7 @@ allowed_origins = [
     2, # Telemesura corregida"
     1, # Telemesura"
     ]
-filtres = "origens {}, minim {} lectures a pool amb distancia entre {} i {}".format(allowed_origins,lectures_pool_minimes,min_days,max_days)
+filtres = "origens {}, origens_comer {}, minim {} lectures a pool amb distancia entre {} i {}".format(allowed_origins,allowed_origins_comer,lectures_pool_minimes,min_days,max_days)
 missatge = "Desactivem el sistema d'estimació ja que té telegestió "
 missatge += "-- [{versio}][{filtres}]".format(**locals())
 
@@ -107,7 +111,7 @@ def test_pool_measures(periode_ids,metter_id,polissa_id,res):
 
     return True
 
-def search_candidates_to_tg(measure_origins,days):
+def search_candidates_to_tg(measure_origins, measure_origins_comer, days):
     #counters
     res = ns({
         'candidates':[],
@@ -164,11 +168,20 @@ def search_candidates_to_tg(measure_origins,days):
                 continue
 
             search_date = polissa.data_ultima_lectura or polissa.data_alta
-            measure = lectF_obj.search([
+
+            measureA = lectF_obj.search([
                 ('comptador','=',metter_ids[0]),
                 ('name','=',search_date),
-                ('origen_id','in',measure_origins),
+                ('origen_id','in',measure_origins)
                 ])
+            measureB = lectF_obj.search([
+                ('comptador','=',metter_ids[0]),
+                ('name','=',search_date),
+                ('origen_id','=',7), #estimada
+                ('origen_comer_id','in',measure_origins_comer)
+                ])
+            measure = measureA + measureA
+
             if not measure:
                 warn("Cap lectura real trobada en {}".format(search_date))
                 res.no_real_measures.append(pol_id)
@@ -206,7 +219,7 @@ def search_candidates_to_tg(measure_origins,days):
     return res
 
 def search_candidates_to_tg_default():
-    return search_candidates_to_tg(allowed_origins,dies)
+    return search_candidates_to_tg(allowed_origins,allowed_origins_comer, dies)
 
 def change_to_tg(pol_ids):
     success('')
