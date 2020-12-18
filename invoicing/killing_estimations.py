@@ -134,7 +134,7 @@ def search_candidates_to_tg(measure_origins, measure_origins_comer, days):
 
 
     draft_no_lect_ids = pol_obj.search([
-        ('state','=','draft'),
+        ('state','=','esborrany'),
         ('data_ultima_lectura','=',None),
         ('no_estimable','=',False), # estimable
         ('facturacio_potencia','=','icp'), # no maximeter
@@ -142,7 +142,7 @@ def search_candidates_to_tg(measure_origins, measure_origins_comer, days):
     res.esborranys_no_ultimalectura = draft_no_lect_ids
 
     active_no_lect_ids = pol_obj.search([
-        ('state','=','active'),
+        ('state','=','activa'),
         ('data_ultima_lectura','=',None),
         ('no_estimable','=',False), # estimable
         ('facturacio_potencia','=','icp'), # no maximeter
@@ -180,7 +180,7 @@ def search_candidates_to_tg(measure_origins, measure_origins_comer, days):
                 ('origen_id','=',7), #estimada
                 ('origen_comer_id','in',measure_origins_comer)
                 ])
-            measure = measureA + measureA
+            measure = measureA + measureB
 
             if not measure:
                 warn("Cap lectura real trobada en {}".format(search_date))
@@ -214,8 +214,8 @@ def search_candidates_to_tg(measure_origins, measure_origins_comer, days):
 
     if query:
         success("Candidats: {}",res.candidates)
-        success("Candidats: esborranys no ultimalectura  {}",res.esborranys_no_ultimalectura)
-        success("Candidats: activa_no_ultimalectura .... {}",res.activa_no_ultimalectura)
+        success("Candidats: esborranys sense ultima lectura .  {}",res.esborranys_no_ultimalectura)
+        success("Candidats: activa sense ultima lectura ..... {}",res.activa_no_ultimalectura)
     return res
 
 def search_candidates_to_tg_default():
