@@ -13,8 +13,10 @@ ERP_CLIENT = Client(**dbconfig.erppeek)
 doit = False
 
 def is_titular_partner_mail(email):
+    if not email:
+        return False
 
-    email_ids = ERP_CLIENT.ResPartnerAddress.search([('email', '=', email)])
+    email_ids = ERP_CLIENT.ResPartnerAddress.search([('email', 'like', email)])
     if not email_ids:
         return False
     partners_ids = [
@@ -33,6 +35,7 @@ def get_not_active(emails):
     to_archive = []
     total = len(emails)
     for counter, email in enumerate(emails):
+        email = email.strip()
         if not is_titular_partner_mail(email):
             to_archive.append(email)
             step("{}/{} - {} --> no titular", counter+1, total, email)

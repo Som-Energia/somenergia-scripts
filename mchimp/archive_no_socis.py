@@ -24,7 +24,10 @@ def get_member_category_id():
         return member_category_relation[-1]
 
 def is_soci_partner_mail(email, category_id):
-    email_ids = ERP_CLIENT.ResPartnerAddress.search([('email', '=', email)])
+    if not email:
+        return False
+
+    email_ids = ERP_CLIENT.ResPartnerAddress.search([('email', 'like', email)])
     if not email_ids:
         return False
 
@@ -50,6 +53,7 @@ def get_soci_or_not_soci(emails):
     total = len(emails)
     category_id = get_member_category_id()
     for counter, email in enumerate(emails):
+        email = email.strip()
         if not is_soci_partner_mail(email, category_id):
             to_archive.append(email)
             step("{}/{} - {} --> no soci", counter+1, total, email)
