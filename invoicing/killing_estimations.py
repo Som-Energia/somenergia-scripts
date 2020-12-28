@@ -123,6 +123,7 @@ def search_candidates_to_tg(measure_origins, measure_origins_comer, days):
         'errors':[],
         'esborranys_no_ultimalectura': [],
         'activa_no_ultimalectura': [],
+        'endarrerides': [],
         })
 
     pol_ids = pol_obj.search([
@@ -132,6 +133,12 @@ def search_candidates_to_tg(measure_origins, measure_origins_comer, days):
         ]) 
     totals = len(pol_ids)
 
+    delayed_ids = pol_obj.search([
+        ('data_ultima_lectura','<=',today_minus_days(days)), # ultima factura a 40 dies enradera
+        ('no_estimable','=',False), # estimable
+        ('facturacio_potencia','=','icp'), # no maximeter
+        ])
+    res.endarrerides = delayed_ids
 
     draft_no_lect_ids = pol_obj.search([
         ('state','=','esborrany'),
@@ -202,6 +209,7 @@ def search_candidates_to_tg(measure_origins, measure_origins_comer, days):
             res.errors.append(pol_id)
 
     success('')
+    success("Endarrerides fa {} dies o mes.......... {}",days, len(res.endarrerides))
     success("Candidats a passar a no estimable ..... {}",len(res.candidates))
     success("Comptadors malament ................... {}",len(res.bad_metters))
     success("Sense lectures reals .................. {}",len(res.no_real_measures))
@@ -214,8 +222,9 @@ def search_candidates_to_tg(measure_origins, measure_origins_comer, days):
 
     if query:
         success("Candidats: {}",res.candidates)
-        success("Candidats: esborranys sense ultima lectura .  {}",res.esborranys_no_ultimalectura)
+        success("Candidats: esborranys sense ultima lectura . {}",res.esborranys_no_ultimalectura)
         success("Candidats: activa sense ultima lectura ..... {}",res.activa_no_ultimalectura)
+        success("NO CANDIDATS: endarrerides fa {} o mes ..... {}",days, res.endarrerides)
     return res
 
 def search_candidates_to_tg_default():
