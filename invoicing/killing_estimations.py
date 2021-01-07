@@ -28,7 +28,7 @@ comp_obj = O.GiscedataLecturesComptador
 per_obj = O.GiscedataPolissaTarifaPeriodes
 
 # Ambit de cerques de polisses:
-#  * tg = 1 -->  telegestio operativa amb cch
+#  * tg = 1 -->  telegestio operativa amb cch --> descartat
 #  * data_ultima_lectura (facturades real ) > avui - 40 (dies) --> ha facturat els ultims 40 dies
 #  * no_estimable = fals --> tick de no estimable esta desactivat
 #  * facturacio_potencia = icp --> self explaining
@@ -42,12 +42,12 @@ per_obj = O.GiscedataPolissaTarifaPeriodes
 #  4 si la polissa ha arribat aqui la passarem a no estimable si el doit esta actiu
 
 #constants de modificació
-dies = 40
+dies = 4000
 lectures_pool_minimes = 4
 lectures_pool_ultimes = 4
 min_days = 20
 max_days = 40
-versio = "v4.0"
+versio = "v5.0"
 allowed_origins_comer =[
     7, # Gestió ATR"
     2, # Fitxer de factura F1"
@@ -66,7 +66,7 @@ allowed_origins = [
     2, # Telemesura corregida"
     1, # Telemesura"
     ]
-filtres = "origens {}, origens_comer {}, minim {} lectures a pool amb distancia entre {} i {}".format(allowed_origins,allowed_origins_comer,lectures_pool_minimes,min_days,max_days)
+filtres = "origens {}, estimada i origens_comer {}, minim {} lectures a pool amb distancia entre {} i {}".format(allowed_origins,allowed_origins_comer,lectures_pool_minimes,min_days,max_days)
 missatge = "Desactivem el sistema d'estimació ja que té telegestió "
 missatge += "-- [{versio}][{filtres}]".format(**locals())
 
@@ -108,6 +108,31 @@ def test_pool_measures(periode_ids,metter_id,polissa_id,res):
                 warn("dies entre ultimes lectures de pool no creix {}",measures)
                 res.no_grown_days_pool.append(polissa_id)
                 return False
+
+    return True
+
+def test_meters(metter_ids, pol_id,search_date,per_ids,measure_origins, measure_origins_comer,res):
+    for metter_id in metter_ids:
+        measureA = lectF_obj.search([
+            ('comptador','=',metter_id),
+            ('name','=',search_date),
+            ('origen_id','in',measure_origins)
+            ])
+        measureB = lectF_obj.search([
+            ('comptador','=',metter_id),
+            ('name','=',search_date),
+            ('origen_id','=',7), #estimada
+            ('origen_comer_id','in',measure_origins_comer)
+            ])
+        measure = measureA + measureB
+
+        if not measure:
+            warn("Cap lectura ok trobada en {}".format(search_date))
+            res.no_real_measures.append(pol_id)
+            return False
+
+        if not test_pool_measures(per_ids,metter_id,pol_id,res):
+            return False
 
     return True
 
@@ -169,37 +194,19 @@ def search_candidates_to_tg(measure_origins, measure_origins_comer, days):
             step("{}/{} polissa {} {}".format(counter+1,totals,polissa.name,polissa.tarifa[1]))
 
             metter_ids = comp_obj.search([('polissa','=',pol_id)])
-            if len(metter_ids) != 1:
+            if len(metter_ids) == 0:
                 warn("Numero de comptadors no contemplat")
                 res.bad_metters.append(pol_id)
                 continue
 
             search_date = polissa.data_ultima_lectura or polissa.data_alta
 
-            measureA = lectF_obj.search([
-                ('comptador','=',metter_ids[0]),
-                ('name','=',search_date),
-                ('origen_id','in',measure_origins)
-                ])
-            measureB = lectF_obj.search([
-                ('comptador','=',metter_ids[0]),
-                ('name','=',search_date),
-                ('origen_id','=',7), #estimada
-                ('origen_comer_id','in',measure_origins_comer)
-                ])
-            measure = measureA + measureB
-
-            if not measure:
-                warn("Cap lectura real trobada en {}".format(search_date))
-                res.no_real_measures.append(pol_id)
-                continue
-
             per_ids = per_obj.search([
                 ('tarifa','=',polissa.tarifa[0]),
                 ('tipus','=','te'),
                 ])
 
-            if not test_pool_measures(per_ids,metter_ids[0],pol_id,res):
+            if not test_meters(metter_ids, pol_id,search_date,per_ids,measure_origins, measure_origins_comer,res):
                 continue
 
             res.candidates.append(pol_id)
@@ -209,22 +216,22 @@ def search_candidates_to_tg(measure_origins, measure_origins_comer, days):
             res.errors.append(pol_id)
 
     success('')
-    success("Endarrerides fa {} dies o mes.......... {}",days, len(res.endarrerides))
-    success("Candidats a passar a no estimable ..... {}",len(res.candidates))
-    success("Comptadors malament ................... {}",len(res.bad_metters))
-    success("Sense lectures reals .................. {}",len(res.no_real_measures))
-    success("Menys de {} lectures a pool ............ {}",lectures_pool_minimes,len(res.too_few_measures))
-    success("Dies entre lectures fora de [{}..{}] .. {}",min_days,max_days,len(res.wrong_days_pool))
-    success("Dies entre lectures no creix .......... {} , {}",len(res.no_grown_days_pool),res.no_grown_days_pool)
-    success("Errors ................................ {} , {}",len(res.errors),res.errors)
-    success("Candidats: esborranys no ultimalectura  {}",len(res.esborranys_no_ultimalectura))
-    success("Candidats: activa_no_ultimalectura .... {}",len(res.activa_no_ultimalectura))
+    success("Endarrerides fa {} dies o mes.............. {}",days, len(res.endarrerides))
+    success("Candidats a passar a no estimable ........... {}",len(res.candidates))
+    success("Cap comptador actiu ......................... {} {}",len(res.bad_metters),res.bad_metters)
+    success("Sense lectures reals ........................ {}",len(res.no_real_measures))
+    success("Menys de {} lectures a pool .................. {} , {}",lectures_pool_minimes,len(res.too_few_measures),res.too_few_measures)
+    success("Dies entre lectures fora de [{}..{}] ........ {}",min_days,max_days,len(res.wrong_days_pool))
+    success("Dies entre lectures no creix ................ {} , {}",len(res.no_grown_days_pool),res.no_grown_days_pool)
+    success("Errors ...................................... {} , {}",len(res.errors),res.errors)
+    success("Candidats: esborranys sense ultima lectura .. {}",len(res.esborranys_no_ultimalectura))
+    success("Candidats: activa sense ultima lectura ...... {}",len(res.activa_no_ultimalectura))
 
     if query:
+        success("")
         success("Candidats: {}",res.candidates)
         success("Candidats: esborranys sense ultima lectura . {}",res.esborranys_no_ultimalectura)
         success("Candidats: activa sense ultima lectura ..... {}",res.activa_no_ultimalectura)
-        success("NO CANDIDATS: endarrerides fa {} o mes ..... {}",days, res.endarrerides)
     return res
 
 def search_candidates_to_tg_default():
@@ -266,7 +273,7 @@ def candidates_to_tg():
         return res
     ret1 = change_to_tg(res.candidates)
     ret2 = change_to_tg(res.esborranys_no_ultimalectura)
-    ret3 = change_to_tg(res.observacions_estimacio)
+    ret3 = change_to_tg(res.activa_no_ultimalectura)
     res = ret1 + ret2 + ret3
     success('')
     success("S'han modificat {} polisses",len(ret))
