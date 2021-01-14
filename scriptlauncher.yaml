@@ -630,7 +630,7 @@ mailchimp:
       title: Arxivar mails de antics socis/es
       description: "Aquest script, quan s’activa, actua sobre la llista de Mailchimp que se li hagi indicat (ex: “Soci/a de Som Energia”). El que fa és que arxiva (dessubscriu però manté les dades antigues) les adreces de correu de les persones que abans eren socies i ara ja no ho són, segons dades de l’ERP.
       OBSERVACIONS: Si no hi ha emails amb aquestes característiques, a la llista de resultats apareixerà un error 404 (no s'ha trobat res a arxivar). Si les adreces d'email s'havien eliminat anteriorment, l'error que apareixerà serà el 405 (acció no permesa)."
-      script: python SOME_SRC/somenergia-scripts/mchimp/archive_no_socis.py --list {list_name} --mailchimp_export_file {mailchimp_export_file} --output {output}
+      script: python SOME_SRC/somenergia-scripts/mchimp/archive_no_socis.py --list {list_name} --mailchimp_export_file {mailchimp_export_file} --output {output} --doit
       parameters:
         list_name:
           description: Nom de la llista de correu on arxivar antics socis/socies
