@@ -15,75 +15,88 @@ from datetime import datetime, timedelta, date, time
 from pymongo import DESCENDING
 
 
-
-
 def get_mongo_data(mongo_db, mongo_collection, curve_type, cups):
     data = dict()
     all_curves_search_query = {'name': {'$regex': '^{}'.format(cups[:20])}}
-    fields = {'_id': False, 'datetime': True, 'create_at': True, 'source': True}
+    fields = {'_id': False}
     curves =  mongo_db[mongo_collection].find(
         all_curves_search_query,
         fields)
     return curves
 
 
-
-def get_mongo_fields():
-    mongo_fields = []
-
-    curve_fields = [
-        'data_primera_{curve_type}', 'count_hores_period_{curve_type}',
-        'count_cch_period_{curve_type}', 'count_diferencia_{curve_type}',
-        'ultima_data_creacio_{curve_type}', 'data_ultim_registre_{curve_type}'
-    ]
-
-    for curve_type in ['f5d', 'f1', 'p5d', 'p1']:
-        mongo_fields = mongo_fields + [
-
-
-    return mongo_fields
-
 def set_mongo_data(mongo_db, mongo_collection, curve_type, cups, mongo_data_f5d):
     try:
         curves =  mongo_db[mongo_collection].insert(
             mongo_data_f5d)
-    except:
-        print "La corba ja existeix"
+    except Exception as e:
+        print "La corba " + curve_type + " ja existeix: " + str(e)
         return False
     return True
 
-def main():
-    mongo_client_prod = pymongo.MongoClient(configdb.mongodb)
+
+def main(cups):
+    mongo_client_prod = pymongo.MongoClient(configdb.mongodb_prod)
     mongo_client_test = pymongo.MongoClient(configdb.mongodb_test)
     mongo_db_prod = mongo_client_prod.somenergia
     mongo_db_test = mongo_client_test.somenergia
 
-    mongo_fields = get_mongo_fields()
     mongo_data_f5d = get_mongo_data(
         mongo_db=mongo_db_prod, mongo_collection='tg_cchfact',
-        curve_type='f5d', cups
+        curve_type='f5d', cups = cups
     )
     mongo_data_f1 = get_mongo_data(
         mongo_db=mongo_db_prod, mongo_collection='tg_f1',
-        curve_type='f1', cups
+        curve_type='f1', cups = cups
     )
     mongo_data_p5d = get_mongo_data(
         mongo_db=mongo_db_prod, mongo_collection='tg_cchval',
-        curve_type='p5d', cups
+        curve_type='p5d', cups = cups
     )
     mongo_data_p1 = get_mongo_data(
         mongo_db=mongo_db_prod, mongo_collection='tg_p1',
-        curve_type='p1', cups
+        curve_type='p1', cups = cups
     )
 
-    print "Corbes obtingudes"
+    print "Corbes obtingudes f5d: " + str(mongo_data_f5d.count())
+    print "Corbes obtingudes p5d: " + str(mongo_data_p5d.count())
+    print "Corbes obtingudes f1: " + str(mongo_data_f1.count())
+    print "Corbes obtingudes p1: " + str(mongo_data_p1.count())
 
-    result = set_mongo_data(
-        mongo_db=mongo_db_test, mongo_collection='tg_cchfact',
-        curve_type='f5d', cups, mongo_data_f5d
-    )
-    print result
+    if mongo_data_f5d.count() > 0:
+        result_f5d = set_mongo_data(
+            mongo_db=mongo_db_test, mongo_collection='tg_cchfact',
+            curve_type='f5d', cups=cups, mongo_data_f5d=mongo_data_f5d
+        )
+    if mongo_data_p5d.count() > 0:
+        result_p5d = set_mongo_data(
+            mongo_db=mongo_db_test, mongo_collection='tg_cchval',
+            curve_type='p5d', cups=cups, mongo_data_f5d=mongo_data_f5d
+        )
+    if mongo_data_f1.count() > 0:
+        result_f1 = set_mongo_data(
+            mongo_db=mongo_db_test, mongo_collection='tg_f1',
+            curve_type='f1', cups=cups, mongo_data_f5d=mongo_data_f5d
+        )
+    if mongo_data_p1.count() > 0:
+        result_p1 = set_mongo_data(
+            mongo_db=mongo_db_test, mongo_collection='tg_p1',
+            curve_type='p1', cups=cups, mongo_data_f5d=mongo_data_f5d
+        )
 
+    print "Les corbes disponibles s'han pujat a testing"
+
+def parseargs():
+    import argparse
+    parser = argparse.ArgumentParser(description='Copiar corbes a Testing')
+    parser.add_argument('-c', '--cups',
+        help="Escull per cups",
+        )
+    return parser.parse_args()
 
 if __name__ == '__main__':
-    main()
+    args=parseargs()
+    if not args.cups:
+        fail("Introdueix un cups o el missatge d'error o una data")
+
+    main(args.cups)
