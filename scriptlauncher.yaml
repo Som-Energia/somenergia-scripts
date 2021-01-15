@@ -149,6 +149,14 @@ invoicefixing:
         date:
           description: Introduir la data des de quan voleu fer la cerca amb format YYYY-mm-dd
 
+    CopyCurveToTesting:
+      script: python SOME_SRC/somenergia-scripts/Curves/copy_corbes_to_testing.py -c {cups}
+      title: Copiar corbes horaries de Productiu a Testing
+      description: Copia totes les corbes disponibles (f5d, p5d, f1 i p1) del Mongo de productiu al Mongo de testing
+      parameters:
+        cups:
+          description: Introduir el CUPS
+
     # To Do: for future elimination, the ERP already can do the same and the script seems to be error prone 
     #fixrefundinvoice:
     #  script:
