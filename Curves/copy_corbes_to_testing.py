@@ -3,16 +3,9 @@
 from future import standard_library
 standard_library.install_aliases()
 
-import os
 import configdb
-import csv
-import tarfile
 from consolemsg import step, error, warn, fail, success
-from erppeek import Client
-from emili import sendMail
 import pymongo
-from datetime import datetime, timedelta, date, time
-from pymongo import DESCENDING
 
 
 def get_mongo_data(mongo_db, mongo_collection, curve_type, cups):
@@ -25,10 +18,10 @@ def get_mongo_data(mongo_db, mongo_collection, curve_type, cups):
     return curves
 
 
-def set_mongo_data(mongo_db, mongo_collection, curve_type, cups, mongo_data_f5d):
+def set_mongo_data(mongo_db, mongo_collection, curve_type, cups, mongo_data):
     try:
         curves =  mongo_db[mongo_collection].insert(
-            mongo_data_f5d)
+            mongo_data)
     except Exception as e:
         print "La corba " + curve_type + " ja existeix: " + str(e)
         return False
@@ -66,22 +59,22 @@ def main(cups):
     if mongo_data_f5d.count() > 0:
         result_f5d = set_mongo_data(
             mongo_db=mongo_db_test, mongo_collection='tg_cchfact',
-            curve_type='f5d', cups=cups, mongo_data_f5d=mongo_data_f5d
+            curve_type='f5d', cups=cups, mongo_data=mongo_data_f5d
         )
     if mongo_data_p5d.count() > 0:
         result_p5d = set_mongo_data(
             mongo_db=mongo_db_test, mongo_collection='tg_cchval',
-            curve_type='p5d', cups=cups, mongo_data_f5d=mongo_data_f5d
+            curve_type='p5d', cups=cups, mongo_data=mongo_data_p5d
         )
     if mongo_data_f1.count() > 0:
         result_f1 = set_mongo_data(
             mongo_db=mongo_db_test, mongo_collection='tg_f1',
-            curve_type='f1', cups=cups, mongo_data_f5d=mongo_data_f5d
+            curve_type='f1', cups=cups, mongo_data=mongo_data_f1
         )
     if mongo_data_p1.count() > 0:
         result_p1 = set_mongo_data(
             mongo_db=mongo_db_test, mongo_collection='tg_p1',
-            curve_type='p1', cups=cups, mongo_data_f5d=mongo_data_f5d
+            curve_type='p1', cups=cups, mongo_data=mongo_data_p1
         )
 
     print "Les corbes disponibles s'han pujat a testing"
