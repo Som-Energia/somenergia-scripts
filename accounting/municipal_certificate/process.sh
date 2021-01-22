@@ -1,15 +1,10 @@
 #!/bin/bash
 
 # Production key
-key="SOM_ENERGIA_SCCL.p12"
+key=$1
 echo -n "Password: "
 read -s password
 echo
-
-# Testing key
-key=../../../fillInPdf/Ciudadano_firma_activo.pfx
-password=123456
-
 
 filter="subject.contains:" # naive filter for single key storages
 LAYER2TEXT='Firmado digitalmente por $$SUBJECTCN$$   Fecha: $$SIGNDATE=dd/MM/yyyy$$'
@@ -26,13 +21,14 @@ upperY=$((lowerY + signatureHeight))
 page='-1' # -1 means the last one
 fontColor='darkgray' # just darkgray, lightgray, black, pink, red, white
 fontSize=10
-fontFamily=0 # 0: Courier 1: 
+fontFamily=2 # 0 = Courier (tipo por defecto) 1= Helvética 2= Times Roman 3= Symbol 4= ZapfDingBats
 fontStyle=1 # or of styles normal(0) bold(1) cursive(2)  underlined(4) strike(8)
 
 
 signatureRatio=$(( (lowerLeftX-rightX) / (lowerY-upperY) ))
 
 config="\
+includeQuestionMark=1\n\
 layer2Text=$LAYER2TEXT\n\
 image=$encodedimage\n\
 imagePositionOnPageUpperRightY=$upperY\n\
@@ -63,7 +59,7 @@ run() {
 	"${@}"
 }
 
-for a in "$@"
+for a in "${@:2}"
 do
 	municipi="${a/.yaml/}"
 	step2 Generating $municipi

@@ -26,14 +26,18 @@ You can test the script with dummy certificates:
 
 Use `Ciudadano_firma_activo.pfx`, password `123456`
 
+For production you should use a real one.
 
+If you have problems with your key, ensure you fixed `AutoFirma` as indicated above.
 
 
 ## Input files
 
-On the erp
+Input files are csv files containing data for the required municipalites.
+You can obtain them from the ERP as follows:
 
 TODO:
+
 
 ## Generating yamls
 
@@ -48,7 +52,7 @@ Will extract all the municipalities in the CSV file as yamls inside the `castell
 
 
 ```bash
-./process.sh castello/*yaml
+./process.sh mykey.pks12 castello/*yaml
 ```
 
 It will ask for the certificate password
