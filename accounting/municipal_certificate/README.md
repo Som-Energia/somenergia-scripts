@@ -42,10 +42,9 @@ TODO:
 ## Generating yamls
 
 ```bash
-./csv2yaml.py 2020 4 CASTELLO.csv castello
+./csv2yaml.py CASTELLO.csv castello
 ```
 
-`2020` and `4` are the year and the trimester.
 Will extract all the municipalities in the CSV file as yamls inside the `castello` directory.
 
 ## Generating the final pdfs

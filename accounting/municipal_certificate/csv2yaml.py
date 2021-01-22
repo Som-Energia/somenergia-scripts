@@ -9,11 +9,12 @@ from slugify import slugify
 
 municipi=None
 
-year, trimester, csvfile, outputdir = sys.argv[1:]
+csvfile, outputdir = sys.argv[1:]
 
 Path(outputdir).mkdir(exist_ok=True)
 
-# Exemple
+# This parser is quite adhoc to the structure of the curent csv file
+# Something like this
 """
 "Albocàsser"
 "Any","Trimestre","Pagaments a distribuidora","Factures a clients"
@@ -34,15 +35,26 @@ def euros(text):
     from decimal import Decimal
     return format(Decimal(text).quantize(Decimal('1.00'))).replace(".",",")
 
+def floatInt(number):
+    return int(float(number))
+
+nextTellsYear=False
 with Path(csvfile).open() as infile:
     reader = csv.reader(infile, delimiter=',', quotechar='"')
     for row in reader:
-        print(row)
         if len(row) == 1:
             municipi = row[0]
             continue
         if not row:
             continue
+
+        if nextTellsYear:
+            year = floatInt(row[0])
+            trimester = floatInt(row[1])
+            nextTellsYear=False
+        if row[0] == "Any":
+            nextTellsYear=True
+
         if row[0] != "Total":
             continue
         (
@@ -63,12 +75,5 @@ with Path(csvfile).open() as infile:
             period=f"{trimester}T {year}",
             date=Date.today(),
         ).dump(Path(outputdir)/(slugify(municipi)+".yaml"))
-
-
-
-            
-        
-
-
 
 
