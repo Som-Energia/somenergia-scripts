@@ -36,7 +36,9 @@ If you have problems with your key, ensure you fixed `AutoFirma` as indicated ab
 Input files are csv files containing data for the required municipalites.
 You can obtain them from the ERP as follows:
 
-TODO:
+List Municipis: Empreses - Configuració - Ubicació - Municipis
+After selection, use action "Informe impost municipal sobre la facturació"
+Save as csv.
 
 
 ## Generating yamls
