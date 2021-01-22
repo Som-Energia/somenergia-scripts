@@ -6,7 +6,9 @@ echo -n "Password: "
 read -s password
 echo
 
-filter="subject.contains:" # naive filter for single key storages
+# https://sede.uco.es/requisitos-tecnicos/autofirma/mac/AF_manual_instalacion_usuarios_ES.pdf
+
+filter="subject.contains:" # naive match all filter for single key storages
 LAYER2TEXT='Firmado digitalmente por $$SUBJECTCN$$   Fecha: $$SIGNDATE=dd/MM/yyyy$$'
 LAYER2TEXT='Signat digitalment per $$SUBJECTCN$$   Data: $$SIGNDATE=dd/MM/yyyy$$'
 image="logo-somenergia-stamp.jpg"
@@ -21,7 +23,7 @@ upperY=$((lowerY + signatureHeight))
 page='-1' # -1 means the last one
 fontColor='darkgray' # just darkgray, lightgray, black, pink, red, white
 fontSize=10
-fontFamily=2 # 0 = Courier (tipo por defecto) 1= Helvética 2= Times Roman 3= Symbol 4= ZapfDingBats
+fontFamily=0 # 0 = Courier (tipo por defecto) 1= Helvética 2= Times Roman 3= Symbol 4= ZapfDingBats
 fontStyle=1 # or of styles normal(0) bold(1) cursive(2)  underlined(4) strike(8)
 
 
