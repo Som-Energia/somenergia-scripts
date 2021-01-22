@@ -52,7 +52,7 @@ Will extract all the municipalities in the CSV file as yamls inside the `castell
 
 
 ```bash
-./process.sh mykey.pks12 castello/*yaml
+./create_certificate.sh mykey.pks12 castello/*yaml
 ```
 
 It will ask for the certificate password
