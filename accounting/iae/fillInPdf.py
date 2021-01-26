@@ -4,6 +4,7 @@ import csv
 from fdfgen import forge_fdf
 import os
 import sys
+from yamlns import namespace as ns
 
 #sys.path.insert(0, os.getcwd())
 filename_prefix_016 = "016"
@@ -21,14 +22,14 @@ output_folder = 'output/'
 def process_csv(filename):
     headers = []
     data =  []
-    with open(filename) as file:
+    with open(filename, encoding='utf8') as file:
         csv_data = list(csv.reader(file))
         headers = csv_data[0]
         return [
-            [
-                (field, value)
+            ns(
+                (field, value.strip())
                 for field, value in zip(headers, row)
-            ]
+            )
             for row in csv_data[1:]
         ]
 
@@ -51,19 +52,20 @@ def form_fill(pdf_file, filename_prefix, filename_sufix, fields):
   os.remove(tmp_file)
 
 os.makedirs(output_folder, exist_ok=True)
-data_016 = process_csv(csv_file_016)
-data_703 = process_csv(csv_file_703)
 print('Generating Forms:')
 print('-----------------------')
+data_016 = process_csv(csv_file_016)
 for fields in data_016:
-  fields.extend([
-    ('FI DACTIVITAT', True),
-    ('SUBJECTE PASSIUSUJETO PASIVO', True),
-    ('Empresarial', True),
-    ('undefined', True),
-    ('EMPRESARIAL', True),
-  ])
-  form_fill(pdf_file_016, filename_prefix_016, fields[21][1].strip(), fields)
+  fields.update({
+    'FI DACTIVITAT': True,
+    'SUBJECTE PASSIUSUJETO PASIVO': True,
+    'Empresarial': True,
+    'undefined': True,
+    'EMPRESARIAL': True,
+    })
+  form_fill(pdf_file_016, filename_prefix_016, fields['MUNICIPIMUNICIPIO_4'], fields)
+
+data_703 = process_csv(csv_file_703)
 for fields in data_703:
-  form_fill(pdf_file_703, filename_prefix_703, fields[23][1].strip(), fields)
+  form_fill(pdf_file_703, filename_prefix_703, fields['12 Municipio de la actividad o local indirecto'], fields)
 
