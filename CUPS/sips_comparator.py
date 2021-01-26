@@ -11,9 +11,15 @@ import configdb
 
 ATR_CASES = ['C2']
 ATR_STEPS = ['01']
+ATR_EXCLUDE_STATES = ['cancel']
 
 def create_file(c, from_date, file_output):
-    atr_ids = c.GiscedataSwitching.search([('create_date','>=', from_date),('proces_id.name', 'in', ATR_CASES),('step_id.name','in',ATR_STEPS)])
+    atr_ids = c.GiscedataSwitching.search([
+        ('create_date', '>=', from_date),
+        ('proces_id.name', 'in', ATR_CASES),
+        ('step_id.name', 'in', ATR_STEPS),
+        ('state', 'not in', ATR_EXCLUDE_STATES)
+    ])
 
     print "{} contracts found from date {}".format(len(atr_ids), from_date)
     print "Dumping data to {}".format(file_output)
