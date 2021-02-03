@@ -47,7 +47,8 @@ lectures_pool_minimes = 4
 lectures_pool_ultimes = 4
 min_days = 20
 max_days = 40
-versio = "v5.0"
+llindar_bimensual = 40
+versio = "v6.0"
 allowed_origins_comer =[
     7, # Gestió ATR"
     2, # Fitxer de factura F1"
@@ -81,6 +82,7 @@ def test_pool_measures(periode_ids,metter_id,polissa_id,res):
         last_pool_ids = pool_obj.search([
             ('comptador','=',metter_id),
             ('periode','=',periode_id),
+            ('tipus','=','A'),
             ],
             limit=lectures_pool_ultimes,
             order="name DESC")
@@ -111,16 +113,63 @@ def test_pool_measures(periode_ids,metter_id,polissa_id,res):
 
     return True
 
+def test_pool_bimensual(periode_ids,metter_id,polissa_id,res):
+    for periode_id in periode_ids:
+
+        last_distri_pool_A_ids = pool_obj.search([
+            ('comptador','=',metter_id),
+            ('periode','=',periode_id),
+            ('tipus','=','A'),
+            ('origen_id','in',(1,2,3,4,5,6,12)) # real
+            ],
+            limit=10,
+            order="name DESC")
+        last_distri_pool_B_ids = pool_obj.search([
+            ('comptador','=',metter_id),
+            ('periode','=',periode_id),
+            ('tipus','=','A'),
+            ('origen_id','=',7), #estimada
+            ('origen_comer_id','in',(2,7)) # de distri
+            ],
+            limit=10,
+            order="name DESC")
+        last_distri_pool_ids = last_distri_pool_A_ids + last_distri_pool_B_ids
+
+        if len(last_distri_pool_ids) < lectures_pool_minimes:
+            warn("menys de {} lectures de DISTRI , trobades {}".format(
+                lectures_pool_minimes,len(last_distri_pool_ids)))
+            res.too_few_distri_measures.append(polissa_id)
+            return False
+
+        last_distri_pool_measures = pool_obj.read(last_distri_pool_ids,['name'])
+        last_distri_pool_dates = sorted([ isodate(measure['name']) for measure in last_distri_pool_measures ], reverse=True)[:6]
+
+        days = [ (first - second).days
+            for first,second in zip(last_distri_pool_dates,last_distri_pool_dates[1:])]
+
+        if min(days) > llindar_bimensual:
+            warn("possible polissa amb lectures bimensuals {}",days)
+            res.bimensual_distri_readings.append(polissa_id)
+            return False
+
+    return True
+
 def test_meters(metter_ids, pol_id,search_date,per_ids,measure_origins, measure_origins_comer,res):
     for metter_id in metter_ids:
+        if not test_pool_bimensual(per_ids,metter_id,pol_id,res):
+            return False
+
+        """
         measureA = lectF_obj.search([
             ('comptador','=',metter_id),
             ('name','=',search_date),
+            ('tipus','=','A'),
             ('origen_id','in',measure_origins)
             ])
         measureB = lectF_obj.search([
             ('comptador','=',metter_id),
             ('name','=',search_date),
+            ('tipus','=','A'),
             ('origen_id','=',7), #estimada
             ('origen_comer_id','in',measure_origins_comer)
             ])
@@ -130,6 +179,7 @@ def test_meters(metter_ids, pol_id,search_date,per_ids,measure_origins, measure_
             warn("Cap lectura ok trobada en {}".format(search_date))
             res.no_real_measures.append(pol_id)
             return False
+        """
 
         if not test_pool_measures(per_ids,metter_id,pol_id,res):
             return False
@@ -143,6 +193,8 @@ def search_candidates_to_tg(measure_origins, measure_origins_comer, days):
         'bad_metters':[],
         'no_real_measures':[],
         'too_few_measures':[],
+        'too_few_distri_measures':[],
+        'bimensual_distri_readings':[],
         'wrong_days_pool':[],
         'no_grown_days_pool':[],
         'errors':[],
@@ -219,6 +271,8 @@ def search_candidates_to_tg(measure_origins, measure_origins_comer, days):
     success("Endarrerides fa {} dies o mes.............. {}",days, len(res.endarrerides))
     success("Candidats a passar a no estimable ........... {}",len(res.candidates))
     success("Cap comptador actiu ......................... {} {}",len(res.bad_metters),res.bad_metters)
+    success("Menys de {} lectures de distri a pool ........ {} , {}",lectures_pool_minimes,len(res.too_few_distri_measures),res.too_few_distri_measures)
+    success("Sospitoses bimensual ......................... {} , {}",len(res.bimensual_distri_readings),res.bimensual_distri_readings)
     success("Sense lectures reals ........................ {}",len(res.no_real_measures))
     success("Menys de {} lectures a pool .................. {} , {}",lectures_pool_minimes,len(res.too_few_measures),res.too_few_measures)
     success("Dies entre lectures fora de [{}..{}] ........ {}",min_days,max_days,len(res.wrong_days_pool))
