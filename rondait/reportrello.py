@@ -33,6 +33,12 @@ def getMemberName(client, member_id):
     m = Member(client, member_id)
     return m.fetch()
 
+def getEpicNumber(name):
+    e = re.search("(\[EP(\d*)\])", name)
+    if e:
+        return int(e.group(2))
+    return 0
+
 def printMembers(client, members):
     print("MEMBER;SPEND;EXPECTED;")
     for member_id in sorted(members):
@@ -58,7 +64,7 @@ def printLabels(client, labels):
             p = Label(client, label_id, "")
             m = p.fetch()
             name = m.name
-            print("Warning: Hem d'afegir aquesta etiqueta la llista de ITLABELS: " + m.full_name + " : " + member_id)
+            print("Warning: Hem d'afegir aquesta etiqueta la llista de ITLABELS: " + str(m.name) + " : " + str(m.id))
         #Only print IT labels
         if trellovariables.ITLABELS.has_key(label_id):
             print("\"" + name + "\";" + str(labels.get(label_id)[0]) + ";" + str(labels.get(label_id)[1]) + ";")
@@ -78,8 +84,20 @@ def printTeams(client, teams):
         if trellovariables.ITTEAMS.has_key(member_id):
             print("\"" + name + "\";" + str(teams.get(member_id)[0]) + ";" + str(teams.get(member_id)[1]) + ";")
 
+def printEpics(epics):
+    print("EPIC;SPEND;EXPECTED;")
+    for epic in sorted(epics):
+        name = ""
+        if epic == 0:
+            name = "No Epiques:"
+        else:
+            name = "EP" + str(epic)
+
+        print("\"" + name + "\";" + str(epics.get(epic)[0]) + ";" + str(epics.get(epic)[1]) + ";")
+
 members = {}
 labels = {}
+epics = {}
 
 parser = argparse.ArgumentParser(prog='reportrello.py')
 parser.add_argument('-n','--num_ronda', required=True)
@@ -94,6 +112,8 @@ for list_data in it_board.all_lists():
         for card in list_data.list_cards():
             spend = getCardTime(card.name, TIME_SPEND)
             estimated = getCardTime(card.name, TIME_ESTIMATED)
+            epic = getEpicNumber(card.name)
+            epics[epic] = [epics.get(epic, [0,0])[0] + spend, epics.get(epic, [0,0])[1] + estimated]
             for label in card.idLabels:
                 if labels.has_key(label):
                     labels[label] = [labels.get(label)[0] + spend , labels.get(label)[1] + estimated]
@@ -117,5 +137,7 @@ for list_data in it_board.all_lists():
         printLabels(client, labels)
         print("======= TEAMS =========")
         printTeams(client, members)
+        print("======= EPICS =========")
+        printEpics(epics)
 
 # vim: et ts=4 sw=4
