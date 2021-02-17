@@ -33,10 +33,8 @@ def search_invoice_by_ids(invoice_ids):
         fact_ids = fact_obj.search([('id', '=', invoice_id)])
         if len(fact_ids) == 0:
             warn("Cap factura trobada amb aquest id!!")
-            return None
         if len(fact_ids) > 1:
             warn("Multiples factures trobades!! {}", fact_ids)
-            return None
         ret_ids.append(fact_ids[0])
         step("Factura amb ID {} existeix", fact_ids[0])
     return ret_ids
@@ -114,13 +112,15 @@ def main(invoice_name, invoice_id, invoice_ids):
         fact_ids.append(search_invoice_by_id(invoice_id))
     if invoice_ids:
         fact_ids.extend(search_invoice_by_ids(invoice_ids))
+
     for fact_id in fact_ids:
-        print_invoice_data(fact_id)
-        error, res = load_invoice_data(fact_id)
-        if error:
-            errors = search_known_errors(res, fact_id)
-        else:
-            success("La factura en pdf no te problemes a nivell de dades!")
+        if fact_id:
+            print_invoice_data(fact_id)
+            error, res = load_invoice_data(fact_id)
+            if error:
+                errors = search_known_errors(res, fact_id)
+            else:
+                success("La factura en pdf no te problemes a nivell de dades!")
 
 
 def only_one(a, b, c):

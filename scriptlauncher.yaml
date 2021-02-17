@@ -246,6 +246,14 @@ invoicefixing:
         delayed_limit:
           description: dies màxims de factura curta
 
+    check_errors_invoice_data_pdf:
+      title: Comprobador de les dades per generar pdf de factura
+      description: Script per comprobar les dades per generar un pdf de factura, quan una factura no imprimeix el pdf aquest script detecta si es un dels errors coneguts de la factura i no del model de dades.
+      script: python SOME_SRC/somenergia-scripts/invoicing/errors_in_invoice_data_pdf.py --invoice_name={invoice_name}
+      parameters:
+        invoice_name:
+          description: numero de la factura FE....
+
 gestiocontractes:
     description: Gestió de contractes
     scripts:
