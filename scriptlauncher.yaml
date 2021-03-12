@@ -256,6 +256,16 @@ invoicefixing:
         invoice_ids:
           description: id's de factures separats per comes
 
+    get_extended_data_from_errors_in_lot:
+      title: Obté llistat amb infomació extesa de les polisses facturades amb incidencia
+      description: Obté llistat amb infomació extesa de les polisses facturades amb incidencia del lot de factucació actiu actualment.
+      script: python SOME_SRC/somenergia-scripts/invoicing/search_errors_in_lot.py {output}
+      parameters:
+        output:
+          type: FILEDOWN
+          filename: extended_errors.csv
+          extension: csv
+
 gestiocontractes:
     description: Gestió de contractes
     scripts:

@@ -1,5 +1,10 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
+
+import sys
+reload(sys) # dirty hack for the underlay script
+sys.setdefaultencoding('utf8')
+
 from erppeek import Client
 import configdb
 from yamlns import namespace as ns
