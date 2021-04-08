@@ -58,6 +58,17 @@ class InvoiceMaker:
         )
         return line
 
+    def getValsLine_without_tax(self, invoice_id, account_name, line_name, price_unit):
+        account_id = self.O.AccountAccount.search([('code','=',account_name)])
+        line = dict(
+            invoice_id = invoice_id,
+            name = line_name,
+            quantity = 1,
+            price_unit = price_unit,
+            account_id = account_id[0],
+        )
+        return line
+
     def makeInvoice(self, dni):
         vals = self.getValsInvoice(dni)
         if not vals:
@@ -66,7 +77,7 @@ class InvoiceMaker:
         partner_lang = self.O.ResPartner.read(vals['partner_id'], ['lang'])['lang']
         valsLineManage = self.getValsLine(invoice.id, '705000000100', DESC_MANAGE[partner_lang], 41.32)
         invoice_line_services = self.O.AccountInvoiceLine.create(valsLineManage)
-        valsLineAdvance = self.getValsLine(invoice.id, '705000000101', DESC_ADVANCE[partner_lang], 82.65)
+        valsLineAdvance = self.getValsLine_without_tax(invoice.id, '419000000001', DESC_ADVANCE[partner_lang], 100.00)
         invoice_line_services = self.O.AccountInvoiceLine.create(valsLineAdvance)
         self.O.AccountInvoice.button_reset_taxes([invoice.id])
         return True
