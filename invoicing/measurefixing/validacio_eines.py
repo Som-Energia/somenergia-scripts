@@ -97,7 +97,9 @@ def buscar_errors_lot_ids(search_vals):
     search_vals += [('lot_id','=',lot_id)]
     clot_ids = clot_obj.search(search_vals)
     clot_reads = clot_obj.read(clot_ids,['polissa_id'])
-    pol_ids = sorted(list(set([clot_read['polissa_id'][0] for clot_read in clot_reads])))
+    pol_ids = []
+    if len(clot_ids) > 0:
+        pol_ids = sorted(list(set([clot_read['polissa_id'][0] for clot_read in clot_reads])))
     return pol_ids
 
 def polissaHasError(pol_id, text):
