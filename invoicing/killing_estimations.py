@@ -48,7 +48,7 @@ lectures_pool_ultimes = 4
 min_days = 20
 max_days = 40
 llindar_bimensual = 40
-versio = "v6.0"
+versio = "v7.0"
 allowed_origins_comer =[
     7, # Gestió ATR"
     2, # Fitxer de factura F1"
@@ -70,6 +70,9 @@ allowed_origins = [
 filtres = "origens {}, estimada i origens_comer {}, minim {} lectures a pool amb distancia entre {} i {}".format(allowed_origins,allowed_origins_comer,lectures_pool_minimes,min_days,max_days)
 missatge = "Desactivem el sistema d'estimació ja que té telegestió "
 missatge += "-- [{versio}][{filtres}]".format(**locals())
+
+missatge = "Desactivem el sistema d'estimació per l'entrada de la tarifa TD"
+missatge += "-- [{versio}]".format(**locals())
 
 def isodate(adate):
     return adate and datetime.strptime(adate,'%Y-%m-%d')
@@ -288,7 +291,30 @@ def search_candidates_to_tg(measure_origins, measure_origins_comer, days):
         success("Candidats: activa sense ultima lectura ..... {}",res.activa_no_ultimalectura)
     return res
 
+def search_all_to_tg():
+    #counters
+    res = ns({
+        'candidates':[],
+        'esborranys_no_ultimalectura': [],
+        'activa_no_ultimalectura': [],
+        })
+    pol_ids = pol_obj.search([
+        ('no_estimable','=',False), # estimable
+        ])
+    res.candidates = pol_ids
+    success('')
+    success("Candidats a passar a no estimable ........... {}",len(res.candidates))
+    success("Candidats: esborranys sense ultima lectura .. {}",len(res.esborranys_no_ultimalectura))
+    success("Candidats: activa sense ultima lectura ...... {}",len(res.activa_no_ultimalectura))
+    if query:
+        success("")
+        success("Candidats: {}",res.candidates)
+        success("Candidats: esborranys sense ultima lectura . {}",res.esborranys_no_ultimalectura)
+        success("Candidats: activa sense ultima lectura ..... {}",res.activa_no_ultimalectura)
+    return res
+
 def search_candidates_to_tg_default():
+    return search_all_to_tg()
     return search_candidates_to_tg(allowed_origins,allowed_origins_comer, dies)
 
 def change_to_tg(pol_ids):
