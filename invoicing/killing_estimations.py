@@ -354,7 +354,7 @@ def candidates_to_tg():
     ret1 = change_to_tg(res.candidates)
     ret2 = change_to_tg(res.esborranys_no_ultimalectura)
     ret3 = change_to_tg(res.activa_no_ultimalectura)
-    res = ret1 + ret2 + ret3
+    ret = ret1.keys() + ret2.keys() + ret3.keys()
     success('')
     success("S'han modificat {} polisses",len(ret))
     return ret
