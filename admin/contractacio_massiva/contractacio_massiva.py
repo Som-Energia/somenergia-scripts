@@ -67,7 +67,15 @@ def read_contracts_data_csv(csv_file):
             reader = csv.reader(f, delimiter=',')
             header = header[0].split(',')
 
-        csv_content = [ns(dict(zip(header, row))) for row in reader if row[0]]
+        csv_content = [(dict(zip(header, row))) for row in reader if row[0]]
+
+        for row in csv_content:
+            fields = [item for item in row if 'contract_owner' in item]
+            row['contract_owner'] = {}
+
+            for item in fields:
+                row['contract_owner'][item] = row[item]
+                del row[item]
 
     return csv_content
 
