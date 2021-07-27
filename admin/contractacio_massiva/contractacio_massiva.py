@@ -22,9 +22,8 @@ def _custom_casting(data):
     data['contract_owner']['state_id'] = int(data['contract_owner']['state_id'])
     data['cups_city_id'] = int(data['cups_city_id'])
     data['cups_state_id'] = int(data['cups_state_id'])
-    if data.get('owner_is_payer').lower() == 'false':
-        data['contract_payer']['city_id'] = int(data['contract_payer']['city_id'])
-        data['contract_payer']['state_id'] = int(data['contract_payer']['state_id'])
+    data['contract_payer']['city_id'] = int(data['contract_payer']['city_id'])
+    data['contract_payer']['state_id'] = int(data['contract_payer']['state_id'])
     for power in power_items:
         if data[power] == '0':
             del data[power]
