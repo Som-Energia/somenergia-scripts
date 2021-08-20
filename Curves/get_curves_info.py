@@ -14,6 +14,8 @@ import pymongo
 from datetime import datetime, timedelta, date, time
 from pymongo import DESCENDING
 
+from tqdm import tqdm
+from time import sleep
 
 def sendmail2all(user, attachment):
     '''
@@ -25,7 +27,7 @@ def sendmail2all(user, attachment):
         to =  user['recipients'],
         bcc = user['bcc'],
         subject = "[Analisi Indexada] Disponibilitat Corbes ",
-        md = "Hola, Os fem arribar el csv d'aquesta setmana :)",
+        md = "Hola, Us fem arribar el csv d'aquesta setmana :)",
         attachments = [attachment],
         config = 'configdb.py',
     )
@@ -46,66 +48,61 @@ def add_row_in_csv(csv_name, header, element):
         writer.writerow(element)
 
 
-def get_count(mongo_db, mongo_collection, start_date, end_date, cups):
-
+def get_count_and_date_firmeza(mongo_db, mongo_collection, cups, firmeza, date):
     queryparms = {
         "name": {'$regex': '^{}'.format(cups[:20])},
+        "validated" : firmeza,
         "datetime" : {
-            "$gte": start_date,
-            "$lte": end_date
+            "$gte": date,
         }
     }
-    if mongo_collection == 'tg_p1':
-        queryparms.update({"type": "p"})
-    count_curves = mongo_db[mongo_collection].find(queryparms).count()
-    return count_curves
+    cursor = mongo_db[mongo_collection].find(queryparms)
+    count_curves = cursor.count()
+    data_ultima = ''
+    if count_curves > 0:
+        data_ultima = cursor[0]['datetime']
+    return count_curves, data_ultima
 
-
-def get_mongo_data(mongo_db, mongo_collection, curve_type, cups, date_F1ATR):
+def get_mongo_data(mongo_db, mongo_collection, curve_type, cups):
     data = dict()
-    all_curves_search_query = {'name': {'$regex': '^{}'.format(cups[:20])}}
+    last_year = datetime.combine(date.today(), time()) - timedelta(days=365)
+    all_curves_search_query = {
+            'name': {'$regex': '^{}'.format(cups[:20])},
+            'datetime': {"$gte": last_year},
+    }
+    if mongo_collection == 'tg_p1':
+        all_curves_search_query.update({"type": "p"})
     fields = {'_id': False, 'datetime': True, 'create_at': True, 'source': True}
     curves =  mongo_db[mongo_collection].find(
         all_curves_search_query,
         fields).sort('datetime', pymongo.ASCENDING)
 
-    last_year = datetime.combine(date.today(), time()) - timedelta(days=365)
-    count_hores_period = (
-        datetime.strptime(date_F1ATR,"%Y-%m-%d") - last_year
-    ).days * 24.
+    number_curves = curves.count()
+    data['count_cch_period_{}'.format(curve_type)] = number_curves
 
-    if curves.count() > 0:
-        if curves[0]['datetime'] < last_year:
-            count_curves = get_count(
-                mongo_db=mongo_db,
-                mongo_collection=mongo_collection,
-                start_date=last_year,
-                end_date=datetime.strptime(date_F1ATR,"%Y-%m-%d"),
-                cups=cups
-            )
-            data['count_cch_period_{}'.format(curve_type)] = count_curves
-
-        if curves[0]['datetime'] > last_year:
-            count_curves = get_count(
-                mongo_db=mongo_db,
-                mongo_collection=mongo_collection,
-                start_date=datetime.strptime(date_F1ATR,"%Y-%m-%d"),
-                end_date=curves[0]['datetime'],
-                cups=cups
-            )
-            data['count_cch_period_{}'.format(curve_type)] = count_curves
-
-        cursor = mongo_db[mongo_collection].find(all_curves_search_query, fields
-                ).sort('datetime', pymongo.DESCENDING)
+    if number_curves > 0:
+        data_primera = curves[0]['datetime']
+        data['data_primera_{}'.format(curve_type)] = data_primera.strftime("%Y-%m-%d %H:%M:%S")
+        cursor = curves.skip(number_curves -1)
         data['ultima_data_creacio_{}'.format(curve_type)] = cursor[0].get(
             'create_at'
         ).strftime("%Y-%m-%d %H:%M:%S")
-        data['data_ultim_registre_{}'.format(curve_type)] = cursor[0].get(
-            'datetime'
-        ).strftime("%Y-%m-%d %H:%M:%S")
-        data['data_primera_{}'.format(curve_type)] = curves[0]['datetime']
+        data_ultima = cursor[0].get('datetime')
+        data['data_ultim_registre_{}'.format(curve_type)] = data_ultima.strftime("%Y-%m-%d %H:%M:%S")
+        count_hores_period = (data_ultima - data_primera).days * 24
+        data['count_diferencia_{}'.format(curve_type)] = number_curves - count_hores_period
         data['count_hores_period_{}'.format(curve_type)] = count_hores_period
-        data['count_diferencia_{}'.format(curve_type)] = count_curves - count_hores_period
+
+
+        data['corbes_no_firmes_{}'.format(curve_type)], data['data_ultima_corbes_no_firmes_{}'.format(curve_type)] = get_count_and_date_firmeza(
+                mongo_db=mongo_db,
+                mongo_collection=mongo_collection,
+                firmeza = False,
+                cups=cups,
+                date=last_year,
+        )
+        data['corbes_firmes_{}'.format(curve_type)] = number_curves - data['corbes_no_firmes_{}'.format(curve_type)]
+
     return data
 
 
@@ -119,17 +116,9 @@ def get_polissa(erp_client, polissa_obj):
     return polissa_obj.search(filters)
 
 def get_data_ultima_lectura_F1ATR(erp_client, contractId):
-    factura_obj = erp_client.model('giscedata.facturacio.factura')
-    filters = [
-        ('polissa_state', '=', 'activa'),
-        ('type', '=', 'in_invoice'),
-        ('polissa_id.name', '=', contractId),
-        ('data_final', '!=', False)
-    ]
-    factura = factura_obj.search(filters)
-    if factura:
-        _F1ATR = sorted(factura)[-1]
-        return factura_obj.read(_F1ATR)['data_final']
+
+    pol_obj = erp_client.model('giscedata.polissa')
+    return pol_obj.read(contractId, ['data_ultima_lectura'])['data_ultima_lectura']
 
 def get_mongo_fields():
     mongo_fields = []
@@ -137,7 +126,9 @@ def get_mongo_fields():
     curve_fields = [
         'data_primera_{curve_type}', 'count_hores_period_{curve_type}',
         'count_cch_period_{curve_type}', 'count_diferencia_{curve_type}',
-        'ultima_data_creacio_{curve_type}', 'data_ultim_registre_{curve_type}'
+        'ultima_data_creacio_{curve_type}', 'data_ultim_registre_{curve_type}',
+        'corbes_firmes_{curve_type}', 'corbes_no_firmes_{curve_type}',
+        'data_ultima_corbes_no_firmes_{curve_type}',
     ]
 
     for curve_type in ['f5d', 'f1', 'p5d', 'p1']:
@@ -171,14 +162,13 @@ def main():
     polissas = get_polissa(erp_client, polissa_obj)
 
     step('Getting CCHs')
-    for polissa_id in polissas:
+    for polissa_id in tqdm(polissas):
         polissa = polissa_obj.read(polissa_id, erp_fields)
         cleared_polissa = {
             key:value if value.__class__ != list else value[1].encode('utf-8')
             for key,value in polissa.items()
         }
         cleared_polissa['cups'] = cleared_polissa['cups'][:6]
-
 
         cleared_polissa['data_avui'] = today
         lectura_F1ATR = get_data_ultima_lectura_F1ATR(
@@ -191,22 +181,18 @@ def main():
             mongo_data_f5d = get_mongo_data(
                 mongo_db=mongo_db, mongo_collection='tg_cchfact',
                 curve_type='f5d', cups=polissa['cups'][1],
-                date_F1ATR=lectura_F1ATR
             )
             mongo_data_f1 = get_mongo_data(
                 mongo_db=mongo_db, mongo_collection='tg_f1',
                 curve_type='f1', cups=polissa['cups'][1],
-                date_F1ATR=lectura_F1ATR
             )
             mongo_data_p5d = get_mongo_data(
                 mongo_db=mongo_db, mongo_collection='tg_cchval',
                 curve_type='p5d', cups=polissa['cups'][1],
-                date_F1ATR=lectura_F1ATR
             )
             mongo_data_p1 = get_mongo_data(
                 mongo_db=mongo_db, mongo_collection='tg_p1',
                 curve_type='p1', cups=polissa['cups'][1],
-                date_F1ATR=lectura_F1ATR
             )
 
             cleared_polissa.update(mongo_data_f5d)
@@ -214,6 +200,8 @@ def main():
             cleared_polissa.update(mongo_data_p5d)
             cleared_polissa.update(mongo_data_p1)
             add_row_in_csv(csv_name, header=csv_fields, element=cleared_polissa)
+            sleep(0.1)
+
     step('ready to send the email')
     tar_filename = 'curves_molonguis_{}.tar.gz'.format(datetime.now().strftime("%Y-%m-%d"))
     make_tarfile(tar_filename, csv_name)
