@@ -1,15 +1,18 @@
 # -*- encoding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+from __future__ import print_function, unicode_literals
+
 import argparse
-import traceback
+import base64
 import csv
 import sys
-import base64
-from zipfile import ZipFile
+import traceback
 from collections import namedtuple
 from os import name, path
+from zipfile import ZipFile
+
+from consolemsg import error, step, success
 from erppeek import Client
-from consolemsg import step, error, success
+
 import configdb
 
 c = Client(**configdb.erppeek)
@@ -61,16 +64,16 @@ def archive(zipfile, attachments):
         zipfile.writestr(attachment.name, attachment.data)
 
 
-def download_xmls(cupses):
-    with ZipFile('cups_attachments.zip', 'w') as zip_:
+def download_xmls(cupses, output_file):
+    with ZipFile(output_file, 'w') as zip_:
         for cups in cupses:
             attachments = get_cups_xmls(cups)
             archive(zip_, attachments)
 
 
-def main(cups_csv):
+def main(cups_csv, output_file):
     cupses = csv_to_cups(cups_csv)
-    download_xmls(cupses)
+    download_xmls(cupses, output_file)
     
 
 if __name__ == '__main__':
@@ -84,10 +87,17 @@ if __name__ == '__main__':
         required=True,
         help="csv amb els cups per descarregar els adjunts del seus casos ATR"
     )
+    
+    parser.add_argument(
+        '--output',
+        dest='output_file',
+        required=True,
+        help="Fitxer de sortida amb els resultats"
+    )
 
     args = parser.parse_args()
     try:
-        main(args.cups_csv)
+        main(args.cups_csv, args.output_file)
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
         error("El proceso no ha finalizado correctamente: {}", str(e))

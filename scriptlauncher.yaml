@@ -395,6 +395,19 @@ gestiocontractes:
           contracts:
             type: FILE
             description: Fitxer csv amb els nùmeros de contractes
+      download_atr_case_attachments:
+        title: Genera un zip amb els adjunts dels casos ATR associats a una llista de CUPS
+        description: Genera un zip amb els adjunts dels casos ATR associats a una llista de CUPS
+        script: python SOME_SRC/somenergia-scripts/comer/xml_neuro/download_case_attachments.py --file {cups_csv} --output {output}
+        parameters:
+          cups_csv:
+            type: FILE
+            description: llista de cups en csv delimitat per ';' i capçalera 'cups'.
+          output:
+            type: FILEDOWN
+            extension: zip
+            filename: cups_attachments.zip
+
 it:
   description: Ronda IT
   scripts:
