@@ -522,7 +522,17 @@ admin:
           type: FILEDOWN
           extension: pdf
           name: BalancSumesiSalods-{start_date}-{end_date}.pdf
-    
+
+    crearUsuarisOdoo:
+      script: python SOME_SRC/somenergia-scripts/admin/crear_usuaris_odoo.py --file {csv_file}
+      title: Crear usuaris empleats a Odoo
+      description: >
+          Es creen les fitxes de Parnter, Empleat i Usuari a Odoo, a partir d'un CSV on posem una línia per persona.
+      parameters:
+        csv_file:
+          type: FILE
+          description: >
+            Fitxer CSV amb la llista d'empleats a crear. El format és una capçalera "nom,cognoms,jornada,equips,email" i les línies per exmple "NÚRIA,IGLESIAS MARTÍNEZ,40,Entorn Laboral,nuria.iglesias@somenergia.coop"
 
 generation:
   description: Generació
