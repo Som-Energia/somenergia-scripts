@@ -1,0 +1,120 @@
+# -*- coding: utf-8 -*-
+import sys
+import psycopg2
+import psycopg2.extras
+import csv
+import configdb
+import codecs
+import driveUtils
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+#import locale
+#locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
+import argparse
+from tqdm import tqdm
+
+## SYNTAX
+# python admin/descarregar_assentaments_comptables.py --start_date 2018-01-10 --end_date 2018-01-20
+#
+# - llistat comptadors (CUPS?) separats per comunitats forals + resta españa (potser per provincies?),
+# detallant; nom/raó social, NIF, direcció suministre, import facturat (detallant si porta IVA o no) periode de consum.
+# Aquestes dades s'han de presentar agregades a nivell de exercici fiscal complet dels anys 2017, 2018, 2019 i 2020
+# CUPS;nombre;nif;direccion_subministro;es_foral;importe_facturado; iva; periodo_inicio; periodo_fin
+# ES0000000000000000000; Nom client; 12345678A; Carrer numero; True; 1000; True; 2020-01-15; 2021-01-15
+
+'''
+SELECT gcp.name AS cups, rp.name as nombre, rp.vat as nif, gcp.direccio AS direccion_subministro,
+       CASE substring(gcp.dp, 0, 3)
+            WHEN '31' THEN 1
+            WHEN '01' THEN 1
+            WHEN '20' THEN 1
+            WHEN '48' THEN 1
+            ELSE 0
+       END es_foral,
+       sum(ai.amount_total) as importe_facturado, 'si' as iva_incluido, min(gff.data_inici) AS periodo_inicio, max(gff.data_final) AS perido_fin
+FROM giscedata_polissa gp, res_partner rp, giscedata_cups_ps gcp, account_invoice ai, giscedata_facturacio_factura gff
+WHERE gp.titular = rp.id 
+    and gcp.id = gp.cups
+    and ai.partner_id = rp.id
+    and gp.id = 66
+    and ai.date_invoice >= '2021-01-01' and ai.date_invoice <= '2021-12-01'
+    and gff.invoice_id = ai.id
+GROUP BY gcp.name, rp.name, rp.vat, gcp.direccio, iva_incluido, es_foral;
+
+'''
+
+
+#    and ai.date_invoice >= '{0}' and ai.date_invoice <= '{1}'
+
+MAX_MOVES_LINES = 700000 #Max linies assentament del programa dels interventors
+FOLDER = '18f1DXG8V5QmCBKivozHldvcob6opldN1'
+
+class MoveReport:
+    def __init__(self, cursor):
+        self.cursor = cursor
+        pass
+
+    def move_by_lines(self, start_date, end_date):
+        sql = '''
+        SELECT gcp.name AS cups, rp.name as nombre, rp.vat as nif, gcp.direccio AS direccion_subministro,
+            CASE rm.state
+                    WHEN '31' THEN 1
+                    WHEN '1' THEN 1
+                    WHEN '20' THEN 1
+                    WHEN '48' THEN 1
+                    ELSE 0
+            END es_foral,
+            round(sum(ai.amount_total),2) as importe_facturado, 'si' as iva_incluido, min(gff.data_inici) AS periodo_inicio, max(gff.data_final) AS perido_fin
+        FROM giscedata_polissa gp, res_partner rp, giscedata_cups_ps gcp, account_invoice ai, giscedata_facturacio_factura gff, res_municipi rm
+        WHERE gp.titular = rp.id
+            and gcp.id = gp.cups
+            and gff.polissa_id = gp.id
+            and ai.partner_id = rp.id
+            and rm.id = gcp.id_municipi
+            and ai.date_invoice >= '{0}' and ai.date_invoice <= '{1}'
+            and gff.invoice_id = ai.id
+        GROUP BY gcp.name, rp.name, rp.vat, gcp.direccio, iva_incluido, es_foral;
+            '''.format(start_date, end_date)
+        print sql
+        self.cursor.execute(sql)
+
+        file_name = '/tmp/listado_contadores_' + str(start_date[:4]) + '.csv'
+        self.build_report(self.cursor.fetchall(), file_name)
+        driveUtils.upload(file_name, FOLDER)
+        print "From ", start_date, " to ", end_date, " exported."
+
+
+    def build_report(self, records, filename):
+        with codecs.open(filename,'wb','utf-8') as csvfile:
+            writer = csv.writer(csvfile, delimiter=',', quotechar='"')
+            writer.writerow(['cups','nombre','nif','direccion_subministro','es_foral','importe_facturado', 'iva_incluido', 'periodo_inicio', 'periodo_fin'])
+            for record in tqdm(records):
+                writer.writerow(record)
+
+
+def main(args):
+    reload(sys)
+    sys.setdefaultencoding('utf8')
+
+    start_date =  args.start_date
+    end_date = args.end_date
+
+    try:
+        dbconn=psycopg2.connect(**configdb.psycopg)
+        dbconn.set_client_encoding('UTF8')
+    except Exception, ex:
+        print "Unable to connect to database "
+        raise ex
+
+    m = MoveReport(dbconn.cursor())
+    m.move_by_lines(start_date, end_date)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(prog='descarregar_assentaments_comptables.py', description='Descarrega assentaments comptables al Drive.')
+    parser.add_argument('-s','--start_date', help='Data inicial des de la qual es volen assentaments.', required=True)
+    parser.add_argument('-e','--end_date', help='Data final fins la qual es volen assentaments.', required=True)
+    args = parser.parse_args(sys.argv[1:])
+    main(args)
+
+# vim: et ts=4 sw=4
