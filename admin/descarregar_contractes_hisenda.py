@@ -8,13 +8,13 @@ import codecs
 import driveUtils
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-#import locale
-#locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
+import locale
+locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
 import argparse
 from tqdm import tqdm
 
 ## SYNTAX
-# python admin/descarregar_assentaments_comptables.py --start_date 2018-01-10 --end_date 2018-01-20
+# python admin/descarregar_contractes_hisenda.py --start_date 2018-01-10 --end_date 2018-01-20
 #
 # - llistat comptadors (CUPS?) separats per comunitats forals + resta españa (potser per provincies?),
 # detallant; nom/raó social, NIF, direcció suministre, import facturat (detallant si porta IVA o no) periode de consum.
@@ -23,30 +23,28 @@ from tqdm import tqdm
 # ES0000000000000000000; Nom client; 12345678A; Carrer numero; True; 1000; True; 2020-01-15; 2021-01-15
 
 '''
-SELECT gcp.name AS cups, rp.name as nombre, rp.vat as nif, gcp.direccio AS direccion_subministro,
-       CASE substring(gcp.dp, 0, 3)
-            WHEN '31' THEN 1
-            WHEN '01' THEN 1
-            WHEN '20' THEN 1
-            WHEN '48' THEN 1
-            ELSE 0
-       END es_foral,
-       sum(ai.amount_total) as importe_facturado, 'si' as iva_incluido, min(gff.data_inici) AS periodo_inicio, max(gff.data_final) AS perido_fin
-FROM giscedata_polissa gp, res_partner rp, giscedata_cups_ps gcp, account_invoice ai, giscedata_facturacio_factura gff
-WHERE gp.titular = rp.id 
-    and gcp.id = gp.cups
-    and ai.partner_id = rp.id
-    and gp.id = 66
-    and ai.date_invoice >= '2021-01-01' and ai.date_invoice <= '2021-12-01'
-    and gff.invoice_id = ai.id
-GROUP BY gcp.name, rp.name, rp.vat, gcp.direccio, iva_incluido, es_foral;
-
+    SELECT gcp.name AS cups, rp.name as nombre, rp.vat as nif, gcp.direccio AS direccion_subministro,
+        CASE rm.state
+                WHEN '31' THEN 1
+                WHEN '1' THEN 1
+                WHEN '20' THEN 1
+                WHEN '48' THEN 1
+                ELSE 0
+        END es_foral,
+        round(sum(ai.amount_total),2) as importe_facturado, 'si' as iva_incluido, min(gff.data_inici) AS periodo_inicio, max(gff.data_final) AS perido_fin
+    FROM
+        giscedata_polissa gp
+    INNER JOIN res_partner rp ON gp.titular = rp.id
+    INNER JOIN giscedata_cups_ps gcp ON gcp.id = gp.cups
+    INNER JOIN account_invoice ai ON ai.partner_id = rp.id
+    INNER JOIN giscedata_facturacio_factura gff ON gff.polissa_id = gp.id
+    INNER JOIN res_municipi rm ON rm.id = gcp.id_municipi
+    WHERE
+        ai.date_invoice >= '2017-01-01' and ai.date_invoice <= '2017-12-31'
+        and gff.invoice_id = ai.id
+    GROUP BY gcp.name, rp.name, rp.vat, gcp.direccio, iva_incluido, es_foral;
 '''
 
-
-#    and ai.date_invoice >= '{0}' and ai.date_invoice <= '{1}'
-
-MAX_MOVES_LINES = 700000 #Max linies assentament del programa dels interventors
 FOLDER = '18f1DXG8V5QmCBKivozHldvcob6opldN1'
 
 class MoveReport:
@@ -56,26 +54,28 @@ class MoveReport:
 
     def move_by_lines(self, start_date, end_date):
         sql = '''
-        SELECT gcp.name AS cups, rp.name as nombre, rp.vat as nif, gcp.direccio AS direccion_subministro,
-            CASE rm.state
-                    WHEN '31' THEN 1
-                    WHEN '1' THEN 1
-                    WHEN '20' THEN 1
-                    WHEN '48' THEN 1
-                    ELSE 0
-            END es_foral,
-            round(sum(ai.amount_total),2) as importe_facturado, 'si' as iva_incluido, min(gff.data_inici) AS periodo_inicio, max(gff.data_final) AS perido_fin
-        FROM giscedata_polissa gp, res_partner rp, giscedata_cups_ps gcp, account_invoice ai, giscedata_facturacio_factura gff, res_municipi rm
-        WHERE gp.titular = rp.id
-            and gcp.id = gp.cups
-            and gff.polissa_id = gp.id
-            and ai.partner_id = rp.id
-            and rm.id = gcp.id_municipi
-            and ai.date_invoice >= '{0}' and ai.date_invoice <= '{1}'
-            and gff.invoice_id = ai.id
-        GROUP BY gcp.name, rp.name, rp.vat, gcp.direccio, iva_incluido, es_foral;
+            SELECT gcp.name AS cups, rp.name as nombre, rp.vat as nif, gcp.direccio AS direccion_subministro,
+                CASE rm.state
+                        WHEN '31' THEN 1
+                        WHEN '1' THEN 1
+                        WHEN '20' THEN 1
+                        WHEN '48' THEN 1
+                        ELSE 0
+                END es_foral,
+                round(sum(ai.amount_total),2) as importe_facturado, 'si' as iva_incluido, min(gff.data_inici) AS periodo_inicio, max(gff.data_final) AS perido_fin
+            FROM
+                giscedata_polissa gp
+            INNER JOIN res_partner rp ON gp.titular = rp.id
+            INNER JOIN giscedata_cups_ps gcp ON gcp.id = gp.cups
+            INNER JOIN account_invoice ai ON ai.partner_id = rp.id
+            INNER JOIN giscedata_facturacio_factura gff ON gff.polissa_id = gp.id
+            INNER JOIN res_municipi rm ON rm.id = gcp.id_municipi
+            WHERE
+                ai.date_invoice >= '{0}' and ai.date_invoice <= '{1}'
+                and gff.invoice_id = ai.id
+            GROUP BY gcp.name, rp.name, rp.vat, gcp.direccio, iva_incluido, es_foral;
             '''.format(start_date, end_date)
-        print sql
+
         self.cursor.execute(sql)
 
         file_name = '/tmp/listado_contadores_' + str(start_date[:4]) + '.csv'
