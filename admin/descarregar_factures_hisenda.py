@@ -34,7 +34,8 @@ SELECT ai.number AS num_factura, ai.date_invoice AS fecha_factura, substring(rp.
     INNER JOIN account_tax AS tax
         ON invoice_tax.tax_id = tax.id
 
- WHERE ai.type = 'out_invoice'
+ WHERE (ai.type = 'out_invoice'
+     OR ai.type = 'out_refund')
     AND ai.date_invoice >= '2020-01-01'
     AND ai.date_invoice <= '2020-01-05'
     AND tax.name like '%IVA%'
@@ -52,7 +53,8 @@ SELECT ai.number AS num_factura, ai.date_invoice AS fecha_factura, rp.vat AS nif
         ON invoice_tax.invoice_id = ai.id
     FULL OUTER JOIN account_tax AS tax
         ON invoice_tax.tax_id = tax.id  AND tax.name like '%IVA%'
- WHERE ai.type = 'out_invoice'
+    WHERE (ai.type = 'out_invoice'
+        OR ai.type = 'out_refund')
     AND ai.date_invoice >= '2020-01-01'
     AND ai.date_invoice <= '2020-01-31'
     AND ai.number = 'FE2000095842';
@@ -80,7 +82,8 @@ class MoveReport:
                 INNER JOIN account_tax AS tax
                     ON invoice_tax.tax_id = tax.id
 
-            WHERE ai.type = 'out_invoice'
+            WHERE (ai.type = 'out_invoice'
+                OR ai.type = 'out_refund')
                 AND ai.date_invoice >= %(start_date)s::date
                 AND ai.date_invoice <= %(end_date)s::date
                 AND tax.name like '%%IVA%%'
