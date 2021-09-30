@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import argparse
 import sys, traceback, csv
 import configdb
@@ -117,7 +118,7 @@ class ImportData:
             # Get department id
             team_id = O.HrDepartment.search([('complete_name','=',employee_data['equips'].decode('utf8'))])
             if not team_id:
-                warn("Equip no trobat {}", employee_data['equips'])
+                warn("Equip no trobat {}", employee_data['equips'].decode('utf8'))
                 continue
             # Get jornada
             jornada_id = 1
@@ -153,7 +154,7 @@ class ImportData:
                 success("Employee created: {}", empleat_data['name'])
             except Exception as e:
                 msg = "I couldn\'t create a new empoyee {}, reason {}"
-                warn(msg, " hola ", e)
+                warn(msg, name , e)
 
 
 
