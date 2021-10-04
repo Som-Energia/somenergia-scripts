@@ -23,56 +23,43 @@ from tqdm import tqdm
 
 '''
 somenergia=#
-SELECT ai.number AS num_factura, ai.date_invoice AS fecha_factura, substring(rp.vat, 3) AS nif_cliente,
-    rp.name AS nombre_cliente, round(ai.amount_untaxed,2) AS base_imponible, round(tax.amount *100,2) AS tipo_iva, round(ai.amount_total,2) AS total_factura
-
- FROM account_invoice ai
-    INNER JOIN res_partner AS rp
-        ON rp.id = ai.partner_id
-    INNER JOIN account_invoice_tax AS invoice_tax
-        ON invoice_tax.invoice_id = ai.id
-    INNER JOIN account_tax AS tax
-        ON invoice_tax.tax_id = tax.id
-
- WHERE (ai.type = 'out_invoice'
-     OR ai.type = 'out_refund')
-    AND ai.date_invoice >= '2020-01-01'
-    AND ai.date_invoice <= '2020-01-05'
-    AND tax.name like '%IVA%'
-ORDER BY ai.number;
-
-
-Query per treure també les factures que no porten IVA (falta pulir i pendent de confirmar que volen)
-somenergia=#
-SELECT ai.number AS num_factura, ai.date_invoice AS fecha_factura, rp.vat AS nif_cliente,
-    rp.name AS nombre_cliente, ai.amount_untaxed AS base_imponible, tax.amount AS iva, ai.amount_total AS total_factura
- FROM account_invoice ai
-    LEFT JOIN res_partner AS rp
-        ON rp.id = ai.partner_id
-    FULL OUTER JOIN account_invoice_tax AS invoice_tax
-        ON invoice_tax.invoice_id = ai.id
-    FULL OUTER JOIN account_tax AS tax
-        ON invoice_tax.tax_id = tax.id  AND tax.name like '%IVA%'
-    WHERE (ai.type = 'out_invoice'
-        OR ai.type = 'out_refund')
-    AND ai.date_invoice >= '2020-01-01'
-    AND ai.date_invoice <= '2020-01-31'
-    AND ai.number = 'FE2000095842';
-
-'''
-#    and ai.date_invoice >= '{0}' and ai.date_invoice <= '{1}'
-
-FOLDER = '18f1DXG8V5QmCBKivozHldvcob6opldN1'
-
-class MoveReport:
-    def __init__(self, cursor):
-        self.cursor = cursor
-        pass
-
-    def invoice_by_date(self, start_date, end_date):
-        sql = '''
-            SELECT ai.number AS num_factura, ai.date_invoice AS fecha_factura, substring(rp.vat, 3) AS nif_cliente,
-                rp.name AS nombre_cliente, round(ai.amount_untaxed,2) AS base_imponible, round(tax.amount * 100,2) AS tipo_iva, round(ai.amount_total,2) AS total_factura
+SELECT amb_iva.num_factura,
+    amb_iva.fecha_factura,
+    amb_iva.nif_cliente,
+    amb_iva.nombre_cliente,
+    coalesce(iese.IESE,0) as IESE,
+    coalesce(amb_iva.lineas_factura_con_iva,0) as lineas_factura_con_iva,
+    coalesce(donatius.linia_factura_donatius,0) as linia_factura_donatius,
+    ( amb_iva.total_factura_sense_donatius + coalesce(donatius.linia_factura_donatius,0) ) as total_factura
+    FROM
+    (
+        SELECT ai.number AS num_factura, ai.date_invoice AS fecha_factura, substring(rp.vat, 3) AS nif_cliente,
+            rp.name AS nombre_cliente, round(sum(ail.price_subtotal),2) AS lineas_factura_con_iva,
+            round( ai.amount_tax + round(sum(ail.price_subtotal),2), 2 ) as total_factura_sense_donatius
+        FROM account_invoice ai
+            INNER JOIN res_partner AS rp
+                ON rp.id = ai.partner_id
+            INNER JOIN account_invoice_tax AS invoice_tax
+                ON invoice_tax.invoice_id = ai.id
+            INNER JOIN account_tax AS tax
+                ON invoice_tax.tax_id = tax.id
+            INNER JOIN account_invoice_line AS ail
+                ON ail.invoice_id = ai.id
+        WHERE (ai.type = 'out_invoice'
+            OR ai.type = 'out_refund')
+            AND ai.date_invoice >= '2017-01-01'
+            AND ai.date_invoice <= '2017-12-31'
+            AND ail.name not like '%%Fraccionament%%'
+            AND ail.name not like '%%Donatiu%%'
+            AND tax.name like '%%IVA%%'
+        GROUP BY ai.number, ai.date_invoice, rp.vat, rp.name, ai.amount_tax
+    ) as amb_iva
+    FULL JOIN
+    (
+        SELECT num_factura, lineas_factura_iese, IESE
+        FROM(
+            SELECT ai.number as num_factura, round(invoice_tax.amount, 2) AS IESE,
+            round(sum(ail.price_subtotal),2) as lineas_factura_iese
 
             FROM account_invoice ai
                 INNER JOIN res_partner AS rp
@@ -81,18 +68,164 @@ class MoveReport:
                     ON invoice_tax.invoice_id = ai.id
                 INNER JOIN account_tax AS tax
                     ON invoice_tax.tax_id = tax.id
+                INNER JOIN account_invoice_line AS ail
+                    ON ail.invoice_id = ai.id
 
             WHERE (ai.type = 'out_invoice'
                 OR ai.type = 'out_refund')
-                AND ai.date_invoice >= %(start_date)s::date
-                AND ai.date_invoice <= %(end_date)s::date
-                AND tax.name like '%%IVA%%'
-            ORDER BY ai.number;
+                AND ai.date_invoice >= '2017-01-01'
+                AND ai.date_invoice <= '2017-12-31'
+                AND ail.name not like '%%Fraccionament%%'
+                AND ail.name not like '%%Donatiu%%'
+                AND tax.name like '%%electricidad%%'
+            GROUP BY ai.number, invoice_tax.amount
+            ) as _iese
+    ) as iese
+     ON amb_iva.num_factura = iese.num_factura
+
+    LEFT JOIN (
+        SELECT num_factura, round( sum(coalesce(price_subtotal,0)) ,2) as linia_factura_donatius
+        FROM(
+            SELECT distinct(ail.id), ai.number AS num_factura, ail.price_subtotal as price_subtotal
+            FROM account_invoice ai
+                INNER JOIN res_partner AS rp
+                    ON rp.id = ai.partner_id
+                INNER JOIN account_invoice_tax AS invoice_tax
+                    ON invoice_tax.invoice_id = ai.id
+                INNER JOIN account_tax AS tax
+                    ON invoice_tax.tax_id = tax.id
+                INNER JOIN account_invoice_line AS ail
+                    ON ail.invoice_id = ai.id
+            WHERE (ai.type = 'out_invoice'
+                OR ai.type = 'out_refund')
+                AND ai.date_invoice >= '2017-01-01'
+                AND ai.date_invoice <= '2017-12-31'
+                AND ail.name like '%%Donatiu%%'
+            GROUP BY ai.number, ail.price_subtotal, ail.id
+        ) as _donatius
+        GROUP BY num_factura, price_subtotal
+        ) as donatius
+    ON donatius.num_factura = amb_iva.num_factura
+'''
+#    and ai.date_invoice >= '{0}' and ai.date_invoice <= '{1}'
+
+MAX_MOVES_LINES = 1000000
+FOLDER = '18f1DXG8V5QmCBKivozHldvcob6opldN1'
+
+class MoveReport:
+    def __init__(self, cursor):
+        self.cursor = cursor
+        pass
+
+    def count_moves_of_year(self, start_date, end_date):
+        sql = '''
+                SELECT count(*)
+                    FROM account_invoice AS ai
+            WHERE ai.date_invoice >= '{0}'
+                AND ai.date_invoice <= '{1}'
+                AND (ai.type = 'out_invoice'
+                OR ai.type = 'out_refund')
+            '''.format(start_date, end_date)
+
+        self.cursor.execute(sql, {'start_date': start_date,
+                                  'end_date': end_date})
+        result = self.cursor.fetchone()
+
+        return int(result[0])
+
+    def invoice_by_date(self, start_date, end_date, start_line, end_line):
+        sql = '''
+            SELECT amb_iva.num_factura,
+                amb_iva.fecha_factura,
+                amb_iva.nif_cliente,
+                amb_iva.nombre_cliente,
+                coalesce(iese.IESE,0) as IESE,
+                coalesce(amb_iva.lineas_factura_con_iva,0) as lineas_factura_con_iva,
+                coalesce(donatius.linia_factura_donatius,0) as linia_factura_donatius,
+                ( amb_iva.total_factura_sense_donatius + coalesce(donatius.linia_factura_donatius,0) ) as total_factura
+                FROM
+                (
+                    SELECT ai.number AS num_factura, ai.date_invoice AS fecha_factura, substring(rp.vat, 3) AS nif_cliente,
+                        rp.name AS nombre_cliente, round(sum(ail.price_subtotal),2) AS lineas_factura_con_iva,
+                        round( ai.amount_tax + round(sum(ail.price_subtotal),2), 2 ) as total_factura_sense_donatius
+                    FROM account_invoice ai
+                        INNER JOIN res_partner AS rp
+                            ON rp.id = ai.partner_id
+                        INNER JOIN account_invoice_tax AS invoice_tax
+                            ON invoice_tax.invoice_id = ai.id
+                        INNER JOIN account_tax AS tax
+                            ON invoice_tax.tax_id = tax.id
+                        INNER JOIN account_invoice_line AS ail
+                            ON ail.invoice_id = ai.id
+                    WHERE (ai.type = 'out_invoice'
+                        OR ai.type = 'out_refund')
+                        AND ai.date_invoice >= %(start_date)s::date
+                        AND ai.date_invoice <= %(end_date)s::date
+                        AND ail.name not like '%%Fraccionament%%'
+                        AND ail.name not like '%%Donatiu%%'
+                        AND tax.name like '%%IVA%%'
+                    GROUP BY ai.number, ai.date_invoice, rp.vat, rp.name, ai.amount_tax
+                ) as amb_iva
+                FULL JOIN
+                (
+                    SELECT num_factura, lineas_factura_iese, IESE
+                    FROM(
+                        SELECT ai.number as num_factura, round(invoice_tax.amount, 2) AS IESE,
+                        round(sum(ail.price_subtotal),2) as lineas_factura_iese
+
+                        FROM account_invoice ai
+                            INNER JOIN res_partner AS rp
+                                ON rp.id = ai.partner_id
+                            INNER JOIN account_invoice_tax AS invoice_tax
+                                ON invoice_tax.invoice_id = ai.id
+                            INNER JOIN account_tax AS tax
+                                ON invoice_tax.tax_id = tax.id
+                            INNER JOIN account_invoice_line AS ail
+                                ON ail.invoice_id = ai.id
+
+                        WHERE (ai.type = 'out_invoice'
+                            OR ai.type = 'out_refund')
+                            AND ai.date_invoice >= %(start_date)s::date
+                            AND ai.date_invoice <= %(end_date)s::date
+                            AND ail.name not like '%%Fraccionament%%'
+                            AND ail.name not like '%%Donatiu%%'
+                            AND tax.name like '%%electricidad%%'
+                        GROUP BY ai.number, invoice_tax.amount
+                        ) as _iese
+                ) as iese
+                 ON amb_iva.num_factura = iese.num_factura
+
+                LEFT JOIN (
+                    SELECT num_factura, round( sum(coalesce(price_subtotal,0)) ,2) as linia_factura_donatius
+                    FROM(
+                        SELECT distinct(ail.id), ai.number AS num_factura, ail.price_subtotal as price_subtotal
+                        FROM account_invoice ai
+                            INNER JOIN res_partner AS rp
+                                ON rp.id = ai.partner_id
+                            INNER JOIN account_invoice_tax AS invoice_tax
+                                ON invoice_tax.invoice_id = ai.id
+                            INNER JOIN account_tax AS tax
+                                ON invoice_tax.tax_id = tax.id
+                            INNER JOIN account_invoice_line AS ail
+                                ON ail.invoice_id = ai.id
+                        WHERE (ai.type = 'out_invoice'
+                            OR ai.type = 'out_refund')
+                            AND ai.date_invoice >= %(start_date)s::date
+                            AND ai.date_invoice <= %(end_date)s::date
+                            AND ail.name like '%%Donatiu%%'
+                        GROUP BY ai.number, ail.price_subtotal, ail.id
+                    ) as _donatius
+                    GROUP BY num_factura, price_subtotal
+                    ) as donatius
+                ON donatius.num_factura = amb_iva.num_factura
+                ORDER BY amb_iva.num_factura
+                OFFSET %(start_line)s LIMIT %(MAX_MOVES_LINES)s
                 '''
         print sql
-        self.cursor.execute(sql, {'start_date': start_date, 'end_date': end_date})
+        self.cursor.execute(sql, {'start_date': start_date, 'end_date': end_date,
+            'start_line': start_line, 'MAX_MOVES_LINES': MAX_MOVES_LINES})
 
-        file_name = '/tmp/listado_facturas_iva_' + str(start_date[:4]) + '.csv'
+        file_name = '/tmp/listado_facturas_iva_' + str(start_date[:4]) + '_' + str(start_line) + '.csv'
         self.build_report(self.cursor.fetchall(), file_name)
         driveUtils.upload(file_name, FOLDER)
         print "From ", start_date, " to ", end_date, " exported."
@@ -101,7 +234,7 @@ class MoveReport:
     def build_report(self, records, filename):
         with codecs.open(filename,'wb','utf-8') as csvfile:
             writer = csv.writer(csvfile, delimiter=',', quotechar='"')
-            writer.writerow(['num_factura','fecha_factura','nif_cliente','nombre_cliente','base_imponible','tipo_iva','total_factura'])
+            writer.writerow(['num_factura','fecha_factura','nif_cliente','nombre_cliente','IESE','lineas_factura_con_iva','linia_factura_donatius','total_factura'])
             for record in tqdm(records):
                 writer.writerow(record)
 
@@ -121,7 +254,15 @@ def main(args):
         raise ex
 
     m = MoveReport(dbconn.cursor())
-    m.invoice_by_date(start_date, end_date)
+    lines = m.count_moves_of_year(start_date, end_date)
+    start_line = 0
+    end_line = 0
+
+    while start_line < lines:
+        end_line = start_line + MAX_MOVES_LINES
+        m.invoice_by_date(start_date, end_date, start_line, end_line)
+        start_line = end_line + 1
+
 
 
 if __name__ == '__main__':
