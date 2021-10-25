@@ -11,10 +11,12 @@ from yamlns import namespace as ns
 contract_header = {
         'ca_ES': ['CIF','Titular','Adreça','CUPS','Data Alta','Data Baixa','Contracte',
             'Distribuidora','Tarifa','Potència contractada P1 (kW)','Potència contractada P2 (kW)',
-            'Potència contractada P3 (kW)','Lloguer'],
+            'Potència contractada P3 (kW)', 'Potència contractada P4 (kW)','Potència contractada P5 (kW)',
+            'Potència contractada P6 (kW)', 'Lloguer'],
         'es_ES': ['CIF','Titular','Dirección','CUPS','Fecha Alta','Fecha Baja','Contrato',
             'Distribuidora','Tarifa','Potencia contratada P1 (kW)','Potencia contratada P2',
-            'Potencia contratada P3','Alquiler']
+            'Potencia contratada P3', 'Potencia contratada P4 (kW)','Potencia contratada P5',
+            'Potencia contratada P6','Alquiler']
         }
 
 billc_header = {
@@ -26,15 +28,23 @@ bill_header = {
         'ca_ES': ['Número','Data inici','Data final','Tipus','Total Potència (€)','Total Energia (€)',
             'Total Reactiva (€)','Total Lloguer (€)','Total sense IVA (€)','Total (€)',
             'Total Energia P1 (€)', 'Total Energia P2 (€)','Total Energia P3 (€)',
+            'Total Energia P4 (€)', 'Total Energia P5 (€)','Total Energia P6 (€)',
             'Total Potència P1 (€)', 'Total Potència P2 (€)','Total Potència P3 (€)',
+            'Total Potència P4 (€)', 'Total Potència P5 (€)','Total Potència P6 (€)',
             'Preu Energia P1 (€/kWh)', 'Preu Energia P2 (€/kWh)','Preu Energia P3 (€/kWh)',
-            'Preu Potència P1 (€/kW)', 'Preu Potència P2 (€/kW)','Preu Potència P3 (€/kW)'],
+            'Preu Energia P4 (€/kWh)', 'Preu Energia P5 (€/kWh)','Preu Energia P6 (€/kWh)',
+            'Preu Potència P1 (€/kW)', 'Preu Potència P2 (€/kW)','Preu Potència P3 (€/kW)',
+            'Preu Potència P4 (€/kW)', 'Preu Potència P5 (€/kW)','Preu Potència P6 (€/kW)'],
         'es_ES': ['Número','Fecha inicio','Fecha final','Tipo','Total Potencia (€)','Total Energia (€)',
             'Total Reactiva (€)','Total Alquiler (€)','Total sin IVA (€)','Total (€)',
             'Total Energia P1 (€)', 'Total Energia P2 (€)','Total Energia P3 (€)',
+            'Total Energia P4 (€)', 'Total Energia P5 (€)','Total Energia P6 (€)',
             'Total Potencia P1 (€)', 'Total Potencia P2 (€)','Total Potencia P3 (€)',
+            'Total Potencia P4 (€)', 'Total Potencia P5 (€)','Total Potencia P6 (€)',
             'Preu Energia P1 (€/kWh)', 'Preu Energia P2 (€/kWh)','Preu Energia P3 (€/kWh)',
-            'Preu Potencia P1 (€/kW)', 'Preu Potencia P2 (€/kW)','Preu Potencia P3 (€/kW)']
+            'Preu Energia P4 (€/kWh)', 'Preu Energia P5 (€/kWh)','Preu Energia P6 (€/kWh)',
+            'Preu Potencia P1 (€/kW)', 'Preu Potencia P2 (€/kW)','Preu Potencia P3 (€/kW)',
+            'Preu Potencia P4 (€/kW)', 'Preu Potencia P5 (€/kW)','Preu Potencia P6 (€/kW)']
         }
 
 bill_prefix = {
@@ -60,7 +70,7 @@ def get_period(string, start='(', stop=')'):
 
 def dump_contracts(contracts, filename, lang):
     fields = ['cif','titular','adreca','cups','data_alta','data_baixa','name',
-            'distribuidora','tarifa','P1','P2','P3','lloguer']
+            'distribuidora','tarifa','P1','P2','P3','P4','P5','P6','lloguer']
 
     with codecs.open(filename, 'wb', 'utf-8') as csvfile:
         writer = csv.writer(csvfile, delimiter=';',
@@ -77,9 +87,13 @@ def dump_bills(contracts, start, end, filename, lang):
             'total_potencia','total_energia','total_reactiva','total_lloguers',
             'amount_untaxed','amount_total',
             'P1 energia price','P2 energia price','P3 energia price',
+            'P4 energia price','P5 energia price','P6 energia price',
             'P1 potencia price','P2 potencia price','P3 potencia price',
+            'P4 potencia price','P5 potencia price','P6 potencia price',
             'P1 energia price unit','P2 energia price unit','P3 energia price unit',
-            'P1 potencia price unit','P2 potencia price unit','P3 potencia price unit']
+            'P4 energia price unit','P5 energia price unit','P6 energia price unit',
+            'P1 potencia price unit','P2 potencia price unit','P3 potencia price unit',
+            'P4 potencia price unit','P5 potencia price unit','P6 potencia price unit']
 
 
     period_fields = ['P1','P2','P3','P4','P5','P6']
@@ -127,7 +141,7 @@ def get_contract(contract_id):
 
     contract['vat'] = partner_obj.read(contract['titular'][0], ['vat'])['vat'][2:]
     contract['titular'] = contract['titular'][1]
-    contract['adreca'] = cups_obj.read(contract['cups'][0], ['direccio'])['direccio'].replace(';',',')
+    contract['adreca'] = cups_obj.read(contract['cups'][0], ['direccio'])['direccio'].replace(';',',').replace(',',' - ')
     contract['cups'] = contract['cups'][1]
     contract['distribuidora'] = contract['distribuidora'][1]
     contract['tarifa'] = contract['tarifa'][1]
