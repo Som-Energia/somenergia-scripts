@@ -115,11 +115,6 @@ def get_polissa(erp_client, polissa_obj):
 
     return polissa_obj.search(filters)
 
-def get_data_ultima_lectura_F1ATR(erp_client, contractId):
-
-    pol_obj = erp_client.model('giscedata.polissa')
-    return pol_obj.read(contractId, ['data_ultima_lectura'])['data_ultima_lectura']
-
 def get_mongo_fields():
     mongo_fields = []
 
@@ -151,11 +146,12 @@ def main():
         'tg', 'distribuidora', 'autoconsumo', 'cups', 'data_alta',
         'data_ultima_lectura', 'tarifa', 'name',
         'data_ultima_lectura_estimada', 'data_ultima_lectura_perfilada',
+        'data_ultima_lectura_f1', 'agree_tipus',
     ]
 
     mongo_fields = get_mongo_fields()
     csv_name = 'curves_info_{}.csv'.format(datetime.now().strftime("%Y-%m-%d"))
-    csv_fields = erp_fields + ['data_ultima_lectura_F1ATR', 'data_avui'] + mongo_fields
+    csv_fields = erp_fields + ['data_avui'] + mongo_fields
     step('creating csv...')
     create_csv(csv_name, csv_fields)
     step('Getting polissa data')
@@ -163,44 +159,45 @@ def main():
 
     step('Getting CCHs')
     for polissa_id in tqdm(polissas):
-        polissa = polissa_obj.read(polissa_id, erp_fields)
-        cleared_polissa = {
-            key:value if value.__class__ != list else value[1].encode('utf-8')
-            for key,value in polissa.items()
-        }
-        cleared_polissa['cups'] = cleared_polissa['cups'][:6]
+        try:
+            polissa = polissa_obj.read(polissa_id, erp_fields)
+            cleared_polissa = {
+                key:value if value.__class__ != list else value[1].encode('utf-8')
+                for key,value in polissa.items()
+            }
+            cleared_polissa['cups'] = cleared_polissa['cups'][:6]
 
-        cleared_polissa['data_avui'] = today
-        lectura_F1ATR = get_data_ultima_lectura_F1ATR(
-            erp_client, polissa['name']
-        )
-        del cleared_polissa['id']
+            cleared_polissa['data_avui'] = today
 
-        if bool(lectura_F1ATR):
-            cleared_polissa.update(dict(data_ultima_lectura_F1ATR=lectura_F1ATR))
-            mongo_data_f5d = get_mongo_data(
-                mongo_db=mongo_db, mongo_collection='tg_cchfact',
-                curve_type='f5d', cups=polissa['cups'][1],
-            )
-            mongo_data_f1 = get_mongo_data(
-                mongo_db=mongo_db, mongo_collection='tg_f1',
-                curve_type='f1', cups=polissa['cups'][1],
-            )
-            mongo_data_p5d = get_mongo_data(
-                mongo_db=mongo_db, mongo_collection='tg_cchval',
-                curve_type='p5d', cups=polissa['cups'][1],
-            )
-            mongo_data_p1 = get_mongo_data(
-                mongo_db=mongo_db, mongo_collection='tg_p1',
-                curve_type='p1', cups=polissa['cups'][1],
-            )
+            lectura_F1ATR = polissa['data_ultima_lectura_f1']
+            del cleared_polissa['id']
 
-            cleared_polissa.update(mongo_data_f5d)
-            cleared_polissa.update(mongo_data_f1)
-            cleared_polissa.update(mongo_data_p5d)
-            cleared_polissa.update(mongo_data_p1)
-            add_row_in_csv(csv_name, header=csv_fields, element=cleared_polissa)
-            sleep(0.1)
+            if bool(lectura_F1ATR):
+                mongo_data_f5d = get_mongo_data(
+                    mongo_db=mongo_db, mongo_collection='tg_cchfact',
+                    curve_type='f5d', cups=polissa['cups'][1],
+                )
+                mongo_data_f1 = get_mongo_data(
+                    mongo_db=mongo_db, mongo_collection='tg_f1',
+                    curve_type='f1', cups=polissa['cups'][1],
+                )
+                mongo_data_p5d = get_mongo_data(
+                    mongo_db=mongo_db, mongo_collection='tg_cchval',
+                    curve_type='p5d', cups=polissa['cups'][1],
+                )
+                mongo_data_p1 = get_mongo_data(
+                    mongo_db=mongo_db, mongo_collection='tg_p1',
+                    curve_type='p1', cups=polissa['cups'][1],
+                )
+
+                cleared_polissa.update(mongo_data_f5d)
+                cleared_polissa.update(mongo_data_f1)
+                cleared_polissa.update(mongo_data_p5d)
+                cleared_polissa.update(mongo_data_p1)
+                add_row_in_csv(csv_name, header=csv_fields, element=cleared_polissa)
+        except:
+            print("Error a la polissa amb id {}".format(polissa_id))
+        sleep(0.1)
 
     step('ready to send the email')
     tar_filename = 'curves_molonguis_{}.tar.gz'.format(datetime.now().strftime("%Y-%m-%d"))
