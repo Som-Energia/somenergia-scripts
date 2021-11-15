@@ -75,10 +75,11 @@ class InvoiceMaker:
             return None
         invoice = self.O.AccountInvoice.create(vals)
         partner_lang = self.O.ResPartner.read(vals['partner_id'], ['lang'])['lang']
-        valsLineManage = self.getValsLine(invoice.id, '705000000100', DESC_MANAGE[partner_lang], 41.32)
+        valsLineManage = self.getValsLine(invoice.id, '705000000100',
+                DESC_MANAGE[partner_lang], 82.65)
         invoice_line_services = self.O.AccountInvoiceLine.create(valsLineManage)
-        valsLineAdvance = self.getValsLine_without_tax(invoice.id, '419000000001', DESC_ADVANCE[partner_lang], 100.00)
-        invoice_line_services = self.O.AccountInvoiceLine.create(valsLineAdvance)
+        #valsLineAdvance = self.getValsLine_without_tax(invoice.id, '419000000001', DESC_ADVANCE[partner_lang], 100.00)
+        #invoice_line_services = self.O.AccountInvoiceLine.create(valsLineAdvance)
         self.O.AccountInvoice.button_reset_taxes([invoice.id])
         return True
 
