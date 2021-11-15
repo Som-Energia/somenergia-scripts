@@ -266,6 +266,16 @@ invoicefixing:
           filename: extended_errors.csv
           extension: csv
 
+    llistatF1erronis:
+      script: python SOME_SRC/somenergia-scripts/invoicing7f1fixing/f1_error_report.py --start_date {start_date} --output {output}
+      title: Llista els F1 amb errors
+      description: Llista els F1 amb error carregats a partir d'una data indicada. No es mostren els F1 en fase de càrrega 1.
+      parameters:
+        start_date:
+          description: data (ex. 2021-05-31)
+        output:
+          description: nom del fitxer resultat (ex. sortida.csv)
+
 gestiocontractes:
     description: Gestió de contractes
     scripts:
