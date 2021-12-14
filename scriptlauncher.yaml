@@ -499,10 +499,31 @@ admin:
           description: Data final titols a retornar (ex. 2012-10-31)
         id_remesa:
           description: Id remesa on posar el retorn dels títol (ex. 2349)
+
     assentamentsInterventors:
       script: python SOME_SRC/somenergia-scripts/admin/descarregar_assentaments_comptables.py --start_date {start_date} --end_date {end_date}
       title: Puja al Drive els assentaments pels interventors
       description: Exporta els assentaments al Drive a la carpeta compartida AssentamentsInterventors
+      parameters:
+        start_date:
+          description: data inici (ex. 2019-01-01)
+        end_date:
+          description: data final (ex. 2019-03-31)
+
+    llistatFacturesIVA:
+      script: python SOME_SRC/somenergia-scripts/admin/descarregar_factures_hisenda.py --start_date {start_date} --end_date {end_date}
+      title: Puja al Drive les factures amb informació de l'IVA per Hisenda
+      description: Exporta informació de les factures emeses per Som Energia al Drive a la carpeta compartida AssentamentsInterventors
+      parameters:
+        start_date:
+          description: data inici (ex. 2019-01-01)
+        end_date:
+          description: data final (ex. 2019-03-31)
+
+    llistatContractes:
+      script: python SOME_SRC/somenergia-scripts/admin/descarregar_contractes_hisenda.py --start_date {start_date} --end_date {end_date}
+      title: Puja al Drive llista de contractes amb import facturat
+      description: Exporta informació de la llista de tots els contractes de Som Energia amb la facturació entre unes dates concretes
       parameters:
         start_date:
           description: data inici (ex. 2019-01-01)
