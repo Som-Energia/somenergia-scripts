@@ -21,7 +21,8 @@ rprt_obj = O.GiscedataFacturacioFacturaReport
 
 # Found known errors
 known_errors = {
-    """'cc_name': fact.partner_bank.iban[:-5]+"*****" if pol.tipo_pago.code != 'TRANSFERENCIA_CSB' else pol.payment_mode_id.bank_id.iban+_(" (Som Energia, SCCL)"),""": "La polissa de la factura no te compte bancari!"
+    """'cc_name': fact.partner_bank.iban[:-5]+"*****" if pol.tipo_pago.code != 'TRANSFERENCIA_CSB' else pol.payment_mode_id.bank_id.iban+_(" (Som Energia, SCCL)"),""": "La polissa de la factura no te compte bancari!",
+    """excempcio = excempcio[excempcio.find("(")+1:excempcio.find(")")]""": "Revisa la posició fiscal, text de la excempcio dona problemes!!",
 }
 
 
