@@ -266,6 +266,17 @@ invoicefixing:
           filename: extended_errors.csv
           extension: csv
 
+    fix_contracts_after_rectificative_f1:
+      title: Reescriptura de la facturació d'una polissa per F1 rectificatiu
+      description: Script que permet donada una F1 rectificativa de proveïdor reescriure la facturació de la polissa esborrant-ne lectures, carregant-ne de noves, abonant i rectificant factures generades i avançant la facturació fins on es pugui.
+      script: python SOME_SRC/somenergia-scripts/invoicing/fix_contracts_after_rectificative_F1.py --polisses_ids={pol_ids} --polisses_names={pol_names}
+      parameters:
+        pol_ids:
+          description: id's de les polisses separats per coma sense espais
+        pol_names:
+          description: noms de les polisses separats per coma sense espais i amb els 0 davant
+
+
 gestiocontractes:
     description: Gestió de contractes
     scripts:
