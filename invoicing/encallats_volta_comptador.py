@@ -46,8 +46,6 @@ def main():
     clot_ids = clot_obj.search([('lot_id', '=', id_lot_obert), ('tarifaATR','like', '2.%'),('status', 'like', '%[V001]%')])
     success("Factures 2.X amb V001 al lot actual trobades: {}", len(clot_ids))
 
-    clot_ids = clot_ids[:10]
-
     csv_writer.writerow(['Nom polissa', 'Data ultima lectura facturada'])
     for clot_id in tqdm(clot_ids):
         cl = clot_obj.browse(clot_id)

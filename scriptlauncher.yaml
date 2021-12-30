@@ -277,8 +277,8 @@ invoicefixing:
           description: noms de les polisses separats per coma sense espais i amb els 0 davant
 
     encallats_volta_comptador:
-      title: text
-      description: mes text
+      title: Genera csv amb les polisses encallades per volta de comptador i F1 tipus R
+      description: Genera csv amb les polisses encallades per volta de comptador i F1 tipus R amb coincidencia de dates entre la F1 i la data de ultima lectura facturada
       script: python SOME_SRC/somenergia-scripts/invoicing/encallats_volta_comptador.py {output}
       parameters:
         output:
