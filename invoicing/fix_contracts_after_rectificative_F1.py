@@ -208,7 +208,7 @@ def search_polissa_by_ids(pol_ids):
 
 def search_polissa_by_names(pol_names):
     ret_ids = []
-    polissa_names = [int(i) for i in pol_names.split(',')]
+    polissa_names = [i for i in pol_names.split(',')]
     for polissa_name in polissa_names:
         step("Cerquem la polissa...", polissa_name)
         pol_ids = pol_o.search([('name', '=', polissa_name)])
