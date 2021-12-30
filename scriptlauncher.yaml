@@ -276,6 +276,16 @@ invoicefixing:
         pol_names:
           description: noms de les polisses separats per coma sense espais i amb els 0 davant
 
+    encallats_volta_comptador:
+      title: text
+      description: mes text
+      script: python SOME_SRC/somenergia-scripts/invoicing/encallats_volta_comptador.py {output}
+      parameters:
+        output:
+          type: FILEDOWN
+          filename: volta_comptador.csv
+          extension: csv
+
 
 gestiocontractes:
     description: Gestió de contractes
