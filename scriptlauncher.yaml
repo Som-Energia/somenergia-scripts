@@ -286,6 +286,21 @@ invoicefixing:
           filename: volta_comptador.csv
           extension: csv
 
+    set_zero_consumption_after_F1G:
+      title: Setejar consum (i generació) 0 després d'un F1 tipus G
+      description: "Script que permet setejar consum i generació 0 pel període comprès en un F1 tipus G que té alguna línia d'energia negativa. Cal que sigui d'autoconsum tipus 41 i que l'F1 encara no estigui facturat.
+      Modifica les lectures de comptador per afegir un ajust i ajust exporta per a que el consum i generació sigui 0, i afegeix un comentari a observacions."
+      script: python SOME_SRC/somenergia-scripts/invoicing/measurefixing/consumption_0_after_f1G.py --file={csv_file} --from-date={from_date} --output={output}
+      parameters:
+        csv_file:
+          type: FILE
+          description: "CSV amb el nom de les pòlisses a la primera columna, sense capçalera"
+        from_date:
+          description: Data d'inicial dels F1 tipus G que cal buscar, amb el format YYYY-mm-dd
+        output:
+          type: FILEDOWN
+          extension: csv
+          filename: polissa_names.csv
 
 gestiocontractes:
     description: Gestió de contractes
