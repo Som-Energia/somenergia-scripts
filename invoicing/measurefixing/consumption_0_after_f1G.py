@@ -52,7 +52,7 @@ def output_results(filename):
     success("Sense F1 tipus G no facturat: {}",len(sense_f1_g))
     step(sense_f1_g)
     if f1_more_atrfact:
-        success("Més d'una factura dins de l'F1 [CUPS](cal revisar acció feta): {}",len(f1_more_atrfactf1_more_atrfact))
+        success("Més d'una factura dins de l'F1 [CUPS](cal revisar acció feta): {}",len(f1_more_atrfact))
         step(f1_more_atrfact)
     success("Altres errors: {}", len(errors_buscant))
     print_list(errors_buscant)
