@@ -271,10 +271,9 @@ invoicefixing:
       description: Script que permet donada una F1 rectificativa de proveïdor reescriure la facturació de la polissa esborrant-ne lectures, carregant-ne de noves, abonant i rectificant factures generades i avançant la facturació fins on es pugui.
       script: python SOME_SRC/somenergia-scripts/invoicing/fix_contracts_after_rectificative_F1.py --polisses_ids={pol_ids} --polisses_names={pol_names}
       parameters:
-        pol_ids:
-          description: id's de les polisses separats per coma sense espais
-        pol_names:
-          description: noms de les polisses separats per coma sense espais i amb els 0 davant
+        csv_file:
+          type: FILE
+          description: "CSV amb el nom de les pòlisses a la primera columna, sense capçalera"
 
     encallats_volta_comptador:
       title: Genera csv amb les polisses encallades per volta de comptador i F1 tipus R
@@ -301,6 +300,20 @@ invoicefixing:
           type: FILEDOWN
           extension: csv
           filename: polissa_names.csv
+
+    check_f1G_pols_with_auto:
+      title: Genera csv amb les polisses amb algun F1 tipus G d'autoconsum on alguna línia d'energia sigui negativa.
+      description: Genera csv amb les polisses que tenen algun F1 tipus G d'autoconsum amb alguna línia d'energia amb quantitat negativa.
+      script: python SOME_SRC/somenergia-scripts/invoicing/measurefixing/list_auto_contracts_f1_type_G.py --from-date={from_date} --show-fact={show_fact} --output={output}
+      parameters:
+        from_date:
+          description: Data d'inicial dels F1 tipus G que cal buscar, amb el format YYYY-mm-dd
+        show_fact:
+          description: Mostrar les pòlisses amb l'F1 ja facturat? (s/n)
+        output:
+          type: FILEDOWN
+          filename: polissa_names.csv
+          extension: csv
 
 gestiocontractes:
     description: Gestió de contractes

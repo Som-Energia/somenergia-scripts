@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 import configdb
-import argparse
+import argparse, csv
 import traceback
 from erppeek import Client
 from tqdm import tqdm
@@ -21,6 +21,7 @@ lect_pot_obj = c.model('giscedata.lectures.potencia')
 carrega_lect_wiz_o = c.model('giscedata.lectures.pool.wizard')
 wiz_ranas_o = c.model('wizard.ranas')
 avancar_f_wiz_o = c.model('wizard.avancar.facturacio')
+modcon_obj = c.model('giscedata.polissa.modcontractual')
 
 polisses_inicials = [] # totes les polisses inicials
 te_facturacio_suspesa = [] # te facturació suspesa
@@ -66,10 +67,16 @@ def fix_contracts_after_rectificative_F1():
                 continue
 
             data_inici_primera = fact_obj.read(f_prov_primera, ['data_inici'])['data_inici']
+            esborrar_lectures_desde = data_inici_primera
+            if len(modcon_obj.search([('polissa_id','=',pol_id), ('data_inici','=',data_inici_primera)], limit=1, context={'active_test': False})) != 0:
+                #Si coincideix amb l'inici d'una modcon hem de esborrar també les inicials
+                esborrar_lectures_desde = (datetime.strptime(data_inici_primera, '%Y-%m-%d') - timedelta(days=1)).strftime("%Y-%m-%d")
+
             search_params = [
-                ('name','>',data_inici_primera),
+                ('name','>=',esborrar_lectures_desde),
                 ('comptador.polissa', '=', pol_id),
             ]
+
             lects_esborrar = lect_obj.search(search_params, context={'active_test':False})
             if not lects_esborrar:
                 sense_lectures.append(pol_id)
@@ -88,7 +95,7 @@ def fix_contracts_after_rectificative_F1():
 
             ####### carrega lectures fins data última lectura facturada
             step("carregant lectures")
-            data_facturat_ok = (datetime.strptime(data_inici_primera, '%Y-%m-%d') - timedelta(days=1)).strftime("%Y-%m-%d")
+            data_facturat_ok = (datetime.strptime(esborrar_lectures_desde, '%Y-%m-%d') - timedelta(days=1)).strftime("%Y-%m-%d")
             p.write({'data_ultima_lectura':data_facturat_ok})
             wiz_id = carrega_lect_wiz_o.create({'date':data_ultima_lectura},context={'model':'giscedata.polissa'})
             wiz_id.action_carrega_lectures(context={'active_id': pol_id,'active_ids':[pol_id],'model':'giscedata.polissa'})
@@ -192,51 +199,37 @@ def print_list(lst):
         step(" - id {} polissa {}", pol_id, pol_name)
         step(pol_text)
 
-def search_polissa_by_ids(pol_ids):
+def search_polissa_by_names(polissa_names):
     ret_ids = []
-    polissa_ids = [int(i) for i in pol_ids.split(',')]
-    for polissa_id in polissa_ids:
-        step("Cerquem la polissa...", polissa_id)
-        pol_ids = pol_o.search([('id', '=', int(polissa_id))])
-        if len(pol_ids) == 0:
-            warn("Cap polissa trobada amb aquest id!!")
-        if len(pol_ids) > 1:
-            warn("Multiples polisses trobades!! {}", pol_ids)
-        ret_ids.append(pol_ids[0])
-        step("Polissa amb ID {} existeix", pol_ids[0])
-    return ret_ids
-
-def search_polissa_by_names(pol_names):
-    ret_ids = []
-    polissa_names = [i for i in pol_names.split(',')]
     for polissa_name in polissa_names:
         step("Cerquem la polissa...", polissa_name)
-        pol_ids = pol_o.search([('name', '=', polissa_name)])
+        pol_ids = pol_o.search([('name', '=', polissa_name)], context={'active_test': False})
         if len(pol_ids) == 0:
             warn("Cap polissa trobada amb aquest id!!")
-        if len(pol_ids) > 1:
+        elif len(pol_ids) > 1:
             warn("Multiples polisses trobades!! {}", pol_ids)
-        ret_ids.append(pol_ids[0])
-        step("Polissa amb ID {} existeix", pol_ids[0])
+        else:
+            ret_ids.append(pol_ids[0])
+            step("Polissa amb ID {} existeix", pol_ids[0])
     return ret_ids
 
-def main(polissa_ids, polissa_names):
-    if polissa_ids:
-        polisses_inicials.extend(search_polissa_by_ids(polissa_ids))
-    if polissa_names:
-        polisses_inicials.extend(search_polissa_by_names(polissa_names))
+def read_polissa_names(csv_file):
+    one_id = pol_o.search([], limit=1)[0]
+    one_name = pol_o.read(one_id, ['name'])['name']
+    with open(csv_file, 'rb') as f:
+        reader = csv.reader(f)
+        csv_content = [row[0].zfill(len(one_name)) for row in reader if row[0]]
+    return list(set(csv_content))
+
+
+def main(csv_file):
+    polissa_names = read_polissa_names(csv_file)
+    polisses_inicials.extend(search_polissa_by_names(polissa_names))
 
     fix_contracts_after_rectificative_F1()
 
     output_results()
 
-def only_one(a, b):
-    n = 0
-    if bool(a):
-        n += 1
-    if bool(b):
-        n += 1
-    return n == 1
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(
@@ -244,25 +237,16 @@ if __name__=='__main__':
     )
 
     parser.add_argument(
-        '--polisses_ids',
-        dest='p_ids',
-        help="llista d'Id de les polisses"
-    )
-
-    parser.add_argument(
-        '--polisses_names',
-        dest='p_names',
-        help="llista de noms de les polisses"
+        '--file',
+        dest='csv_file',
+        required=True,
+        help="csv amb el nom de les pòlisses a modificar (a la primera columna i sense capçalera)"
     )
 
     args = parser.parse_args()
 
-    if not only_one(args.p_ids, args.p_names):
-        parser.print_help()
-        sys.exit()
-
     try:
-        main(args.p_ids, args.p_names)
+        main(args.csv_file)
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
         error("El proces no ha finalitzat correctament: {}", str(e))
