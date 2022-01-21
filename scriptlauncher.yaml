@@ -315,6 +315,20 @@ invoicefixing:
           filename: polissa_names.csv
           extension: csv
 
+    list_invoices_different_export:
+      title: Genera csv amb les factures client amb una quantitat diferent d'energia exportada que la corresponent de proveidor.
+      description: Genera csv amb les factures d'autoconsum on l'energia exportada sigui diferent de la que apareix a la corresponent factura de proveidor. Se'n mostra també la pòlissa i les dades.
+      script: python SOME_SRC/somenergia-scripts/invoicing/list_invoices_different_export_energy.py --from-date={from_date} --to-date={to_date} --output={output}
+      parameters:
+        from_date:
+          description: Des de quina data d'inici cal buscar les factures, amb el format YYYY-mm-dd
+        to_date:
+          description: Fins a quina data poden començar les factures que cal comprovar, amb el format YYYY-mm-dd
+        output:
+          type: FILEDOWN
+          filename: factures.csv
+          extension: csv
+
 gestiocontractes:
     description: Gestió de contractes
     scripts:
