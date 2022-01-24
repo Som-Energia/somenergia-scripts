@@ -58,23 +58,38 @@ def find_invoices(from_date, to_date):
         try:
             date_from = from_date if from_date > p_info['data_alta_autoconsum'] else p_info['data_alta_autoconsum']
             p_id = p_info['id']
-            f_ids = fact_obj.search([('polissa_id','=',p_id),('data_inici','>=', date_from), ('data_inici', '<', to_date)])
+            f_ids = fact_obj.search([('polissa_id','=',p_id),('data_final','>=', date_from), ('data_inici', '<=', to_date)])
             if not f_ids:
                 continue
             f_client_ids = fact_obj.search([('id','in',f_ids),('type','=','out_invoice'),('refund_by_id','=',False)])
             for f_c_id in f_client_ids:
                 fact = fact_obj.browse(f_c_id)
-                f_prov_id = fact_obj.search([('id','in',f_ids),('type','=','in_invoice'),('data_inici','=',fact.data_inici),('data_final','=',fact.data_final)])
-                if len(f_prov_id) != 1:
+                f_prov_id = fact_obj.search([('id','in',f_ids),('type','=','in_invoice'),('data_inici','=',fact.data_inici),('data_final','=',fact.data_final),('refund_by_id','=',False)])
+                if len(f_prov_id) > 1:
                     no_correspon_prov_ids.append(f_c_id)
                     no_correspon_prov.append([f_c_id, len(f_prov_id)])
+                elif len(f_prov_id) == 0:
+                    f_prov_extrems_ids = fact_obj.search([('polissa_id', '=', p_id), ('type', '=', 'in_invoice'), '|',('data_final', '=', fact.data_final), ('data_inici','=', fact.data_inici)])
+                    if len(f_prov_extrems_ids) == 1:
+                        fact_prov = fact_obj.browse(f_prov_extrems_ids[0])
+                        f_clients_partides_id = fact_obj.search([('polissa_id','=',p_id),('type','=','out_invoice'),('data_inici','>=', fact_prov.data_inici), ('data_final','<=', fact_prov.data_final)])
+                        if f_clients_partides_id:
+                            energy_total = sum([x['generacio_kwh'] for x in fact_obj.read(f_clients_partides_id, ['generacio_kwh'])])
+                            if abs(fact_prov.generacio_kwh - energy_total) > len(f_clients_partides_id):
+                                differents.append({
+                                    'f_id':fact.id, 'f_num': fact.number, 'polissa':fact.polissa_id.name,
+                                    'exp_client':fact.generacio_kwh, 'exp_prov':fact_prov.generacio_kwh,
+                                    'f_prov_id':fact_prov.id, 'data_inici':fact.data_inici, 'data_final':fact.data_final, 'obs': 'Comprèn una part de la factura de proveïdor'
+                                })
+                    else:
+                        no_correspon_prov.append([f_c_id, len(f_prov_id)])
                 else:
                     fact_prov = fact_obj.browse(f_prov_id[0])
                     if abs(fact_prov.generacio_kwh - fact.generacio_kwh) > 2:
                         differents.append({
                             'f_id':fact.id, 'f_num': fact.number, 'polissa':fact.polissa_id.name,
                             'exp_client':fact.generacio_kwh, 'exp_prov':fact_prov.generacio_kwh,
-                            'f_prov_id':fact_prov.id, 'data_inici':fact.data_inici, 'data_final':fact.data_final
+                            'f_prov_id':fact_prov.id, 'data_inici':fact.data_inici, 'data_final':fact.data_final, 'obs':''
                         })
                     else:
                         facts_ok.append(f_c_id)
