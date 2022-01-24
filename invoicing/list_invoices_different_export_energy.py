@@ -44,10 +44,10 @@ def output_results():
 
 def write_results(filename):
     with open(filename,'w') as f:
-        f.write("Polissa,ID factura,Num Factura,Exportada client, Exportada proveidor, data inici, data final,ID factura proveidor\n")
+        f.write("Polissa,ID factura,Num Factura,Exportada client, Exportada proveidor, data inici, data final,ID factura proveidor, observacions\n")
         for a in differents:
-            f.write("{},{},{},{},{},{},{},{}\n".format(
-                a['polissa'], a['f_id'], a['f_num'], a['exp_client'], a['exp_prov'], a['data_inici'], a['data_final'], a['f_prov_id'])
+            f.write("{},{},{},{},{},{},{},{},{}\n".format(
+                a['polissa'], a['f_id'], a['f_num'], a['exp_client'], a['exp_prov'], a['data_inici'], a['data_final'], a['f_prov_id'], a['obs'])
             )
 
 
