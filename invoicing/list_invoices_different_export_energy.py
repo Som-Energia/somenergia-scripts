@@ -82,6 +82,7 @@ def find_invoices(from_date, to_date):
                                     'f_prov_id':fact_prov.id, 'data_inici':fact.data_inici, 'data_final':fact.data_final, 'obs': 'Comprèn una part de la factura de proveïdor'
                                 })
                     else:
+                        no_correspon_prov_ids.append(f_c_id)
                         no_correspon_prov.append([f_c_id, len(f_prov_id)])
                 else:
                     fact_prov = fact_obj.browse(f_prov_id[0])
