@@ -20,9 +20,12 @@ def main():
             if ps and ps.id in [correct_state_dp, correct_state_bs]:
                 if ps.process_id.id == 1:
                     ai_obj.set_pending( [fact.invoice_id.id], estat_fracc_extra_dp)
+                    print("La factura {} ha passat d'estat Correcte a 'Fraccionament Extralines'".format(fact.number))
                 else:
                     ai_obj.set_pending( [fact.invoice_id.id], estat_fracc_extra_bs)
+                    print("La factura {} ha passat d'estat Correcte a 'Fraccionament Extralines'".format(fact.number))
             else:
+                continue
                 if fact.invoice_id.pending_state:
                     print("La factura {} no té estat correcte.Té estat: {}".format(fact.number, fact.invoice_id.pending_state.name))
                 else:
@@ -43,9 +46,12 @@ def main():
             if ps and ps.id in [estat_fracc_extra_dp, estat_fracc_extra_bs]:
                 if ps.process_id.id == 1:
                     ai_obj.set_pending( [fact.invoice_id.id], correct_state_dp)
+                    print("La factura {} ha passat d'estat 'Fraccionament Extralines' a Correcte".format(fact.number))
                 else:
                     ai_obj.set_pending( [fact.invoice_id.id], correct_state_bs)
+                    print("La factura {} ha passat d'estat 'Fraccionament Extralines' a Correcte".format(fact.number))
             else:
+                continue
                 if fact.invoice_id.pending_state:
                     print("La factura {} no té estat fraccionament.Té estat: {}".format(fact.number, fact.invoice_id.pending_state.name))
                 else:
