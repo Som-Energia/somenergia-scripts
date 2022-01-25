@@ -329,6 +329,22 @@ invoicefixing:
           filename: factures.csv
           extension: csv
 
+    refund_rectify_from_origin:
+      title: Abona i rectifica factures client a partir d'origen de proveidor.
+      description: "
+        Abona i rectifica les factures client compreses en el període de les factures proveidor indicades pels origens entrats.
+        Retorna un fitxer amb les factures creades i a quina pòlissa pertanyen
+      "
+      script: python SOME_SRC/somenergia-scripts/invoicing/refund_rectify_from_origin.py --file={csv_file} --output={output}
+      parameters:
+        csv_file:
+          type: FILE
+          description: "CSV amb l'origen de les factures proveidor, a la primera columna i sense capçalera"
+        output:
+          type: FILEDOWN
+          filename: factures.csv
+          extension: csv
+
 gestiocontractes:
     description: Gestió de contractes
     scripts:
