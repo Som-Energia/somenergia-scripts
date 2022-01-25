@@ -28,6 +28,7 @@ amb_f_esborrany = [] #Tenen factures normals en esborrany, cal esborrar-les?
 factures_generades = [] #Factures Re i AB fetes
 polisses_processades = []
 errors = [] #Ha hagit un error inesperat al processar la polissa
+not_found = [] # origens no trobats
 
 def get_provider_invoice(origin):
 
@@ -126,6 +127,9 @@ def output_results(filename):
 
     success("ERRORS inicials:")
     success("----------------")
+    success("Origens no trobats: {}",len(not_found))
+    step(not_found)
+
     success("Sense lectures per esborrar: {}",len(sense_lectures))
     step(sense_lectures)
 
