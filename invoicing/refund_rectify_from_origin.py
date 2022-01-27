@@ -20,6 +20,10 @@ lect_obj = c.model('giscedata.lectures.lectura')
 lect_pot_obj = c.model('giscedata.lectures.potencia')
 carrega_lect_wiz_o = c.model('giscedata.lectures.pool.wizard')
 wiz_ranas_o = c.model('wizard.ranas')
+wiz_ag_o = c.model('wizard.group.invoices.payment')
+po_obj = c.model('payment.order')
+
+plantilla_id = 338
 
 
 sense_lectures = [] #No n'hi ha lectures per esborrar
@@ -39,7 +43,28 @@ def get_provider_invoice(origin):
         return False
     return f_prov_ref[0]
 
-def refund_rectify_by_origin(origin_list):
+def send_mail(p_id):
+    ctx = {
+        'active_ids': [p_id],
+        'active_id': p_id,
+        'template_id': plantilla_id,
+        'src_model': 'giscedata.polissa',
+        'src_rec_ids': [p_id],
+        'from': 23,
+        'state': 'single',
+        'priority': 0,
+    }
+    params = {
+        'state': 'single',
+        'priority': 0,
+        'from': 23,
+    }
+
+    wz_id = c.PoweremailSendWizard.create(params, ctx)
+    result = c.PoweremailSendWizard.send_mail([wz_id.id], ctx)
+
+def refund_rectify_by_origin(origin_list, payment_order_id):
+
     for origin in tqdm(origin_list):
         try:
             fact_prov_id = get_provider_invoice(origin)
@@ -111,8 +136,63 @@ def refund_rectify_by_origin(origin_list):
             context={'active_ids':f_cli_rectificar, 'active_id':f_cli_rectificar[0]}
             wiz_id = wiz_ranas_o.create({}, context=context)
             fres_resultat = wiz_id.action_rectificar(context=context)
-            factures_generades.extend([[pol_id,fact_prov.polissa_id.name, fr] for fr in fres_resultat])
-            step("abonat i rectificat")
+            if len(fres_resultat) != len(f_cli_rectificar)*2:
+                factures_generades.extend(
+                    [[pol_id,fact_prov.polissa_id.name, fr, "S'han creat {} factures AB/RE per {} factures client. No continua el procés".format(len(fres_resultat), len(f_cli_rectificar))] 
+                    for fr in fres_resultat])
+                continue
+
+            #Eliminem les que no cal rectificar (import AB == import RE)
+            fact_info = fact_obj.read(fres_resultat, ['data_inici','amount_total'])
+            sorted_fact_info = sorted(fact_info, key=lambda x: x['data_inici'])
+            for idx in range(len(f_cli_rectificar)):
+                if sorted_fact_info[idx*2]['amount_total'] == sorted_fact_info[idx*2+1]['amount_total']:
+                    to_del_ids = [sorted_fact_info[idx*2]['id'], sorted_fact_info[idx*2+1]['id']]
+                    fact_obj.unlink(to_del_ids)
+                    factures_generades.extend(
+                        [[pol_id,fact_prov.polissa_id.name, fr, "S'ha eliminat per import igual, data inici: {}".format(fr['data_inici'])]
+                    for fr in to_del_ids])
+                    fres_resultat = list(set(fres_resultat)- set(to_del_ids))
+
+            if not fres_resultat:
+                continue
+            #Obrir les factures
+            try:
+                c.wizard('giscedata.facturacio.factura.obrir', {'model': 'giscedata.facturacio.factura', 'form': {}, 'id': fres_resultat[0], 'report_type': 'pdf', 'ids': fres_resultat}, 'init', )
+            except Exception as e:
+                factures_generades.extend(
+                    [[pol_id,fact_prov.polissa_id.name, fr, "Error en obrir les factures, no continua el procés. Error {}".format(str(e))]
+                    for fr in fres_resultat]
+                )
+                continue
+
+            #Agrupar les factures
+            try:
+                agrupar_ctx = {'active_id':fres_resultat[0], 'active_ids':fres_resultat, 'model':'giscedata.facturacio.factura'}
+                wiz = wiz_ag_o.create({},context=agrupar_ctx)
+                if wiz.amount_total == 0:
+                    factures_generades.extend(
+                    [[pol_id,fact_prov.polissa_id.name, fr, "L'agrupació de factures fan un total de 0. S'atura el procés"]
+                    for fr in fres_resultat]
+                )
+                elif wiz.amount_total < 0:
+                    res = wiz_ag_o.agrupar_remesar([wiz.id], context=agrupar_ctx)
+                    remesar_ctx = res['context']
+                    wiz_remesar_o = c.model(res['res_model'])
+                    wiz_remesa = wiz_remesar_o.create({'tipus': 'payable', 'order': payment_order_id}, context=remesar_ctx)
+                    wiz_remesar_o.action_afegir_factures(wiz_remesa.id, context=remesar_ctx)
+                else:
+                    wiz_ag_o.group_invoices([wiz.id], context=agrupar_ctx)
+            except Exception as e:
+                factures_generades.extend(
+                    [[pol_id,fact_prov.polissa_id.name, fr, "Error en agrupar les factures (o remesar), no continua el procés. Error {}".format(str(e))]
+                    for fr in fres_resultat]
+                )
+                continue
+            send_mail(pol_id)
+            factures_generades.extend([[pol_id,fact_prov.polissa_id.name, fr, 'Procés complert, email enviat.'] for fr in fres_resultat])
+
+            step("Correu enviat")
             polisses_processades.append([pol_id, origin])
         except Exception as e:
             errors.append([pol_id, str(e)])
@@ -149,9 +229,9 @@ def output_results(filename):
     print_list(errors)
 
     with open(filename,'w') as f:
-        f.write("Id polissa, polissa, id factura \n")
+        f.write("Id polissa, polissa, id factura, informacio \n")
         for a in factures_generades:
-            f.write("{},{},{}\n".format(*a))
+            f.write("{},{},{},{}\n".format(*a))
 
 
 def print_list(lst):
@@ -169,10 +249,17 @@ def read_invoices_origin(csv_file):
         csv_content = [row[0] for row in reader if row[0]]
     return list(set(csv_content))
 
+def get_payment_order_by_name(order_name):
+    po_ids = po_obj.search([('reference', '=', order_name), ('type','=','payable')])
+    if len(po_ids) != 1:
+        raise Exception("Trobades {} ordres amb aquest nom".format(len(po_ids)))
+    else:
+        return po_ids[0]
 
-def main(csv_file, outputfile):
+def main(csv_file, outputfile, payment_order):
     invoice_origins = read_invoices_origin(csv_file)
-    refund_rectify_by_origin(invoice_origins)
+    payment_order_id = get_payment_order_by_name(payment_order)
+    refund_rectify_by_origin(invoice_origins, payment_order_id)
 
     output_results(outputfile)
 
@@ -188,6 +275,13 @@ if __name__=='__main__':
         required=True,
         help="csv amb l'origen de les factures proveïdor (a la primera columna i sense capçalera)"
     )
+    parser.add_argument(
+        '--payment-order',
+        dest='payment_order',
+        required=True,
+        type=str,
+        help="Nom de la remesa on afegir factures agrupades a pagar",
+        )
 
     parser.add_argument(
         '--output',
@@ -199,7 +293,7 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     try:
-        main(args.csv_file, args.output)
+        main(args.csv_file, args.output, args.payment_order)
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
         error("El proces no ha finalitzat correctament: {}", str(e))
