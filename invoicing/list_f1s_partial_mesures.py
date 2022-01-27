@@ -35,7 +35,7 @@ def find_f1s(from_date, to_date):
     search_params = [('data_carrega', '>=', from_date),
                      ('data_carrega', '<=', '{} 23:59:59'.format(to_date))]
 
-    f1_obj = c.model('giscedata.facturacio.factura')
+    f1_obj = c.model('giscedata.facturacio.importacio.linia')
     f1s = f1_obj.search(search_params)
 
     problematics = []
