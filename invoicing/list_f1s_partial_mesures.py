@@ -6,7 +6,7 @@ import csv
 import traceback
 from erppeek import Client
 from tqdm import tqdm
-from datetime import datetime
+from datetime import datetime, timedelta
 import sys
 from consolemsg import error, step, success, warn
 
@@ -24,10 +24,13 @@ def output_results():
 
 def write_results(filename, content):
     with open(filename,'w') as f:
-        f.write("id F1,Cups,fase importacio ,ID F1 rectificant, Fase importacio R\n")
+        f.write("id F1,Cups,fase importacio,tipus F1, Data factura desde, data factura hasta, data lect. anterior, data lect. actual,  ID F1 rectificant, Fase importacio R\n")
         for a in content:
             f.write("{},{},{},{},{}\n".format(
-                a['id'], a['cups'], a['fase'], a['id rect'], a['fase rect'])
+                a['id'], a['cups'], a['fase'],
+                a['type'], a['fecha_desde'], a['fecha_hasta'],
+                a['data_l_desde'], a['data_l_hasta'],
+                a['id rect'], a['fase rect'])
             )
 
 def find_f1s(from_date, to_date):
@@ -42,9 +45,11 @@ def find_f1s(from_date, to_date):
     for f1 in tqdm(f1_obj.browse(f1s)):
         try:
             if f1.importacio_lectures_ids:
-                ff_d_f1 = set([f1.fecha_factura_desde])
-                f_d = set(f1.importacio_lectures_ids.fecha_desde)
-                if ff_d_f1 != f_d:
+                ff_d_f1 = f1.fecha_factura_desde
+                dia_anterior = (datetime.strptime(f1.fecha_factura_desde, '%Y-%m-%d') - timedelta(days=1)).strftime("%Y-%m-%d")
+                f_d = min(f1.importacio_lectures_ids.fecha_desde)
+                f_h_lect = max(f1.importacio_lectures_ids.fecha_actual)
+                if (f_d not in [dia_anterior, ff_d_f1]) or f_h_lect != f1.fecha_factura_hasta:
                     problematics.append(f1.id)
         except Exception as e:
             errors_buscant.append(str(e))
@@ -66,14 +71,20 @@ def find_f1s(from_date, to_date):
                                 ('codi_rectificada_anulada','=',prob.invoice_number_text),
                                 ('type_factura','=','R')])
 
+            dades_f1 = {
+                'id': prob.id, 'cups': prob.cups_id.name, 'fase': prob.import_phase,
+                'type': prob.type_factura, 'id rect': False, 'fase rect': False,
+                'fecha_desde': prob.fecha_factura_desde, 'fecha_hasta': prob.fecha_factura_hasta,
+                'data_l_desde': min(prob.importacio_lectures_ids.fecha_desde),
+                'data_l_hasta': max(prob.importacio_lectures_ids.fecha_actual)
+            }
             if not rs:
                 problematics_sense_R.append(problematic)
-                dades = {'id':prob.id, 'cups': prob.cups_id.name, 'fase':prob.import_phase, 'id rect': False, 'fase rect': False}
-                resultat.append(dades)
+                resultat.append(dades_f1)
             for f1_r in rs:
                 rect = f1_obj.browse(f1_r)
-                dades = {'id':prob.id, 'cups': prob.cups_id.name, 'fase':prob.import_phase, 'id rect': rect.id, 'fase rect': rect.import_phase}
-                dades['id_rect'] = rs[0]
+                dades = dades_f1.copy()
+                dades['id_rect'] = rect.id
                 dades['fase rect'] = rect.import_phase
                 resultat.append(dades)
         except Exception as e:
