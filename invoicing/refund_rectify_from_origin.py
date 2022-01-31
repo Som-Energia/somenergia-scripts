@@ -150,7 +150,7 @@ def refund_rectify_by_origin(origin_list, payment_order_id):
                     to_del_ids = [sorted_fact_info[idx*2]['id'], sorted_fact_info[idx*2+1]['id']]
                     fact_obj.unlink(to_del_ids)
                     factures_generades.extend(
-                        [[pol_id,fact_prov.polissa_id.name, fr, "S'ha eliminat per import igual, data inici: {}".format(fr['data_inici'])]
+                        [[pol_id,fact_prov.polissa_id.name, fr, "S'ha eliminat per import igual"]
                     for fr in to_del_ids])
                     fres_resultat = list(set(fres_resultat)- set(to_del_ids))
 
