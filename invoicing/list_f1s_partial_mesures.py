@@ -26,7 +26,7 @@ def write_results(filename, content):
     with open(filename,'w') as f:
         f.write("id F1,Cups,fase importacio,tipus F1, Data factura desde, data factura hasta, data lect. anterior, data lect. actual,  ID F1 rectificant, Fase importacio R\n")
         for a in content:
-            f.write("{},{},{},{},{}\n".format(
+            f.write("{},{},{},{},{},{},{},{},{},{}\n".format(
                 a['id'], a['cups'], a['fase'],
                 a['type'], a['fecha_desde'], a['fecha_hasta'],
                 a['data_l_desde'], a['data_l_hasta'],
@@ -35,12 +35,11 @@ def write_results(filename, content):
 
 def find_f1s(from_date, to_date):
 
-    search_params = [('data_carrega', '>=', from_date),
-                     ('data_carrega', '<=', '{} 23:59:59'.format(to_date))]
+    search_params = [('fecha_factura_desde', '>=', from_date),
+                     ('fecha_factura_hasta', '<=', to_date)]
 
     f1_obj = c.model('giscedata.facturacio.importacio.linia')
     f1s = f1_obj.search(search_params)
-
     problematics = []
     for f1 in tqdm(f1_obj.browse(f1s)):
         try:
@@ -111,14 +110,14 @@ if __name__ == '__main__':
         '--from-date',
         dest='from_date',
         required=True,
-        help="Data de càrrega a partir de la qual cal buscar els F1"
+        help="Data d'inici a partir de la qual cal buscar els F1"
     )
 
     parser.add_argument(
         '--to-date',
         dest='to_date',
         required=True,
-        help="Data de càrrega fins la que cal buscar els F1"
+        help="Data d'inici fins la que cal buscar els F1"
     )
 
     parser.add_argument(

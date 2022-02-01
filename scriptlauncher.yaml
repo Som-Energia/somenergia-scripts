@@ -351,9 +351,9 @@ invoicefixing:
       script: python SOME_SRC/somenergia-scripts/invoicing/list_f1s_partial_mesures.py --from-date={from_date} --to-date={to_date} --output={output}
       parameters:
         from_date:
-          description: Des de quina data de càrrega cal buscar els F1s, amb el format YYYY-mm-dd
+          description: Des de quina data d'inici cal buscar els F1s, amb el format YYYY-mm-dd
         to_date:
-          description: Fins a quina data de càrrega cal buscar els F1s, amb el format YYYY-mm-dd
+          description: Fins a quina data d'inici cal buscar els F1s, amb el format YYYY-mm-dd
         output:
           type: FILEDOWN
           filename: list_f1.csv
