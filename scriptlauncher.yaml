@@ -348,6 +348,20 @@ invoicefixing:
           filename: factures.csv
           extension: csv
 
+    list_f1_partial_measures:
+      title: Genera csv els F1 que tenen lectures parcials.
+      description: Genera csv amb els F1ns que tenen alguna lectures que no comprén tot el període de l'F1, i si tenen un F1 tipus R que els rectifica.
+      script: python SOME_SRC/somenergia-scripts/invoicing/list_f1s_partial_mesures.py --from-date={from_date} --to-date={to_date} --output={output}
+      parameters:
+        from_date:
+          description: Des de quina data d'inici cal buscar els F1s, amb el format YYYY-mm-dd
+        to_date:
+          description: Fins a quina data d'inici cal buscar els F1s, amb el format YYYY-mm-dd
+        output:
+          type: FILEDOWN
+          filename: list_f1.csv
+          extension: csv
+
 gestiocontractes:
     description: Gestió de contractes
     scripts:
