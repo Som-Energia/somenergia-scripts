@@ -1,0 +1,2 @@
+yamlns
+python-slugify
