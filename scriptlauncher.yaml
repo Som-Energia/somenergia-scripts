@@ -348,6 +348,22 @@ invoicefixing:
           filename: factures.csv
           extension: csv
 
+    list_contracts_empty_f1_period:
+      title: Genera csv els períodes intermitjos sense F1 trobats per a les pòlisses.
+      description: Genera csv amb períodes intermitjos sense F1 de les pòlisses indicades al fitxer. Si no s'entra cap fitxer, es busquen de totes les pòlisses
+      script: python SOME_SRC/somenergia-scripts/invoicing/list_contracts_empty_f1_period.py --from-date={from_date} --file={csv_file} --output={output}
+      parameters:
+        from_date:
+          description: Des de quina data d'inici cal buscar els "forats", amb el format YYYY-mm-dd
+        csv_file:
+          type: FILE
+          description: "CSV amb el nom de les pòlisses a la primera columna, sense capçalera. Opcional."
+        output:
+          type: FILEDOWN
+          filename: forats.csv
+          extension: csv
+
+
 gestiocontractes:
     description: Gestió de contractes
     scripts:
