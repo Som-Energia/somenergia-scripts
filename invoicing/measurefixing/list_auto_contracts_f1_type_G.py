@@ -42,7 +42,7 @@ def output_results():
         success("F1ns que informen de més d'una FacturaATR: {}",len(multiple_atrinvoices))
         step(multiple_atrinvoices)
     success("Errors: ")
-    step(errors_buscant)
+    step(','.join(errors_buscant))
 
 
 def write_results(filename, show_fact):
@@ -91,9 +91,15 @@ def find_f1_g(from_date):
         no_facturats.extend(list(filter(lambda x: x['data_ultima_lectura'] < x['fecha_hasta'],dades_pols)))
         ja_facturats.extend(list(filter(lambda x: x['data_ultima_lectura'] >= x['fecha_hasta'],dades_pols)))
     except Exception as e:
-        errors_buscant.append(str(e))
-        step("Error: {}", str(e))
         traceback.print_exc(file=sys.stdout)
+        error_text = ''
+        try:
+            error_text = str(e)
+        except UnicodeEncodeError as e2:
+            error_text = unicode(e)
+        except:
+            error_text = "Text d'error desconegut"
+        errors_buscant.append(error_text)
 
 
 def main(from_date, show_fact, filename='output.csv'):
