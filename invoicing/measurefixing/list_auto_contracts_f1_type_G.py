@@ -93,10 +93,8 @@ def find_f1_g(from_date):
             error_text = ''
             try:
                 error_text = str(e)
-            except UnicodeEncodeError as e2:
-                error_text = unicode(e)
             except:
-                error_text = "Text d'error desconegut"
+                error_text = "Text d'error desconegut en la pòlissa ID {}".format(p_id)
             errors_buscant.append(error_text)
     no_facturats.extend(list(filter(lambda x: x['data_ultima_lectura'] < x['fecha_hasta'],dades_pols)))
     ja_facturats.extend(list(filter(lambda x: x['data_ultima_lectura'] >= x['fecha_hasta'],dades_pols)))
