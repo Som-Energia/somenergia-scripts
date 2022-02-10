@@ -58,10 +58,10 @@ def write_results(filename, show_fact):
 def find_f1_g(from_date):
     pols = []
     dades_pols = []
-    try:
-        f1_g = f1_obj.search([('fecha_factura_desde','>', from_date),('type_factura','=','G')])
+    f1_g = f1_obj.search([('fecha_factura_desde','>', from_date),('type_factura','=','G')])
 
-        for f1_id in tqdm(f1_g):
+    for f1_id in tqdm(f1_g):
+        try:
             f1 = f1_obj.browse(f1_id)
             l_ener = []; l_gen = []
             if len(f1.liniafactura_id) > 1:
@@ -88,18 +88,18 @@ def find_f1_g(from_date):
             else:
                 no_trobats.append(f1_id)
 
-        no_facturats.extend(list(filter(lambda x: x['data_ultima_lectura'] < x['fecha_hasta'],dades_pols)))
-        ja_facturats.extend(list(filter(lambda x: x['data_ultima_lectura'] >= x['fecha_hasta'],dades_pols)))
-    except Exception as e:
-        traceback.print_exc(file=sys.stdout)
-        error_text = ''
-        try:
-            error_text = str(e)
-        except UnicodeEncodeError as e2:
-            error_text = unicode(e)
-        except:
-            error_text = "Text d'error desconegut"
-        errors_buscant.append(error_text)
+        except Exception as e:
+            traceback.print_exc(file=sys.stdout)
+            error_text = ''
+            try:
+                error_text = str(e)
+            except UnicodeEncodeError as e2:
+                error_text = unicode(e)
+            except:
+                error_text = "Text d'error desconegut"
+            errors_buscant.append(error_text)
+    no_facturats.extend(list(filter(lambda x: x['data_ultima_lectura'] < x['fecha_hasta'],dades_pols)))
+    ja_facturats.extend(list(filter(lambda x: x['data_ultima_lectura'] >= x['fecha_hasta'],dades_pols)))
 
 
 def main(from_date, show_fact, filename='output.csv'):
