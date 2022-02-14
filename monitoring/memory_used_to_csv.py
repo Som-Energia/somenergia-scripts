@@ -4,13 +4,31 @@
 """
 This script gets the given file (result of a top command with a predermined structure) and 
 converts the information to a csv.
+OUTPUT:
+1. ["DATE", "HOUR", "PID", "PPID", "USER", "PR", "NI", "VIRT", "RES", "SHR", "S", "%CPU", "%MEM", "TIME+", "COMMAND"]
+2. ["DATE", "COMMAND", "INST", "MEM"] on DATE i date + hour
 """
 
 import csv
-from yamlns import namespace as ns
 import datetime
+from yamlns import namespace as ns
+from memory_erp import selector
 
-months = {'Jan':1,'Feb':2}
+months = {
+    'Jan':1,
+    'Feb':2,
+    'Mar': 3,
+    'Apr': 4,
+    'May': 5,
+    'Jun': 6,
+    'Jul': 7,
+    'Aug': 8,
+    'Sep': 9,
+    'Oct': 10,
+    'Nov': 11,
+    'Dec': 12,
+    }
+
 
 def parseArguments():
     import argparse
@@ -77,25 +95,10 @@ for row in rows:
 
 filecsv = open(output_file2, 'w')
 csv_writer = csv.writer(filecsv, delimiter=';')
-csv_writer.writerow(["DATE", "COMMAND", "MEM"])
+csv_writer.writerow(["DATE", "COMMAND", "INST", "MEM"])
 data_date = False
 data_row = []
 
-
-grouped_commands = [
-    'wkhtmltopdf',
-    'tmux',
-    'git',
-    'pdftk',
-    'multitail',
-    'crontab_actions'
-]
-
-def grouped(command):
-    for gr in grouped_commands:
-        if gr in command:
-            return gr
-    return command
 
 acc = {}
 for row in rows:
@@ -103,7 +106,7 @@ for row in rows:
         continue
     if '##################' in row[0]:
         for command in sorted(acc.keys()):
-            csv_writer.writerow([date_hour, command, comma(str(acc[command]))])
+            csv_writer.writerow([date_hour, command, comma(str(acc[command]['inst'])), comma(str(acc[command]['mem']))])
         acc = {}
         continue
 
@@ -126,8 +129,13 @@ for row in rows:
     if data_date:
         data_row = row[0].split()
         last_data_row = ' '.join(data_row[12:])
-        last_data_row = grouped(last_data_row)
-        if last_data_row in acc:
-            acc[last_data_row] = acc[last_data_row] + float(data_row[10])
-        else:
-            acc[last_data_row] = float(data_row[10])
+        last_data_row = selector(last_data_row)
+
+        if last_data_row not in acc:
+            acc[last_data_row] = {'mem':0.0 ,'inst':0}
+
+        data = acc[last_data_row]
+        acc[last_data_row] = {
+            'mem': data['mem'] + float(data_row[10]),
+            'inst': data['inst'] + 1,
+            }
