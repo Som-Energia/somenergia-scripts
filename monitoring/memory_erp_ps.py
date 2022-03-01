@@ -116,7 +116,7 @@ def main():
         }
 
     lines = do_the_ps_bash()
-    report = process_the_lines(lines[:10000])
+    report = process_the_lines(lines[:100])
     print_report(title, report)
 
 
