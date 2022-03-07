@@ -138,8 +138,8 @@ def refund_rectify_by_origin(origin_list, payment_order_id):
             fres_resultat = wiz_id.action_rectificar(context=context)
             if len(fres_resultat) != len(f_cli_rectificar)*2:
                 factures_generades.extend(
-                    [[pol_id,fact_prov.polissa_id.name, fr, "S'han creat {} factures AB/RE per {} factures client. No continua el procés".format(len(fres_resultat), len(f_cli_rectificar))] 
-                    for fr in fres_resultat])
+                    [[pol_id,fact_prov.polissa_id.name, fr.id, fr.signed_amount_total, "S'han creat {} factures AB/RE per {} factures client. No continua el procés".format(len(fres_resultat), len(f_cli_rectificar))]
+                    for fr in fact_obj.browse(fres_resultat)])
                 continue
 
             #Eliminem les que no cal rectificar (import AB == import RE)
@@ -150,9 +150,21 @@ def refund_rectify_by_origin(origin_list, payment_order_id):
                     to_del_ids = [sorted_fact_info[idx*2]['id'], sorted_fact_info[idx*2+1]['id']]
                     fact_obj.unlink(to_del_ids)
                     factures_generades.extend(
-                        [[pol_id,fact_prov.polissa_id.name, fr, "S'ha eliminat per import igual"]
-                    for fr in to_del_ids])
+                        [[pol_id,fact_prov.polissa_id.name, fr.id, fr.signed_amount_total, "S'ha eliminat per import igual"]
+                    for fr in fact_obj.browse(to_del_ids)])
                     fres_resultat = list(set(fres_resultat)- set(to_del_ids))
+
+            #Mirem que l'import no sigui superior a 2000€
+            for _id in fres_resultat:
+                factura = fact_obj.browse(_id)
+                if factura.type == 'out_refund':
+                    continue
+                if factura.amount_total > 2000:
+                    factures_generades.extend(
+                        [[pol_id,fact_prov.polissa_id.name, fr.id, fr.signed_amount_total, "Import de la rectificadora elevat, cal revisar les factures"]
+                    for fr in fact_obj.browse(fres_resultat)])
+                    fres_resultat = []
+                    break
 
             if not fres_resultat:
                 continue
@@ -161,8 +173,8 @@ def refund_rectify_by_origin(origin_list, payment_order_id):
                 c.wizard('giscedata.facturacio.factura.obrir', {'model': 'giscedata.facturacio.factura', 'form': {}, 'id': fres_resultat[0], 'report_type': 'pdf', 'ids': fres_resultat}, 'init', )
             except Exception as e:
                 factures_generades.extend(
-                    [[pol_id,fact_prov.polissa_id.name, fr, "Error en obrir les factures, no continua el procés. Error {}".format(str(e))]
-                    for fr in fres_resultat]
+                    [[pol_id,fact_prov.polissa_id.name, fr.id, fr.signed_amount_total, "Error en obrir les factures, no continua el procés. Error {}".format(str(e))]
+                    for fr in fact_obj.browse(fres_resultat)]
                 )
                 continue
 
@@ -172,8 +184,8 @@ def refund_rectify_by_origin(origin_list, payment_order_id):
                 wiz = wiz_ag_o.create({},context=agrupar_ctx)
                 if wiz.amount_total == 0:
                     factures_generades.extend(
-                    [[pol_id,fact_prov.polissa_id.name, fr, "L'agrupació de factures fan un total de 0. S'atura el procés"]
-                    for fr in fres_resultat]
+                    [[pol_id,fact_prov.polissa_id.name, fr.id, fr.signed_amount_total, "L'agrupació de factures fan un total de 0. S'atura el procés"]
+                    for fr in fact_obj.browse(fres_resultat)]
                 )
                 elif wiz.amount_total < 0:
                     res = wiz_ag_o.agrupar_remesar([wiz.id], context=agrupar_ctx)
@@ -185,12 +197,12 @@ def refund_rectify_by_origin(origin_list, payment_order_id):
                     wiz_ag_o.group_invoices([wiz.id], context=agrupar_ctx)
             except Exception as e:
                 factures_generades.extend(
-                    [[pol_id,fact_prov.polissa_id.name, fr, "Error en agrupar les factures (o remesar), no continua el procés. Error {}".format(str(e))]
-                    for fr in fres_resultat]
+                    [[pol_id,fact_prov.polissa_id.name, fr.id, fr.signed_amount_total, "Error en agrupar les factures (o remesar), no continua el procés. Error {}".format(str(e))]
+                    for fr in fact_obj.browse(fres_resultat)]
                 )
                 continue
             send_mail(pol_id)
-            factures_generades.extend([[pol_id,fact_prov.polissa_id.name, fr, 'Procés complert, email enviat.'] for fr in fres_resultat])
+            factures_generades.extend([[pol_id,fact_prov.polissa_id.name, fr.id, fr.signed_amount_total, 'Procés complert, email enviat.'] for fr in fact_obj.browse(fres_resultat)])
 
             step("Correu enviat")
             polisses_processades.append([pol_id, origin])
@@ -229,9 +241,9 @@ def output_results(filename):
     print_list(errors)
 
     with open(filename,'w') as f:
-        f.write("Id polissa, polissa, id factura, informacio \n")
+        f.write("Id polissa, polissa, id factura, import, informacio \n")
         for a in factures_generades:
-            f.write("{},{},{},{}\n".format(*a))
+            f.write("{},{},{},{},{}\n".format(*a))
 
 
 def print_list(lst):
