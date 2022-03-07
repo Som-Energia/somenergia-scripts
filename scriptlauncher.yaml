@@ -599,7 +599,7 @@ admin:
           description: Id remesa on posar el retorn dels títol (ex. 2349)
 
     assentamentsInterventors:
-      script: python SOME_SRC/somenergia-scripts/admin/descarregar_assentaments_comptables.py --start_date {start_date} --end_date {end_date}
+      script: python SOME_SRC/somenergia-scripts/admin/descarregar_assentaments_comptables.py --start_date {start_date} --end_date {end_date} --account {account}
       title: Puja al Drive els assentaments pels interventors
       description: Exporta els assentaments al Drive a la carpeta compartida AssentamentsInterventors
       parameters:
@@ -607,6 +607,8 @@ admin:
           description: data inici (ex. 2019-01-01)
         end_date:
           description: data final (ex. 2019-03-31)
+        account:
+          description: compte comptable (ex. 430%)
 
     llistatFacturesIVA:
       script: python SOME_SRC/somenergia-scripts/admin/descarregar_factures_hisenda.py --start_date {start_date} --end_date {end_date}
