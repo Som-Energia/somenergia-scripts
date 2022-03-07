@@ -23,13 +23,28 @@ class MoveReport:
         self.cursor = cursor
         pass
 
-    def count_moves_of_year(self, start_date, end_date):
+    def get_account_ids(self, account_code):
+        if not account_code:
+            return []
+        account_sql = '''
+            SELECT id
+                FROM account_account AS acc
+            WHERE code like '{}'
+        '''.format(account_code)
+
+        self.cursor.execute(account_sql, {'account': account_code})
+        return self.cursor.fetchone()
+
+    def count_moves_of_year(self, start_date, end_date, account_ids):
         sql = '''
-                SELECT count(*) 
+                SELECT count(*)
                     FROM account_move_line AS acm
-            WHERE acm.date >= '{0}' 
+            WHERE acm.date >= '{0}'
                 AND acm.date <= '{1}'
             '''.format(start_date, end_date)
+
+        if account_ids:
+            sql += ''' AND acm.account_id in ({}) '''.format(','.join(str(_id) for _id in account_ids))
 
         self.cursor.execute(sql, {'start_date': start_date,
                                   'end_date': end_date})
@@ -37,9 +52,9 @@ class MoveReport:
 
         return int(result[0])
 
-    def move_by_lines(self, start_date, end_date, start_line, end_line):
+    def move_by_lines(self, start_date, end_date, start_line, end_line, account_ids):
         sql = '''
-            SELECT acm.name AS numero, 
+            SELECT acm.name AS numero,
                 acm.date AS data,
                 acc.name AS compte,
                 acc.code AS codi,
@@ -49,12 +64,19 @@ class MoveReport:
             FROM account_move AS acm
                 LEFT JOIN account_move_line AS acm_line ON acm.id=acm_line.move_id
                 LEFT JOIN account_account AS acc ON acc.id = acm_line.account_id
-            WHERE acm.date >= '{0}' 
+            WHERE acm.date >= '{0}'
                 AND acm.date <= '{1}'
-            ORDER BY acm.date, 
+            '''.format(start_date, end_date)
+
+        if account_ids:
+            sql += ''' AND acm_line.account_id in ({}) '''.format(','.join(str(_id) for _id in account_ids))
+
+        sql +=  '''
+            ORDER BY acm.date,
                 acm.name
-                OFFSET {2} LIMIT {3}
-            '''.format(start_date, end_date, start_line, MAX_MOVES_LINES)
+                OFFSET {0} LIMIT {1}
+            '''.format(start_line, MAX_MOVES_LINES)
+
         print sql
         self.cursor.execute(sql, {'start_date': start_date,
                                   'end_date': end_date,
@@ -120,6 +142,7 @@ def main(args):
 
     start_date =  args.start_date
     end_date = args.end_date
+    account = args.account
 
     try:
         dbconn=psycopg2.connect(**configdb.psycopg)
@@ -129,13 +152,17 @@ def main(args):
         raise ex
 
     m = MoveReport(dbconn.cursor())
-    lines = m.count_moves_of_year(start_date, end_date)
+
+    account_ids = []
+
+    account_ids = m.get_account_ids(args.account)
+    lines = m.count_moves_of_year(start_date, end_date, account_ids)
     start_line = 0
     end_line = 0
 
     while start_line < lines:
         end_line = start_line + MAX_MOVES_LINES
-        m.move_by_lines(start_date, end_date, start_line, end_line)
+        m.move_by_lines(start_date, end_date, start_line, end_line, account_ids)
         start_line = end_line + 1
 
 
@@ -143,6 +170,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='descarregar_assentaments_comptables.py', description='Descarrega assentaments comptables al Drive.')
     parser.add_argument('-s','--start_date', help='Data inicial des de la qual es volen assentaments.', required=True)
     parser.add_argument('-e','--end_date', help='Data final fins la qual es volen assentaments.', required=True)
+    parser.add_argument('-a','--account', help='Compte comptable del qual es volen els assentaments')
     args = parser.parse_args(sys.argv[1:])
     main(args)
 # vim: et ts=4 sw=4
