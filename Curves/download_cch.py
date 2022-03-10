@@ -5,11 +5,15 @@ from concurrent.futures import ThreadPoolExecutor, wait
 from configdb import apinergia
 import requests
 import pandas as pd
+import datetime
+import zipfile
+import os
 
 BASE_URL = apinergia['server']
 USERNAME = apinergia['user']
 PASSWORD = apinergia['password']
 
+BASE_PATH = apinergia.get('csv_output_directory', '/tmp')
 
 class Authentication:
     '''
@@ -71,8 +75,7 @@ def get_cch_curves(contract, cch_type, start_date, end_date):
     )
     response.raise_for_status()
     results = response.json()['data']
-    import pdb; pdb.set_trace()
-    
+
     next_page = response.json().get('next_page')
     if next_page:
         results += process_next_page(next_page, token)
@@ -99,18 +102,66 @@ def get_contracts_cch(contract_list):
         with open(f'{result}.json', 'w') as output:
             json.dump(results[result], output)
 
-
 def cch_json_to_dataframe(results):
-    import pdb; pdb.set_trace()
     columns = ['contractId','meteringPointId','season', 'ai','ao','r1','r2','r3','r4','source','validated','date', 'dateDownload', 'dateUpdate']
     llista_measurements = [(r['contractId'],r['meteringPointId'],*tuple(r['measurements'].values())) for r in results]
     measurements = pd.DataFrame(llista_measurements, columns = columns)
     measurements['date'] = pd.to_datetime(measurements['date']).dt.tz_convert("Europe/Madrid")
-    measurements = measurements.reset_index().set_index('date', drop=False)
+    measurements = measurements.set_index('date', drop=False)
     date_range = pd.date_range(min(measurements['date']),max(measurements['date']), freq='H')
     measurements = measurements.reindex(date_range)
+    return measurements
 
-    return pd.read_json(results)
+def df_to_csv(df, contract_id, cch_type, from_date, to_date):
+    filename = '{}/CCH_download_{}_{}_{}_{}.csv'.format(BASE_PATH, from_date, to_date, cch_type, contract_id)
+    df.to_csv(filename, sep=';', index=False)
+    return filename
 
-results = get_cch_curves('0173713', 'tg_cchfact', '2021-01-01', '2021-01-02')
-cch_json_to_dataframe(results)
+def get_cch_curves_csv(contract, cch_type, from_date, to_date):
+    cch_json = get_cch_curves(contract, cch_type, from_date, to_date)
+    cch_df = cch_json_to_dataframe(cch_json)
+    csv_filename = df_to_csv(cch_df, contract, cch_type, from_date, to_date)
+    # errors are handled via exceptions
+    return csv_filename
+
+def get_contracts_cch_csv(contract_type_list):
+    results = dict()
+    with ThreadPoolExecutor(max_workers=20) as executor:
+        tasks = {
+            executor.submit(get_cch_curves_csv, contract, cch_type, from_date, to_date): contract
+            for contract, cch_type, from_date, to_date in contract_type_list
+        }
+        todo = tasks
+
+        while todo:
+            done, todo = wait(todo, timeout=10)
+            for task in done:
+                results[tasks[task]] = task.result()
+                print(tasks[task])
+
+    return results
+
+contract_type_list = [('0173713', 'tg_cchfact', '2021-12-16', '2021-12-17')]
+
+results = get_contracts_cch_csv(contract_type_list)
+
+# zip results
+zipfilename = "{}/{}_cch_download.zip".format(BASE_PATH, datetime.datetime.now().isoformat())
+with zipfile.ZipFile(zipfilename, 'w') as archive:
+    for filename in results.values():
+        archive.write(filename, os.path.basename(filename))
+
+print(results)
+
+print("csv cch files saved in {}".format(zipfilename))
+
+print("Job's done, Have A Nice Day")
+
+
+
+# CCh's tipo P5D; F5D; A5D; B5D
+# (CCH_VAL; CCH_FACT; CCH_AUTOCONSUM; CCH_GENNETABETA)
+# periodo: 01/01/2021 hasta 01/02/2022
+
+# contractes = ['0042625','0042639','0042640','0042646','0173713','0173714','0173715','0173716']
+
