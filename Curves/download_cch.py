@@ -7,7 +7,7 @@ import requests
 import pandas as pd
 import datetime
 import zipfile
-import os
+import os.path
 
 BASE_URL = apinergia['server']
 USERNAME = apinergia['user']
@@ -103,10 +103,12 @@ def get_contracts_cch(contract_list):
             json.dump(results[result], output)
 
 def cch_json_to_dataframe(results):
-    columns = ['contractId','meteringPointId','season', 'ai','ao','r1','r2','r3','r4','source','validated','date', 'dateDownload', 'dateUpdate']
+    columns = ('contractId','meteringPointId')+tuple(results[0]['measurements'].keys())
     llista_measurements = [(r['contractId'],r['meteringPointId'],*tuple(r['measurements'].values())) for r in results]
     measurements = pd.DataFrame(llista_measurements, columns = columns)
     measurements['date'] = pd.to_datetime(measurements['date']).dt.tz_convert("Europe/Madrid")
+    measurements['dateUpdate'] = pd.to_datetime(measurements['dateUpdate'])
+    measurements = measurements.loc[measurements.groupby(["date"])["dateUpdate"].idxmax()] # filtering deprecated values
     measurements = measurements.set_index('date', drop=False)
     date_range = pd.date_range(min(measurements['date']),max(measurements['date']), freq='H')
     measurements = measurements.reindex(date_range)
@@ -119,6 +121,10 @@ def df_to_csv(df, contract_id, cch_type, from_date, to_date):
 
 def get_cch_curves_csv(contract, cch_type, from_date, to_date):
     cch_json = get_cch_curves(contract, cch_type, from_date, to_date)
+    if not cch_json:
+        print("Contract {} without curves of type {}.".format(contract,cch_type)) 
+        return None
+        
     cch_df = cch_json_to_dataframe(cch_json)
     csv_filename = df_to_csv(cch_df, contract, cch_type, from_date, to_date)
     # errors are handled via exceptions
@@ -141,21 +147,37 @@ def get_contracts_cch_csv(contract_type_list):
 
     return results
 
-contract_type_list = [('0173713', 'tg_cchfact', '2021-12-16', '2021-12-17')]
+# Example:
+#contract_type_list = [('0173713', 'tg_cchfact', '2021-12-16', '2021-12-17')]
+# tg_cchfact
+# tg_cchval
+contract_type_list = [
+	('0042625','tg_cchfact','2021-01-01','2022-02-02'),
+	('0042639','tg_cchfact','2021-01-01','2022-02-02'),
+	('0042640','tg_cchfact','2021-01-01','2022-02-02'),
+	('0042646','tg_cchfact','2021-01-01','2022-02-02'),
+	('0173713','tg_cchfact','2021-01-01','2022-02-02'),
+	('0173714','tg_cchfact','2021-01-01','2022-02-02'),
+	('0173715','tg_cchfact','2021-01-01','2022-02-02'),
+	('0173716','tg_cchfact','2021-01-01','2022-02-02')
+]
+
 
 results = get_contracts_cch_csv(contract_type_list)
 
 # zip results
 zipfilename = "{}/{}_cch_download.zip".format(BASE_PATH, datetime.datetime.now().isoformat())
 with zipfile.ZipFile(zipfilename, 'w') as archive:
+    
     for filename in results.values():
-        archive.write(filename, os.path.basename(filename))
+        if filename:
+            archive.write(filename, os.path.basename(filename))
 
 print(results)
 
 print("csv cch files saved in {}".format(zipfilename))
 
-print("Job's done, Have A Nice Day")
+print("Job's Done, Have A Nice Day")
 
 
 
