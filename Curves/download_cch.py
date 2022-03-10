@@ -1,8 +1,14 @@
+#from concurrent.futures import ThreadPoolExecutor, wait
+# concurrent no està disponible per python 3?
+# han fet un backport per python3 https://pypi.org/project/futures/
 from concurrent.futures import ThreadPoolExecutor, wait
+import configdb
+import requests
 
-BASE_URL = 'https://apinergia.somenergia.coop'
-USERNAME = 'MyUsername'
-PASSWORD = 'MyPassword'
+BASE_URL = configdb.apinergia['server']
+USERNAME = configdb.apinergia['user']
+PASSWORD = configdb.apinergia['password']
+
 
 class Authentication:
     '''
@@ -64,6 +70,7 @@ def get_cch_curves(contract, cch_type, start_date, end_date):
     )
     response.raise_for_status()
     results = response.json()['data']
+    import pdb; pdb.set_trace()
     
     next_page = response.json().get('next_page')
     if next_page:
@@ -91,4 +98,4 @@ def get_contracts_cch(contract_list):
         with open(f'{result}.json', 'w') as output:
             json.dump(results[result], output)
         
-get_contracts_cch(lista)
+get_cch_curves(173713, 'CCH_FACT', '2021-01-01', '2021-02-01')
