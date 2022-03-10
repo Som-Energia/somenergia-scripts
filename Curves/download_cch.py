@@ -2,12 +2,13 @@
 # concurrent no està disponible per python 3?
 # han fet un backport per python3 https://pypi.org/project/futures/
 from concurrent.futures import ThreadPoolExecutor, wait
-import configdb
+from configdb import apinergia
 import requests
+import pandas as pd
 
-BASE_URL = configdb.apinergia['server']
-USERNAME = configdb.apinergia['user']
-PASSWORD = configdb.apinergia['password']
+BASE_URL = apinergia['server']
+USERNAME = apinergia['user']
+PASSWORD = apinergia['password']
 
 
 class Authentication:
@@ -61,7 +62,7 @@ def get_cch_curves(contract, cch_type, start_date, end_date):
             'type': cch_type,
             'from_': start_date,
             'to_': end_date,
-            'limit': 2000
+            'limit': 15000
         },
         headers={
             'accept': 'application/json',
@@ -87,15 +88,29 @@ def get_contracts_cch(contract_list):
             for contract in contract_list
         }
         todo = tasks
-        
+
         while todo:
             done, todo = wait(todo, timeout=10)
             for task in done:
-                results[tasks[task]] = task.result() 
+                results[tasks[task]] = task.result()
                 print(tasks[task])
 
     for result in results:
         with open(f'{result}.json', 'w') as output:
             json.dump(results[result], output)
-        
-get_cch_curves(173713, 'CCH_FACT', '2021-01-01', '2021-02-01')
+
+
+def cch_json_to_dataframe(results):
+    import pdb; pdb.set_trace()
+    columns = ['contractId','meteringPointId','season', 'ai','ao','r1','r2','r3','r4','source','validated','date', 'dateDownload', 'dateUpdate']
+    llista_measurements = [(r['contractId'],r['meteringPointId'],*tuple(r['measurements'].values())) for r in results]
+    measurements = pd.DataFrame(llista_measurements, columns = columns)
+    measurements['date'] = pd.to_datetime(measurements['date']).dt.tz_convert("Europe/Madrid")
+    measurements = measurements.reset_index().set_index('date', drop=False)
+    date_range = pd.date_range(min(measurements['date']),max(measurements['date']), freq='H')
+    measurements = measurements.reindex(date_range)
+
+    return pd.read_json(results)
+
+results = get_cch_curves('0173713', 'tg_cchfact', '2021-01-01', '2021-01-02')
+cch_json_to_dataframe(results)
