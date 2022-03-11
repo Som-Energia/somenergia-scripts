@@ -12,13 +12,24 @@ import requests
 import pandas as pd
 from configdb import apinergia
 from consolemsg import error, step, success
-
+from functools import reduce
+import pytz
 
 BASE_URL = apinergia['server']
 USERNAME = apinergia['user']
 PASSWORD = apinergia['password']
 
 BASE_PATH = apinergia.get('csv_output_directory', '/tmp')
+
+accepted_curve_types = [
+    'tg_cchfact',
+    'tg_cchval',
+    'tg_f1',
+    'P1',
+    'P2',
+    'tg_cchautoconsum',
+    'tg_gennetabeta',
+]
 
 class Authentication:
     '''
@@ -84,7 +95,6 @@ def get_cch_curves(contract, cch_type, start_date, end_date):
     next_page = response.json().get('next_page')
     if next_page:
         results += process_next_page(next_page, token)
-
     return results
 
 
@@ -107,40 +117,99 @@ def get_contracts_cch(contract_list):
         with open(f'{result}.json', 'w') as output:
             json.dump(results[result], output)
 
-def cch_json_to_dataframe(results):
-    columns = ('contractId','meteringPointId')+tuple(results[0]['measurements'].keys())
+# TODO remove this patch once the backend is fixed and times are correct
+# currently it is returning one hour less than it should
+def bugfix_add_one_hour(df_column):
+    df_column = df_column + pd.Timedelta(hours=1)
+    return df_column
+
+
+def cch_json_to_dataframe(results, cch_type, from_date, to_date):
+
+    columns = ('contractId','meteringPointId') + tuple(results[0]['measurements'].keys())
+
     llista_measurements = [(r['contractId'],r['meteringPointId'],*tuple(r['measurements'].values())) for r in results]
     measurements = pd.DataFrame(llista_measurements, columns = columns)
-    measurements['date'] = pd.to_datetime(measurements['date']).dt.tz_convert("Europe/Madrid")
+
+    # TODO remove this workaround once backend is patched and uncomment the original line below
+    measurements['date'] = bugfix_add_one_hour(pd.to_datetime(measurements['date']))
+    measurements['date'] = measurements['date'].dt.tz_convert("Europe/Madrid")
+    #measurements['date'] = pd.to_datetime(measurements['date']).dt.tz_convert("Europe/Madrid")
+
+    # ugly reordering
+    dates = measurements['date']
+    measurements = measurements.drop(columns=['date'])
+    measurements.insert(loc=1, column='date', value=dates)
+
     measurements['dateUpdate'] = pd.to_datetime(measurements['dateUpdate'])
-    measurements = measurements.loc[measurements.groupby(["date"])["dateUpdate"].idxmax()] # filtering deprecated values
+    # TODO we will fuck up if there's more than one meteringPoint (it will pick one at random by dateUpdate)
+    measurements = measurements.loc[measurements.groupby(["date","meteringPointId"])['dateUpdate'].idxmax()] # filtering deprecated values
     measurements = measurements.set_index('date', drop=False)
-    date_range = pd.date_range(min(measurements['date']),max(measurements['date']), freq='H')
+    
+    timezone = pytz.timezone('Europe/Madrid')
+    date_range = pd.date_range(timezone.localize(from_date), timezone.localize(to_date), freq='H')
     measurements = measurements.reindex(date_range)
-    return measurements
+
+    return measurements\
+        .add_prefix(cch_type + '_')\
+        .rename(columns={cch_type + '_date':'date', cch_type + '_contractId':'contractId'})
+
 
 def df_to_csv(df, contract_id, cch_type, from_date, to_date):
     filename = '{}/CCH_download_{}_{}_{}_{}.csv'.format(BASE_PATH, from_date, to_date, cch_type, contract_id)
     df.to_csv(filename, sep=';', index=False)
     return filename
 
-def get_cch_curves_csv(contract, cch_type, from_date, to_date):
-    cch_json = get_cch_curves(contract, cch_type, from_date, to_date)
-    if not cch_json:
-        print("Contract {} without curves of type {}.".format(contract,cch_type)) 
-        return None
-        
-    cch_df = cch_json_to_dataframe(cch_json)
-    csv_filename = df_to_csv(cch_df, contract, cch_type, from_date, to_date)
+def get_cch_curves_csv(contract, cch_types, from_date, to_date):
+
+    from_date_excess_dt = datetime.datetime.strptime(from_date, "%Y-%m-%d") - datetime.timedelta(days=1)
+    from_date_excess = datetime.datetime.strftime(from_date_excess_dt, "%Y-%m-%d")
+
+    to_date_excess_dt = datetime.datetime.strptime(to_date, "%Y-%m-%d") + datetime.timedelta(days=1)
+    to_date_excess = datetime.datetime.strftime(to_date_excess_dt, "%Y-%m-%d")
+
+    cchs = []
+    for cch_type in cch_types:
+        cch_json = get_cch_curves(contract, cch_type, from_date_excess, to_date_excess)
+        if not cch_json:
+            print("Contract {} without curves of type {}.".format(contract, cch_type)) 
+            continue
+
+        cchs.append((cch_type, cch_json_to_dataframe(cch_json, cch_type, from_date_excess_dt, to_date_excess_dt)))
+
+    if not cchs:
+        return
+
+    all_types_curves_df = pd.DataFrame(columns=['date', 'contractId'])
+    print('Merging {} curves'.format(len(cchs)))
+    for cch_type, curve_df in cchs:
+        all_types_curves_df = pd.merge(all_types_curves_df, curve_df, on=['date', 'contractId'], how='outer', sort=False)
+    
+    all_types_curves_df = truncate_date_range(all_types_curves_df, from_date, to_date)
+
+    csv_filename = df_to_csv(all_types_curves_df, contract, cch_type, from_date, to_date)
     # errors are handled via exceptions
     return csv_filename
+
+def truncate_date_range(df, from_date, to_date):
+
+    # be conscious that timedelta additions are not aware of timezone changes and DST
+    # In [66]: (pytz.timezone('Europe/Madrid').localize(datetime.datetime(2022,3,27,3))).isoformat()
+    # Out[66]: '2022-03-27T03:00:00+02:00'
+    # In [67]: (pytz.timezone('Europe/Madrid').localize(datetime.datetime(2022,3,27,2))+datetime.timedelta(hours=1)).isoformat()
+    # Out[67]: '2022-03-27T03:00:00+01:00'
+
+    timezone = pytz.timezone('Europe/Madrid')
+    from_date = datetime.datetime.strptime(from_date, "%Y-%m-%d").astimezone(timezone)
+    to_date = timezone.localize(datetime.datetime.strptime(to_date, "%Y-%m-%d")) + datetime.timedelta(days=1)
+    return df[(from_date < df['date']) & (df['date'] <= to_date)]
 
 def get_contracts_cch_csv(contract_type_list):
     results = dict()
     with ThreadPoolExecutor(max_workers=20) as executor:
         tasks = {
-            executor.submit(get_cch_curves_csv, contract, cch_type, from_date, to_date): contract
-            for contract, cch_type, from_date, to_date in contract_type_list
+            executor.submit(get_cch_curves_csv, contract, cch_types, from_date, to_date): contract
+            for contract, cch_types, from_date, to_date in contract_type_list
         }
         todo = tasks
 
@@ -152,11 +221,13 @@ def get_contracts_cch_csv(contract_type_list):
 
     return results
 
-def main(contracts, curve_type, from_date, to_date, output_file):
+def main(contracts, curve_types, from_date, to_date, output_file):
 
+    curve_types = [x.strip() for x in curve_types.split(',')]
+    
     contracts = [x.strip() for x in contracts.split(',')]
-
-    contract_type_list = [(contract, curve_type, from_date, to_date) for contract in contracts]
+     
+    contract_type_list = [(contract, curve_types, from_date, to_date) for contract in contracts]
 
     # Example:
     #contract_type_list = [('0173713', 'tg_cchfact', '2021-12-16', '2021-12-17')]
@@ -222,8 +293,8 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '--curve_type',
-        dest='curve_type',
+        '--curve_types',
+        dest='curve_types',
         required=True,
         help="Tipus de corba e.g. (tg_cchva o bé tg_cchfact...)"
     )
@@ -237,7 +308,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     try:
-        main(args.contracts, args.curve_type, args.from_date, args.to_date, args.output_file)
+        main(args.contracts, args.curve_types, args.from_date, args.to_date, args.output_file)
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
         error("El procés no ha finalitzat correctament: {}", str(e))
