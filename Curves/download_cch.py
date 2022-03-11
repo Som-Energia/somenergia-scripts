@@ -2,12 +2,17 @@
 # concurrent no està disponible per python 3?
 # han fet un backport per python3 https://pypi.org/project/futures/
 from concurrent.futures import ThreadPoolExecutor, wait
-from configdb import apinergia
-import requests
-import pandas as pd
+import sys
+import os.path
 import datetime
 import zipfile
-import os.path
+import traceback
+import argparse
+import requests
+import pandas as pd
+from configdb import apinergia
+from consolemsg import error, step, success
+
 
 BASE_URL = apinergia['server']
 USERNAME = apinergia['user']
@@ -147,38 +152,41 @@ def get_contracts_cch_csv(contract_type_list):
 
     return results
 
-# Example:
-#contract_type_list = [('0173713', 'tg_cchfact', '2021-12-16', '2021-12-17')]
-# tg_cchfact
-# tg_cchval
-contract_type_list = [
-	('0042625','tg_cchfact','2021-01-01','2022-02-02'),
-	('0042639','tg_cchfact','2021-01-01','2022-02-02'),
-	('0042640','tg_cchfact','2021-01-01','2022-02-02'),
-	('0042646','tg_cchfact','2021-01-01','2022-02-02'),
-	('0173713','tg_cchfact','2021-01-01','2022-02-02'),
-	('0173714','tg_cchfact','2021-01-01','2022-02-02'),
-	('0173715','tg_cchfact','2021-01-01','2022-02-02'),
-	('0173716','tg_cchfact','2021-01-01','2022-02-02')
-]
+def main(contracts, curve_type, from_date, to_date, output_file):
 
+    contracts = [x.strip() for x in contracts.split(',')]
 
-results = get_contracts_cch_csv(contract_type_list)
+    contract_type_list = [(contract, curve_type, from_date, to_date) for contract in contracts]
 
-# zip results
-zipfilename = "{}/{}_cch_download.zip".format(BASE_PATH, datetime.datetime.now().isoformat())
-with zipfile.ZipFile(zipfilename, 'w') as archive:
-    
-    for filename in results.values():
-        if filename:
-            archive.write(filename, os.path.basename(filename))
+    # Example:
+    #contract_type_list = [('0173713', 'tg_cchfact', '2021-12-16', '2021-12-17')]
+    # tg_cchfact
+    # tg_cchval
+    # contract_type_list = [
+    #     ('0042625','tg_cchfact','2021-01-01','2022-02-02'),
+    #     ('0042639','tg_cchfact','2021-01-01','2022-02-02'),
+    #     ('0042640','tg_cchfact','2021-01-01','2022-02-02'),
+    #     ('0042646','tg_cchfact','2021-01-01','2022-02-02'),
+    #     ('0173713','tg_cchfact','2021-01-01','2022-02-02'),
+    #     ('0173714','tg_cchfact','2021-01-01','2022-02-02'),
+    #     ('0173715','tg_cchfact','2021-01-01','2022-02-02'),
+    #     ('0173716','tg_cchfact','2021-01-01','2022-02-02')
+    # ]
 
-print(results)
+    results = get_contracts_cch_csv(contract_type_list)
 
-print("csv cch files saved in {}".format(zipfilename))
+    # zip results
+    zipfilename = output_file
+    # zipfilename = "{}/cch_download.zip".format(BASE_PATH, datetime.datetime.now().isoformat())
+    with zipfile.ZipFile(zipfilename, 'w') as archive:
+        
+        for filename in results.values():
+            if filename:
+                archive.write(filename, os.path.basename(filename))
 
-print("Job's Done, Have A Nice Day")
+    print(results)
 
+    print("csv cch files saved in {}".format(zipfilename))
 
 
 # CCh's tipo P5D; F5D; A5D; B5D
@@ -186,4 +194,53 @@ print("Job's Done, Have A Nice Day")
 # periodo: 01/01/2021 hasta 01/02/2022
 
 # contractes = ['0042625','0042639','0042640','0042646','0173713','0173714','0173715','0173716']
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+            description='Elsxutu korbojn kaj fek vi'
+    )
+
+    parser.add_argument(
+        '--contracts',
+        dest='contracts',
+        required=True,
+        help="Números de contractes de 7 digits separats per comes (e.g. 0731234, 1230923)"
+    )
+
+    parser.add_argument(
+        '--from_date',
+        dest='from_date',
+        required=True,
+        help="Introdueix la data d'inici del perídode que cal decarregar 'YYYY-mm-dd'"
+    )
+
+    parser.add_argument(
+        '--to_date',
+        dest='to_date',
+        required=True,
+        help="Introdueix la data final del perídode que cal decarregar 'YYYY-mm-dd'"
+    )
+
+    parser.add_argument(
+        '--curve_type',
+        dest='curve_type',
+        required=True,
+        help="Tipus de corba e.g. (tg_cchva o bé tg_cchfact...)"
+    )
+
+    parser.add_argument(
+        '--output',
+        dest='output_file',
+        required=True,
+        help="Fitxer de sortida amb els resultats"
+    )
+
+    args = parser.parse_args()
+    try:
+        main(args.contracts, args.curve_type, args.from_date, args.to_date, args.output_file)
+    except Exception as e:
+        traceback.print_exc(file=sys.stdout)
+        error("El procés no ha finalitzat correctament: {}", str(e))
+    else:
+        success("Job's Done, Have A Nice Day")
 
