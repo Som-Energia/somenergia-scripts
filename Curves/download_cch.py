@@ -1,7 +1,6 @@
 #from concurrent.futures import ThreadPoolExecutor, wait
 # concurrent no està disponible per python 3?
 # han fet un backport per python3 https://pypi.org/project/futures/
-from calendar import c
 from concurrent.futures import ThreadPoolExecutor, wait
 import sys
 import os.path
