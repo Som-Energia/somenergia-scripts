@@ -1,6 +1,7 @@
 #from concurrent.futures import ThreadPoolExecutor, wait
 # concurrent no està disponible per python 3?
 # han fet un backport per python3 https://pypi.org/project/futures/
+from calendar import c
 from concurrent.futures import ThreadPoolExecutor, wait
 import sys
 import os.path
@@ -125,7 +126,6 @@ def bugfix_add_one_hour(df_column):
 
 
 def cch_json_to_dataframe(results, cch_type, from_date, to_date):
-
     columns = ('contractId','meteringPointId') + tuple(results[0]['measurements'].keys())
 
     llista_measurements = [(r['contractId'],r['meteringPointId'],*tuple(r['measurements'].values())) for r in results]
@@ -144,15 +144,32 @@ def cch_json_to_dataframe(results, cch_type, from_date, to_date):
     measurements['dateUpdate'] = pd.to_datetime(measurements['dateUpdate'])
     # TODO we will fuck up if there's more than one meteringPoint (it will pick one at random by dateUpdate)
     measurements = measurements.loc[measurements.groupby(["date","meteringPointId"])['dateUpdate'].idxmax()] # filtering deprecated values
-    measurements = measurements.set_index('date', drop=False)
-    
+    measurements = measurements.set_index(['date','meteringPointId'], drop=False)
+     
     timezone = pytz.timezone('Europe/Madrid')
-    date_range = pd.date_range(timezone.localize(from_date), timezone.localize(to_date), freq='H')
-    measurements = measurements.reindex(date_range)
 
-    return measurements\
+    meterings = measurements['meteringPointId'].unique()
+    nmeterings = len(meterings)
+    date_range = pd.date_range(timezone.localize(from_date), timezone.localize(to_date), freq='H')
+    
+    date_range = date_range.repeat(nmeterings)
+    #meterings = meterings.repeat(len(date_range))
+    meterings = [[m] for m in meterings] * int(len(date_range) / nmeterings)
+    meterings = [item for sublist in meterings for item in sublist]
+
+    measurements = measurements.reindex([date_range, meterings])
+
+    measurements = measurements\
         .add_prefix(cch_type + '_')\
-        .rename(columns={cch_type + '_date':'date', cch_type + '_contractId':'contractId'})
+        .rename(columns={
+            cch_type + '_date':'date',
+            cch_type + '_contractId':'contractId'
+            }
+        )
+    
+    measurements = measurements.reset_index(drop = True)
+
+    return measurements
 
 
 def df_to_csv(df, contract_id, cch_type, from_date, to_date):
