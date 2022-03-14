@@ -147,12 +147,11 @@ def cch_json_to_dataframe(results, cch_type, from_date, to_date):
      
     timezone = pytz.timezone('Europe/Madrid')
 
+    #TODO: Partition by meteringPointId to avoid this complexity in the index
     meterings = measurements['meteringPointId'].unique()
     nmeterings = len(meterings)
     date_range = pd.date_range(timezone.localize(from_date), timezone.localize(to_date), freq='H')
-    
     date_range = date_range.repeat(nmeterings)
-    #meterings = meterings.repeat(len(date_range))
     meterings = [[m] for m in meterings] * int(len(date_range) / nmeterings)
     meterings = [item for sublist in meterings for item in sublist]
 
