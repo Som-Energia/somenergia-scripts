@@ -505,6 +505,23 @@ gestiocontractes:
             type: FILEDOWN
             extension: zip
             filename: cups_attachments.zip
+      download_cch:
+        script: python3 SOME_SRC/somenergia-scripts/Curves/download_cch.py --from_date {from_date} --to_date {to_date} --contracts {contracts} --curve_types {curve_types} --output {output}
+        title: Descarrega corbes d'un conjunt de contractes filtrant per data i tipus de corba
+        description: Aquest script descarrega les corbes d'un conjunt de contractes imputats per l'usuari per un període de temps i tipus indicats. En cas d'haver-hi hores sense valors retorna l'hora amb els valors buits. No es poden descarregar més de 15000 corbes per petició.
+        parameters:
+          contracts:
+            description: Números de contractes de 7 digits separats per comes (e.g. 0731234, 1230923)
+          curve_types:
+            description: Tipus de corbes separat per comes (tg_cchval, tg_cchfact)
+          from_date:
+            description: Introdueix la data d'inici del període que cal decarregar 'YYYY-mm-dd'
+          to_date:
+            description: Introdueix la data final del període que cal decarregar 'YYYY-mm-dd'
+          output:
+            type: FILEDOWN
+            extension: zip
+            filename: cch_download.zip
 
 it:
   description: Ronda IT
