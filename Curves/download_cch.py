@@ -238,9 +238,10 @@ def get_contracts_cch_csv(contract_type_list):
 
 def main(contracts, curve_types, from_date, to_date, output_file):
 
-    curve_types = [x.strip() for x in curve_types.split(',')]
-    
-    contracts = [x.strip() for x in contracts.split(',')]
+    curve_types = [i.strip() for x in curve_types for i in x.split(',') if i.strip() != '']
+
+    contracts = [i.strip() for x in contracts for i in x.split(',') if i.strip() != '']
+
      
     contract_type_list = [(contract, curve_types, from_date, to_date) for contract in contracts]
 
@@ -290,7 +291,8 @@ if __name__ == '__main__':
         '--contracts',
         dest='contracts',
         required=True,
-        help="Números de contractes de 7 digits separats per comes (e.g. 0731234, 1230923)"
+        help="Números de contractes de 7 digits separats per comes (e.g. 0731234, 1230923)",
+        nargs = '*'
     )
 
     parser.add_argument(
@@ -311,7 +313,8 @@ if __name__ == '__main__':
         '--curve_types',
         dest='curve_types',
         required=True,
-        help="Tipus de corba e.g. (tg_cchva o bé tg_cchfact...)"
+        help="Tipus de corba e.g. (tg_cchva o bé tg_cchfact...)",
+        nargs = '*'
     )
 
     parser.add_argument(
