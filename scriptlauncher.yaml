@@ -102,6 +102,7 @@ measurefixing:
         doit:
           description: Campo para confirmar cambios en producción escribir --doit. En blanco deshace las facturas.
 
+
 invoicefixing:
   description: Facturació. Eines per lots, F1 i factures
   scripts:
@@ -151,11 +152,29 @@ invoicefixing:
 
     CopyCurveToTesting:
       script: python SOME_SRC/somenergia-scripts/Curves/copy_corbes_to_testing.py -c {cups}
-      title: Copiar corbes horaries de Productiu a Testing
+      title: CCh - Copia corbes horaries de Productiu a Testing
       description: Copia totes les corbes disponibles (f5d, p5d, f1 i p1) del Mongo de productiu al Mongo de testing
       parameters:
         cups:
           description: Introduir el CUPS
+
+    download_cch:
+      script: sudo su -c 'export PATH=$HOME/.pyenv/bin:$PATH; eval "$(pyenv init -)"; python SOME_SRC/somenergia-scripts/Curves/download_cch.py --from_date {from_date} --to_date {to_date} --contracts {contracts} --curve_types {curve_types} --output {output}' somenergia
+      title: CCh - Descarrega corbes d'un conjunt de contractes filtrant per data i tipus de corba
+      description: Aquest script descarrega les corbes d'un conjunt de contractes imputats per l'usuari per un període de temps i tipus indicats. En cas d'haver-hi hores sense valors retorna l'hora amb els valors buits. No es poden descarregar més de 15000 corbes per petició.
+      parameters:
+        contracts:
+          description: Números de contractes de 7 digits separats per comes (e.g. 0731234, 1230923)
+        curve_types:
+          description: Tipus de corbes separat per comes (tg_cchval, tg_cchfact)
+        from_date:
+          description: Introdueix la data d'inici del període que cal decarregar 'YYYY-mm-dd'
+        to_date:
+          description: Introdueix la data final del període que cal decarregar 'YYYY-mm-dd'
+        output:
+          type: FILEDOWN
+          extension: zip
+          filename: cch_download.zip
 
     # To Do: for future elimination, the ERP already can do the same and the script seems to be error prone 
     #fixrefundinvoice:
@@ -365,163 +384,147 @@ invoicefixing:
 
 
 gestiocontractes:
-    description: Gestió de contractes
-    scripts:
-      canvistitular_fitxes_client:
-        script: python SOME_SRC/somenergia-scripts/comer/canvi_titus/fitxa_client.py --file {csv_file} --create-case {create_case}
-        title: Canvi titular Creació noves fitxes client
-        description: Script que donat un csv amb les dades dels nous clients, crea si cal, la seva fitxa dins del ERP
-        parameters:
-          csv_file:
-            type: FILE
-            description: "csv amb les dades dels nous titulars, la capçalera ha de tenir: Data,Contracte,CUPS,Nom nou titu,Idioma,Tlf,Mail,DNI,IBAN"
-          create_case:
-            description: "Si -> crea la M101 de canvi de titular per traspàs. No -> Solo crea la fitxa client"
+  description: Gestió de contractes
+  scripts:
+    canvistitular_fitxes_client:
+      script: python SOME_SRC/somenergia-scripts/comer/canvi_titus/fitxa_client.py --file {csv_file} --create-case {create_case}
+      title: Canvi titular Creació noves fitxes client
+      description: Script que donat un csv amb les dades dels nous clients, crea si cal, la seva fitxa dins del ERP
+      parameters:
+        csv_file:
+          type: FILE
+          description: "csv amb les dades dels nous titulars, la capçalera ha de tenir: Data,Contracte,CUPS,Nom nou titu,Idioma,Tlf,Mail,DNI,IBAN"
+        create_case:
+          description: "Si -> crea la M101 de canvi de titular per traspàs. No -> Solo crea la fitxa client"
 
-      canvistitular:
-        script: reportrun -a -C SOME_SRC/somenergia-scripts/dbconfig.py -s canvi_titular -t modifica@somenergia.coop -- python SOME_SRC/somenergia-scripts/Revisions_periodiques/canvi_titular_fase3.py
-        title: Canvi de titular. Última fase
-        description: Un cop ens arriben els M102 d'accpetació de canvi de titular, fem totes les accions per donar de baixa el contracte vell i crear el nou amb el nou titular.
-      quadrecontrolsw:
-        script: python SOME_SRC/somenergia-scripts/Informacio/switching_qc.py
-        title: Quadre de control Gestió de contractes
-        description: Aquest quadre de control permet veure la situació dels processos. Veiem si tenim endarreriments en alguns dels passos del cas
-      quadrecontrol3:
-        script: python SOME_SRC/somenergia-scripts/Informacio/tres_qc.py -d {date} -de {date_end}
-        title: Quadre de control de tarifa 3.0A
-        description: Aquest quadre de control està en construcció. Potser hi ha funcionalitats que s'haurien de tractar a fora d'aquest quadre. S'hi ha de treballar una mica més.
-        parameters:
-          date:
-            description: Introdueix la data dels des dels quals vols veure els nous contractes amb el format 'YYYY-mm-dd'
-          date_end:
-            description: Introdueix la data amb que vols que comencen l'anàlisi de ccvv i altres associacions
-      seguiment3:
-        script: 
-        - python
-        - SOME_SRC/somenergia-scripts/Informacio/seguiment_30A.py
-        - "-d {date}"
+    canvistitular:
+      script: reportrun -a -C SOME_SRC/somenergia-scripts/dbconfig.py -s canvi_titular -t modifica@somenergia.coop -- python SOME_SRC/somenergia-scripts/Revisions_periodiques/canvi_titular_fase3.py
+      title: Canvi de titular. Última fase
+      description: Un cop ens arriben els M102 d'accpetació de canvi de titular, fem totes les accions per donar de baixa el contracte vell i crear el nou amb el nou titular.
+    quadrecontrolsw:
+      script: python SOME_SRC/somenergia-scripts/Informacio/switching_qc.py
+      title: Quadre de control Gestió de contractes
+      description: Aquest quadre de control permet veure la situació dels processos. Veiem si tenim endarreriments en alguns dels passos del cas
+    quadrecontrol3:
+      script: python SOME_SRC/somenergia-scripts/Informacio/tres_qc.py -d {date} -de {date_end}
+      title: Quadre de control de tarifa 3.0A
+      description: Aquest quadre de control està en construcció. Potser hi ha funcionalitats que s'haurien de tractar a fora d'aquest quadre. S'hi ha de treballar una mica més.
+      parameters:
+        date:
+          description: Introdueix la data dels des dels quals vols veure els nous contractes amb el format 'YYYY-mm-dd'
+        date_end:
+          description: Introdueix la data amb que vols que comencen l'anàlisi de ccvv i altres associacions
+    seguiment3:
+      script: 
+      - python
+      - SOME_SRC/somenergia-scripts/Informacio/seguiment_30A.py
+      - "-d {date}"
 
-        title: Seguiment de contractes nous 3.0A i contractes endarrerits en esborrany
-        description: 
-        parameters:
-          date:
-            description: Introdueix la data amb el format 'YYYY-mm-dd', l'última no inclosa
-      cupstoemailc:
-        script: SOME_SRC/cups2email/cups2email_lang_c.py {file}
-        title: Email segon avís requeriment butlletí elèctric a partir dels CUPS facilitats per la distribuidora
-        description: 
-        parameters:
-          file:
-            type: FILE
-            description: Excel con los cups
-      cupstoemailb:
-        script: SOME_SRC/cups2email/cups2email_lang_b.py {file}
-        title: Email validació de instalació a partir dels CUPS facilitats per la distribuidora
-        description: 
-        parameters:
-          file:
-            type: FILE
-            description: Excel con los cups
-      cupstoemaila:
-        script: SOME_SRC/cups2email/cups2email_lang_a.py {file}
-        title: Email petició documentació a partir dels CUPS facilitats per la distribuidora
-        description: 
-        parameters:
-          file:
-            type: FILE
-            description: Excel con los cups
-      cupstoemailcanvicomptador:
-        script: SOME_SRC/cups2email/cups2email_lang_canvi_comptador.py {file}
-        title: Email avis tall de llum si no deixen canviar el comptador a la distribuidora
-        description:
-        parameters:
-          file:
-            type: FILE
-            description: Excel con los cups
-      contractesSenseATR:
-        script: python SOME_SRC/somenergia-scripts/Informacio/cercar_contractes_sense_atr.py {date_from} {date_to}
-        title: Cerca contractes sense casos ATR creats
-        description: Busca contractes, entre les dates especificades, en els quals no s'ha obert un cas ATR del tipus Alta o Switching (C1, C2, A3). Aquesta cerca es custosa, intenta acotar les dates.
-        parameters:
-          date_from:
-            description: Data dels contractes més antics 'YYYY-mm-dd'
-          date_to:
-            description: Data dels contractes més nous 'YYYY-mm-dd'
-      killingEstimation:
-        script: python SOME_SRC/somenergia-scripts/invoicing/killing_estimations.py {doit}
-        title: Posar a no estimable als telegestionats
-        description: Marcar com a no estimables els contractes que compleixen una serie de condicions i tenen telegestió activada.
-        parameters:
-          doit:
-            description: Vols fer els canvis? (escriu 'si' per aplicar-ho)
-      countEstimation:
-        script: python SOME_SRC/somenergia-scripts/invoicing/count_estimations.py
-        title:  Control estadístic de polisses estimables i no estimables
-        description: Mesura uns quants estadístics sobre pólisses amb el sistema d'estimació tret i les que no creuant les dades amb polisses endarrerides.
+      title: Seguiment de contractes nous 3.0A i contractes endarrerits en esborrany
+      description: 
+      parameters:
+        date:
+          description: Introdueix la data amb el format 'YYYY-mm-dd', l'última no inclosa
+    cupstoemailc:
+      script: SOME_SRC/cups2email/cups2email_lang_c.py {file}
+      title: Email segon avís requeriment butlletí elèctric a partir dels CUPS facilitats per la distribuidora
+      description: 
+      parameters:
+        file:
+          type: FILE
+          description: Excel con los cups
+    cupstoemailb:
+      script: SOME_SRC/cups2email/cups2email_lang_b.py {file}
+      title: Email validació de instalació a partir dels CUPS facilitats per la distribuidora
+      description: 
+      parameters:
+        file:
+          type: FILE
+          description: Excel con los cups
+    cupstoemaila:
+      script: SOME_SRC/cups2email/cups2email_lang_a.py {file}
+      title: Email petició documentació a partir dels CUPS facilitats per la distribuidora
+      description: 
+      parameters:
+        file:
+          type: FILE
+          description: Excel con los cups
+    cupstoemailcanvicomptador:
+      script: SOME_SRC/cups2email/cups2email_lang_canvi_comptador.py {file}
+      title: Email avis tall de llum si no deixen canviar el comptador a la distribuidora
+      description:
+      parameters:
+        file:
+          type: FILE
+          description: Excel con los cups
+    contractesSenseATR:
+      script: python SOME_SRC/somenergia-scripts/Informacio/cercar_contractes_sense_atr.py {date_from} {date_to}
+      title: Cerca contractes sense casos ATR creats
+      description: Busca contractes, entre les dates especificades, en els quals no s'ha obert un cas ATR del tipus Alta o Switching (C1, C2, A3). Aquesta cerca es custosa, intenta acotar les dates.
+      parameters:
+        date_from:
+          description: Data dels contractes més antics 'YYYY-mm-dd'
+        date_to:
+          description: Data dels contractes més nous 'YYYY-mm-dd'
+    killingEstimation:
+      script: python SOME_SRC/somenergia-scripts/invoicing/killing_estimations.py {doit}
+      title: Posar a no estimable als telegestionats
+      description: Marcar com a no estimables els contractes que compleixen una serie de condicions i tenen telegestió activada.
+      parameters:
+        doit:
+          description: Vols fer els canvis? (escriu 'si' per aplicar-ho)
+    countEstimation:
+      script: python SOME_SRC/somenergia-scripts/invoicing/count_estimations.py
+      title:  Control estadístic de polisses estimables i no estimables
+      description: Mesura uns quants estadístics sobre pólisses amb el sistema d'estimació tret i les que no creuant les dades amb polisses endarrerides.
 
-      mailofcontractowners:
-        script: SOME_SRC/somenergia-scripts/Informes/mailofcontractowners.sh {contracts} {output}
-        title: Correus dels titulars de contractes
-        description: >
-            Donat un fitxer csv amb els ids dels contractes, retorna un csv amb la
-            info per poder fer un enviament de correus als titulars.
-        parameters:
-          contracts:
-            type: FILE
-            description: >
-              Fitxer csv amb els ids de contracte
-          output:
-            type: FILEDOWN
-            extension: csv
-      sips_comparator:
-        script: SOME_SRC/somenergia-scripts/CUPS/sips_comparator.py -d {date_from} -f {output} 
-        title: Script comparació adreça CUPS - adreça SIPS
-        description: >
-           Dada una data, mostra en un fitxer CSV les direccions sips del 2015 per cups. Utilitza la data "data firma contracte" per trobar els contractes
-        parameters:
-          date_from:
-            description: >
-              Data a partir de la cual realitzar la cerca, en format 'YYYY-mm-dd'
-          output:
-            type: FILEDOWN
-            extension: csv
-      killingPayerWarning:
-        script: SOME_SRC/somenergia-scripts/comer/mort_al_pagador/avis_mort_al_pagador.py --file {contracts} --doit
-        title: Script per enviament massiu de correus d'avis de mort al pagador
-        description: Agafa un fitxer csv amb els números de pòlissa i envia els correus de la plantilla d'avis de mort al pagador del ERP.
-        parameters:
-          contracts:
-            type: FILE
-            description: Fitxer csv amb els nùmeros de contractes
-      download_atr_case_attachments:
-        title: Genera un zip amb els adjunts dels casos ATR associats a una llista de CUPS
-        description: Genera un zip amb els adjunts dels casos ATR associats a una llista de CUPS
-        script: python SOME_SRC/somenergia-scripts/comer/xml_neuro/download_case_attachments.py --file {cups_csv} --output {output}
-        parameters:
-          cups_csv:
-            type: FILE
-            description: llista de cups en csv delimitat per ';' i capçalera 'cups'.
-          output:
-            type: FILEDOWN
-            extension: zip
-            filename: cups_attachments.zip
-      download_cch:
-        script: sudo su -c 'export PATH=$HOME/.pyenv/bin:$PATH; eval "$(pyenv init -)"; python SOME_SRC/somenergia-scripts/Curves/download_cch.py --from_date {from_date} --to_date {to_date} --contracts {contracts} --curve_types {curve_types} --output {output}' somenergia
-        title: Descarrega corbes d'un conjunt de contractes filtrant per data i tipus de corba
-        description: Aquest script descarrega les corbes d'un conjunt de contractes imputats per l'usuari per un període de temps i tipus indicats. En cas d'haver-hi hores sense valors retorna l'hora amb els valors buits. No es poden descarregar més de 15000 corbes per petició.
-        parameters:
-          contracts:
-            description: Números de contractes de 7 digits separats per comes (e.g. 0731234, 1230923)
-          curve_types:
-            description: Tipus de corbes separat per comes (tg_cchval, tg_cchfact)
-          from_date:
-            description: Introdueix la data d'inici del període que cal decarregar 'YYYY-mm-dd'
-          to_date:
-            description: Introdueix la data final del període que cal decarregar 'YYYY-mm-dd'
-          output:
-            type: FILEDOWN
-            extension: zip
-            filename: cch_download.zip
+    mailofcontractowners:
+      script: SOME_SRC/somenergia-scripts/Informes/mailofcontractowners.sh {contracts} {output}
+      title: Correus dels titulars de contractes
+      description: >
+          Donat un fitxer csv amb els ids dels contractes, retorna un csv amb la
+          info per poder fer un enviament de correus als titulars.
+      parameters:
+        contracts:
+          type: FILE
+          description: >
+            Fitxer csv amb els ids de contracte
+        output:
+          type: FILEDOWN
+          extension: csv
+    sips_comparator:
+      script: SOME_SRC/somenergia-scripts/CUPS/sips_comparator.py -d {date_from} -f {output} 
+      title: Script comparació adreça CUPS - adreça SIPS
+      description: >
+          Dada una data, mostra en un fitxer CSV les direccions sips del 2015 per cups. Utilitza la data "data firma contracte" per trobar els contractes
+      parameters:
+        date_from:
+          description: >
+            Data a partir de la cual realitzar la cerca, en format 'YYYY-mm-dd'
+        output:
+          type: FILEDOWN
+          extension: csv
+    killingPayerWarning:
+      script: SOME_SRC/somenergia-scripts/comer/mort_al_pagador/avis_mort_al_pagador.py --file {contracts} --doit
+      title: Script per enviament massiu de correus d'avis de mort al pagador
+      description: Agafa un fitxer csv amb els números de pòlissa i envia els correus de la plantilla d'avis de mort al pagador del ERP.
+      parameters:
+        contracts:
+          type: FILE
+          description: Fitxer csv amb els nùmeros de contractes
+    download_atr_case_attachments:
+      title: Genera un zip amb els adjunts dels casos ATR associats a una llista de CUPS
+      description: Genera un zip amb els adjunts dels casos ATR associats a una llista de CUPS
+      script: python SOME_SRC/somenergia-scripts/comer/xml_neuro/download_case_attachments.py --file {cups_csv} --output {output}
+      parameters:
+        cups_csv:
+          type: FILE
+          description: llista de cups en csv delimitat per ';' i capçalera 'cups'.
+        output:
+          type: FILEDOWN
+          extension: zip
+          filename: cups_attachments.zip
+
 
 it:
   description: Ronda IT

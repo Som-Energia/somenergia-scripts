@@ -135,7 +135,7 @@ def cch_json_to_dataframe(results, cch_type, from_date, to_date):
     measurements['date'] = measurements['date'].dt.tz_convert("Europe/Madrid")
     #measurements['date'] = pd.to_datetime(measurements['date']).dt.tz_convert("Europe/Madrid")
 
-    # ugly reordering
+    # reordering of the columns (pandas you're ugly)
     dates = measurements['date']
     measurements = measurements.drop(columns=['date'])
     measurements.insert(loc=1, column='date', value=dates)
@@ -157,6 +157,10 @@ def cch_json_to_dataframe(results, cch_type, from_date, to_date):
 
     measurements = measurements.reindex([date_range, meterings])
 
+    measurements = measurements.drop(columns = ['date','meteringPointId'])
+
+    measurements = measurements.reset_index(drop = False)
+
     measurements = measurements\
         .add_prefix(cch_type + '_')\
         .rename(columns={
@@ -164,15 +168,13 @@ def cch_json_to_dataframe(results, cch_type, from_date, to_date):
             cch_type + '_contractId':'contractId'
             }
         )
-    
-    measurements = measurements.reset_index(drop = True)
 
     return measurements
 
 
 def df_to_csv(df, contract_id, cch_type, from_date, to_date):
     filename = '{}/CCH_download_{}_{}_{}_{}.csv'.format(BASE_PATH, from_date, to_date, cch_type, contract_id)
-    df.to_csv(filename, sep=';', index=False)
+    df.to_csv(filename, sep=';', index=False, decimal=',')
     return filename
 
 def get_cch_curves_csv(contract, cch_types, from_date, to_date):
@@ -197,11 +199,13 @@ def get_cch_curves_csv(contract, cch_types, from_date, to_date):
 
     all_types_curves_df = pd.DataFrame(columns=['date', 'contractId'])
     print('Merging {} curves'.format(len(cchs)))
+
     for cch_type, curve_df in cchs:
+        curve_df['contractId'] = contract
         all_types_curves_df = pd.merge(all_types_curves_df, curve_df, on=['date', 'contractId'], how='outer', sort=False)
     
     all_types_curves_df = truncate_date_range(all_types_curves_df, from_date, to_date)
-
+    
     csv_filename = df_to_csv(all_types_curves_df, contract, cch_type, from_date, to_date)
     # errors are handled via exceptions
     return csv_filename
