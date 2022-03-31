@@ -4,6 +4,7 @@
 import configdb
 from consolemsg import step, error, warn, fail, success
 import pymongo
+from erppeek import Client
 from bson.objectid import ObjectId
 from tqdm import tqdm
 import argparse
@@ -18,9 +19,10 @@ def is_winter_hour_change(dt):
 
     return False
 
-def get_mongo_name_datetime_duplicateds(mongo_db, mongo_collection):
+def get_mongo_name_datetime_duplicateds(mongo_db, mongo_collection, cups):
     data = dict()
     name_datetime_duplicateds_query = [
+        {'$match': {'name': {'$regex': '^{}'.format(cups[:20])}, 'datetime': {'$gt': datetime(2021,1,1)}}},
         {'$group': {'_id': {'datetime': '$datetime', 'name': '$name'},
             'count': {'$sum': 1},
             'uniqueIds': {'$addToSet': '$_id'}}},
@@ -34,10 +36,17 @@ def get_mongo_name_datetime_duplicateds(mongo_db, mongo_collection):
     success("Trobats {} registres duplicats".format(len(result)))
     return result
 
-def treat_duplicateds(mongo_db, mongo_collection, doit=False):
+def treat_duplicateds(mongo_db, mongo_collection, cups, doit=False):
     total_deleted = 0
-    duplicateds = get_mongo_name_datetime_duplicateds(mongo_db, mongo_collection)
-    for entry in tqdm(duplicateds):
+    for cups_name in tqdm(cups):
+        duplicateds = get_mongo_name_datetime_duplicateds(mongo_db, mongo_collection, cups_name)
+        total_deleted += duplicateds_by_cups(duplicateds, doit)
+
+    success("Eliminats {} registres".format(total_deleted))
+
+def duplicateds_by_cups(duplicateds, doit=False):
+    total_deleted = 0
+    for entry in duplicateds:
         try:
             if not 'name' in entry['_id'] or 'ai' not in entry['_id']:
                 continue
@@ -53,20 +62,27 @@ def treat_duplicateds(mongo_db, mongo_collection, doit=False):
                     if doit:
                         del_res = mongo_db[mongo_collection].delete_many({'_id':{'$in': entry['uniqueIds'][1:]}})
                 else:
-                    warn("Repetits diferents ", cr)
+                    warn("Repetits amb diferents valors ai ", cr)
         except KeyboardInterrupt as e:
             break
         except Exception as e:
             error("Error: {}".format(e))
-    success("Eliminats {} registres".format(total_deleted))
+    return total_deleted
+
+def get_cups_names(erpclient):
+    cups_ids = erpclient.GiscedataCupsPs.search([], context={'active_test': False})
+    cups_names = erpclient.GiscedataCupsPs.read(cups_ids, ['name'])
+    return [x['name'] for x in cups_names]
 
 def main(doit=False):
     import pudb; pu.db
     mongo_client = pymongo.MongoClient(**configdb.mongodb)
     mongo_db = mongo_client.somenergia
+    erpclient = Client(**configdb.erppeek)
+    cups_names = get_cups_names(erpclient)
     for col in ['tg_cchfact', 'tg_cchval']:
         step("Tractant la coŀlecció {}".format(col))
-        treat_duplicateds(mongo_db, col)
+        treat_duplicateds(mongo_db, col, cups_names, doit)
 
 
 if __name__ == '__main__':
