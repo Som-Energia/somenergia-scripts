@@ -6,6 +6,8 @@ from consolemsg import step, error, warn, fail, success
 import pymongo
 from bson.objectid import ObjectId
 from tqdm import tqdm
+import argparse
+
 
 def is_winter_hour_change(dt):
 
@@ -29,7 +31,7 @@ def get_mongo_name_datetime_duplicateds(mongo_db, mongo_collection):
         name_datetime_duplicateds_query,
         allowDiskUse=True)
     result = duplicateds['result']
-    success("Trobats {} registres duplicats".format(result))
+    success("Trobats {} registres duplicats".format(len(result)))
     return result
 
 def treat_duplicateds(mongo_db, mongo_collection, doit=False):
@@ -47,7 +49,7 @@ def treat_duplicateds(mongo_db, mongo_collection, doit=False):
                     warn("Element/s sense ai", cr)
                     continue
                 if len(set(informed_ai)) == 1:
-                    total_deleted + = len(cr)-1
+                    total_deleted += len(cr)-1
                     if doit:
                         del_res = mongo_db[mongo_collection].delete_many({'_id':{'$in': entry['uniqueIds'][1:]}})
                 else:
@@ -58,10 +60,10 @@ def treat_duplicateds(mongo_db, mongo_collection, doit=False):
             error("Error: {}".format(e))
     success("Eliminats {} registres".format(total_deleted))
 
-def main():
-
-    mongo_client = pymongo.MongoClient(configdb.mongodb)
-    mongo_db = mongo_client_prod.somenergia
+def main(doit=False):
+    import pudb; pu.db
+    mongo_client = pymongo.MongoClient(**configdb.mongodb)
+    mongo_db = mongo_client.somenergia
     for col in ['tg_cchfact', 'tg_cchval']:
         step("Tractant la coŀlecció {}".format(col))
         treat_duplicateds(mongo_db, col)
