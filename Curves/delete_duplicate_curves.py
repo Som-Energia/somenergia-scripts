@@ -3,6 +3,7 @@
 
 import configdb
 from consolemsg import step, error, warn, fail, success
+from datetime import datetime, timedelta
 import pymongo
 from erppeek import Client
 from bson.objectid import ObjectId
@@ -33,22 +34,22 @@ def get_mongo_name_datetime_duplicateds(mongo_db, mongo_collection, cups):
         name_datetime_duplicateds_query,
         allowDiskUse=True)
     result = duplicateds['result']
-    success("Trobats {} registres duplicats".format(len(result)))
+
     return result
 
 def treat_duplicateds(mongo_db, mongo_collection, cups, doit=False):
     total_deleted = 0
     for cups_name in tqdm(cups):
         duplicateds = get_mongo_name_datetime_duplicateds(mongo_db, mongo_collection, cups_name)
-        total_deleted += duplicateds_by_cups(duplicateds, doit)
+        total_deleted += duplicateds_by_cups(duplicateds, mongo_db, mongo_collection, doit)
 
     success("Eliminats {} registres".format(total_deleted))
 
-def duplicateds_by_cups(duplicateds, doit=False):
+def duplicateds_by_cups(duplicateds, mongo_db, mongo_collection, doit=False):
     total_deleted = 0
     for entry in duplicateds:
         try:
-            if not 'name' in entry['_id'] or 'ai' not in entry['_id']:
+            if not 'name' in entry['_id']:
                 continue
             to_delete = not is_winter_hour_change(entry['_id']['datetime'])
             if to_delete:
@@ -70,16 +71,18 @@ def duplicateds_by_cups(duplicateds, doit=False):
     return total_deleted
 
 def get_cups_names(erpclient):
+    step("Buscant CUPS")
     cups_ids = erpclient.GiscedataCupsPs.search([], context={'active_test': False})
     cups_names = erpclient.GiscedataCupsPs.read(cups_ids, ['name'])
     return [x['name'] for x in cups_names]
 
 def main(doit=False):
-    import pudb; pu.db
+
     mongo_client = pymongo.MongoClient(**configdb.mongodb)
     mongo_db = mongo_client.somenergia
     erpclient = Client(**configdb.erppeek)
     cups_names = get_cups_names(erpclient)
+    step("Trobats {} CUPS".format(len(cups_names)))
     for col in ['tg_cchfact', 'tg_cchval']:
         step("Tractant la coŀlecció {}".format(col))
         treat_duplicateds(mongo_db, col, cups_names, doit)
