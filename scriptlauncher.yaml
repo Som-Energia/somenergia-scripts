@@ -384,7 +384,7 @@ invoicefixing:
 
     copy_f1_to_testing:
       title: Copia els F1ns de productiu a testing de les pòlisses indicades.
-      description: Copia els F1 que faltin a les pòlisses de productiu a testing de les pòlisses indicades.
+      description: Copia els F1 que faltin de les pòlisses indicades, de productiu a testing.
       script: python SOME_SRC/somenergia-scripts/invoicing/copy_f1_to_testing.py --file={csv_file}
       parameters:
         csv_file:

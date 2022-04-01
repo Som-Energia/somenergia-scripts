@@ -54,7 +54,7 @@ def main(csv_file):
     client_prod = Client(**configdb.erppeek)
     client_test = Client(**configdb.erppeek_testing)
     polissa_ids = search_polissa_by_names(read_polissa_names(csv_file, client_prod), client_prod)
-    import pudb; pu.db
+
     total_pols_ok = 0
     for pol_id in polissa_ids:
         try:
