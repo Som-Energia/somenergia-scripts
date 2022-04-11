@@ -391,7 +391,7 @@ invoicefixing:
           type: FILE
           description: "CSV amb el nom de les pòlisses a la primera columna, sense capçalera."
         from_date:
-          description: Des de quina cal actualitzar l'adjunt de testing, dels F1ns que ja existien
+          description: Des de quina cal actualitzar l'adjunt de testing, dels F1ns que ja existien, amb el format YYYY-mm-dd
         output:
           type: FILEDOWN
           filename: resultat.csv
