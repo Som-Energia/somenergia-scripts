@@ -104,8 +104,8 @@ def copy_f1_to_testing(csv_file, date_from):
                 info.append({'pol':pol_name, 'info': txt})
                 continue
 
-            import_f1_to_testing(to_import_f1, client_prod, client_test)
             replace_att(to_replace_att, client_prod, client_test)
+            import_f1_to_testing(to_import_f1, client_prod, client_test)
             txt = "importats {} F1 i {} adjunts actualitzats".format(len(to_import_f1), len(to_replace_att))
             step("Per la pòlissa {} {}".format(pol_name, txt))
             info.append({'pol':pol_name, 'info': txt})
