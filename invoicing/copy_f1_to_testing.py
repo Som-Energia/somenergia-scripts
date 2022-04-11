@@ -127,7 +127,6 @@ def write_result(result, filename):
             writer.writerow({k: unicode(v).encode('utf-8') for k, v in a.items()})
 
 def main(csv_file, output_file, from_date):
-    import pudb; pu.db
     result = copy_f1_to_testing(csv_file, from_date)
     write_result(result, output_file)
 
