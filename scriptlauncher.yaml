@@ -385,12 +385,17 @@ invoicefixing:
     copy_f1_to_testing:
       title: Copia els F1ns de productiu a testing de les pòlisses indicades.
       description: Copia els F1 que faltin de les pòlisses indicades, de productiu a testing.
-      script: python SOME_SRC/somenergia-scripts/invoicing/copy_f1_to_testing.py --file={csv_file}
+      script: python SOME_SRC/somenergia-scripts/invoicing/copy_f1_to_testing.py --file={csv_file} --from-date={from_date} --output={output}
       parameters:
         csv_file:
           type: FILE
           description: "CSV amb el nom de les pòlisses a la primera columna, sense capçalera."
-
+        from_date:
+          description: Des de quina cal actualitzar l'adjunt de testing, dels F1ns que ja existien
+        output:
+          type: FILEDOWN
+          filename: resultat.csv
+          extension: csv
 
 gestiocontractes:
   description: Gestió de contractes
