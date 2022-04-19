@@ -39,14 +39,18 @@ def get_mongo_name_datetime_duplicateds(mongo_db, mongo_collection, cups):
 
 def treat_duplicateds(mongo_db, mongo_collection, cups, doit=False):
     total_deleted = 0
-    for cups_name in tqdm(cups):
+    deleted_by_cups = 0
+    for cups_name in cups:
         duplicateds = get_mongo_name_datetime_duplicateds(mongo_db, mongo_collection, cups_name)
-        total_deleted += duplicateds_by_cups(duplicateds, mongo_db, mongo_collection, doit)
-
+        deleted_by_cups += duplicateds_by_cups(duplicateds, mongo_db, mongo_collection, doit)
+        total_deleted += deleted_by_cups
+        step("Trobats {} duplicats del CUPS {}".format(deleted_by_cups, cups_name))
     success("Eliminats {} registres".format(total_deleted))
 
 def duplicateds_by_cups(duplicateds, mongo_db, mongo_collection, doit=False):
     total_deleted = 0
+    count_different_values = 0
+    entry_example = False
     for entry in duplicateds:
         try:
             if not 'name' in entry['_id']:
@@ -63,11 +67,17 @@ def duplicateds_by_cups(duplicateds, mongo_db, mongo_collection, doit=False):
                     if doit:
                         del_res = mongo_db[mongo_collection].delete_many({'_id':{'$in': entry['uniqueIds'][1:]}})
                 else:
-                    warn("Repetits amb diferents valors ai ", cr)
+                    count_different_values += 1
+                    entry_example = entry['_id']
+                    #warn("Repetits amb diferents valors ai ", cr)
         except KeyboardInterrupt as e:
             break
         except Exception as e:
             error("Error: {}".format(e))
+    if count_different_values:
+        warn("Trobats {} repetits amb diferents valors, per exemple CUPS {}, diahora {}".format(
+            count_different_values, entry_example['name'], entry_example['datetime'])
+        )
     return total_deleted
 
 def get_cups_names(erpclient):
@@ -87,6 +97,8 @@ def main(doit=False):
         step("Tractant la coŀlecció {}".format(col))
         treat_duplicateds(mongo_db, col, cups_names, doit)
 
+    if not doit:
+        warn("S'ha executat sense el doit: mode consulta")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
