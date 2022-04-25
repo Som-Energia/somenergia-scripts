@@ -151,12 +151,20 @@ invoicefixing:
           description: Introduir la data des de quan voleu fer la cerca amb format YYYY-mm-dd
 
     CopyCurveToTesting:
-      script: python SOME_SRC/somenergia-scripts/Curves/copy_corbes_to_testing.py -c {cups}
+      script: python SOME_SRC/somenergia-scripts/Curves/copy_corbes_to_testing.py -c {cups} -s {server}
       title: CCh - Copia corbes horaries de Productiu a Testing
       description: Copia totes les corbes disponibles (f5d, p5d, f1 i p1) del Mongo de productiu al Mongo de testing
       parameters:
         cups:
           description: Introduir el CUPS
+        server:
+          description: A quin servidor vols copiarles (terp01, perp01...)
+          type: enum
+          options:
+            Testing (terp01): terp01
+            Preproducció (perp01): perp01
+          default: terp01
+
 
     download_cch:
       script: sudo su -c 'export PATH=$HOME/.pyenv/bin:$PATH; eval "$(pyenv init -)"; python SOME_SRC/somenergia-scripts/Curves/download_cch.py --from_date {from_date} --to_date {to_date} --contracts {contracts} --curve_types {curve_types} --output {output}' somenergia

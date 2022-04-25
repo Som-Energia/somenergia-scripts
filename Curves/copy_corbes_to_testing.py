@@ -30,9 +30,15 @@ def set_mongo_data(mongo_db, mongo_collection, curve_type, cups, mongo_data):
     return True
 
 
-def main(cups):
+def main(cups, server):
     mongo_client_prod = pymongo.MongoClient(configdb.mongodb_prod)
-    mongo_client_test = pymongo.MongoClient(configdb.mongodb_test)
+    if server == 'terp01':
+        mongo_client_test = pymongo.MongoClient(configdb.mongodb_test)
+    elif server == 'perp01':
+        mongo_client_test = pymongo.MongoClient(configdb.mongodb_pre)
+    else:
+        raise Exception("Servidor desconegut")
+
     mongo_db_prod = mongo_client_prod.somenergia
     mongo_db_test = mongo_client_test.somenergia
 
@@ -86,7 +92,7 @@ def main(cups):
         )
         print "Corbes obtingudes TM_PROFILE: " + str(mongo_data_tmprofile.count())
 
-    print "Les corbes disponibles s'han pujat a testing"
+    print "Les corbes disponibles s'han pujat a " + servidor
 
 def parseargs():
     import argparse
@@ -94,11 +100,16 @@ def parseargs():
     parser.add_argument('-c', '--cups',
         help="Escull per cups",
         )
+    parser.add_argument('-s', '--server',
+        help="Escull un servidor destí",
+        )
     return parser.parse_args()
 
 if __name__ == '__main__':
     args=parseargs()
     if not args.cups:
         fail("Introdueix un cups o el missatge d'error o una data")
+    if not args.server:
+        fail("Introdueix un servidor a on copiar les corbes")
 
-    main(args.cups)
+    main(args.cups, args.server)
