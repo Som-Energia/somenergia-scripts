@@ -92,7 +92,7 @@ def main(cups, server):
         )
         print "Corbes obtingudes TM_PROFILE: " + str(mongo_data_tmprofile.count())
 
-    print "Les corbes disponibles s'han pujat a " + servidor
+    print "Les corbes disponibles s'han pujat a " + server
 
 def parseargs():
     import argparse
