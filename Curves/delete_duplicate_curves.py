@@ -39,12 +39,12 @@ def get_mongo_name_datetime_duplicateds(mongo_db, mongo_collection, cups):
 
 def treat_duplicateds(mongo_db, mongo_collection, cups, doit=False):
     total_deleted = 0
-    deleted_by_cups = 0
     for cups_name in cups:
         duplicateds = get_mongo_name_datetime_duplicateds(mongo_db, mongo_collection, cups_name)
-        deleted_by_cups += duplicateds_by_cups(duplicateds, mongo_db, mongo_collection, doit)
+        deleted_by_cups = duplicateds_by_cups(duplicateds, mongo_db, mongo_collection, doit)
         total_deleted += deleted_by_cups
-        step("Trobats {} duplicats del CUPS {}".format(deleted_by_cups, cups_name))
+        if deleted_by_cups:
+            step("Trobats {} duplicats del CUPS {}".format(deleted_by_cups, cups_name))
     success("Eliminats {} registres".format(total_deleted))
 
 def duplicateds_by_cups(duplicateds, mongo_db, mongo_collection, doit=False):
