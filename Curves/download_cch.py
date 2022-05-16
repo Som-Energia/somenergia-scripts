@@ -144,7 +144,7 @@ def cch_json_to_dataframe(results, cch_type, from_date, to_date):
     # TODO we will fuck up if there's more than one meteringPoint (it will pick one at random by dateUpdate)
     measurements = measurements.loc[measurements.groupby(["date","meteringPointId"])['dateUpdate'].idxmax()] # filtering deprecated values
     measurements = measurements.set_index(['date','meteringPointId'], drop=False)
-     
+
     timezone = pytz.timezone('Europe/Madrid')
 
     #TODO: Partition by meteringPointId to avoid this complexity in the index
@@ -189,7 +189,7 @@ def get_cch_curves_csv(contract, cch_types, from_date, to_date):
     for cch_type in cch_types:
         cch_json = get_cch_curves(contract, cch_type, from_date_excess, to_date_excess)
         if not cch_json:
-            print("Contract {} without curves of type {}.".format(contract, cch_type)) 
+            print("Contract {} without curves of type {}.".format(contract, cch_type))
             continue
 
         cchs.append((cch_type, cch_json_to_dataframe(cch_json, cch_type, from_date_excess_dt, to_date_excess_dt)))
@@ -203,9 +203,9 @@ def get_cch_curves_csv(contract, cch_types, from_date, to_date):
     for cch_type, curve_df in cchs:
         curve_df['contractId'] = contract
         all_types_curves_df = pd.merge(all_types_curves_df, curve_df, on=['date', 'contractId'], how='outer', sort=False)
-    
+
     all_types_curves_df = truncate_date_range(all_types_curves_df, from_date, to_date)
-    
+
     csv_filename = df_to_csv(all_types_curves_df, contract, cch_type, from_date, to_date)
     # errors are handled via exceptions
     return csv_filename
@@ -246,22 +246,41 @@ def main(contracts, curve_types, from_date, to_date, output_file):
 
     contracts = [i.strip() for x in contracts for i in x.split(',') if i.strip() != '']
 
-     
+
     contract_type_list = [(contract, curve_types, from_date, to_date) for contract in contracts]
 
     # Example:
-    #contract_type_list = [('0173713', 'tg_cchfact', '2021-12-16', '2021-12-17')]
+    #contract_type_list = [('0173713', ['tg_cchfact'], '2021-12-16', '2021-12-17')]
     # tg_cchfact
     # tg_cchval
     # contract_type_list = [
-    #     ('0042625','tg_cchfact','2021-01-01','2022-02-02'),
-    #     ('0042639','tg_cchfact','2021-01-01','2022-02-02'),
-    #     ('0042640','tg_cchfact','2021-01-01','2022-02-02'),
-    #     ('0042646','tg_cchfact','2021-01-01','2022-02-02'),
-    #     ('0173713','tg_cchfact','2021-01-01','2022-02-02'),
-    #     ('0173714','tg_cchfact','2021-01-01','2022-02-02'),
-    #     ('0173715','tg_cchfact','2021-01-01','2022-02-02'),
-    #     ('0173716','tg_cchfact','2021-01-01','2022-02-02')
+    #     ('0042625',['tg_cchfact'],'2021-01-01','2022-02-02'),
+    #     ('0042639',['tg_cchfact'],'2021-01-01','2022-02-02'),
+    #     ('0042640',['tg_cchfact'],'2021-01-01','2022-02-02'),
+    #     ('0042646',['tg_cchfact'],'2021-01-01','2022-02-02'),
+    #     ('0173713',['tg_cchfact'],'2021-01-01','2022-02-02'),
+    #     ('0173714',['tg_cchfact'],'2021-01-01','2022-02-02'),
+    #     ('0173715',['tg_cchfact'],'2021-01-01','2022-02-02'),
+    #     ('0173716',['tg_cchfact'],'2021-01-01','2022-02-02')
+    # ]
+
+    # A dia de 13-05-2022:
+    # almenys un exemple de contracte i dates que torni corbes
+    # - F1 (TG F1) [0096760, 0103760]
+    # - P1 (TG P1 tipus horari: Corba horària) [0096760, 0103760]
+    # - P2 (TG P1 tipus horari: Corba quartihorària) [0096760, 0103760]
+    # - A5D (TG CCHAUTOCONS) [0042639, 0173713, 0173714]
+    # - B5D (TG CCHGENNETABETA) [0042639, 0173713, 0173714]
+
+    # Other Examples:
+    # contract_type_list = [
+    #     ('0096760', ['tg_f1', 'P1', 'P2'], '2022-02-01', '2022-02-01')
+    # ]
+
+    # New Examples:
+    # contract_type_list = [
+    #     ('0173713', ['tg_cchautoconsum'], '2022-01-01', '2022-02-01'),
+    #     ('0173713', ['tg_gennetabeta'], '2022-01-01', '2022-03-01'),
     # ]
 
     results = get_contracts_cch_csv(contract_type_list)
@@ -270,7 +289,7 @@ def main(contracts, curve_types, from_date, to_date, output_file):
     zipfilename = output_file
     # zipfilename = "{}/cch_download.zip".format(BASE_PATH, datetime.datetime.now().isoformat())
     with zipfile.ZipFile(zipfilename, 'w') as archive:
-        
+
         for filename in results.values():
             if filename:
                 archive.write(filename, os.path.basename(filename))

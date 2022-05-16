@@ -24,7 +24,7 @@ measurefixing:
 #      script: reportrun -a -C SOME_SRC/somenergia-scripts/dbconfig.py -s [Web_Scripts]_Quadre_de_control_validacio -t {mail} -- SOME_SRC/somenergia-scripts/invoicing/measurefixing/Validacio_Quadre_control.py
       script: SOME_SRC/somenergia-scripts/invoicing/measurefixing/Validacio_Quadre_control.py
       title: Quadre de control Validació
-      description: Serveix per quantificar els errors que actualment tenim en el validació de les lectures. 
+      description: Serveix per quantificar els errors que actualment tenim en el validació de les lectures.
       parameters:
         mail:
           description: Introdueix el correu electrònic
@@ -46,12 +46,12 @@ measurefixing:
     validacionbajas:
       script: SOME_SRC/somenergia-scripts/invoicing/measurefixing/Validacio1_baixes_2.py
       title: Corregir errors en baixes
-      description: 
+      description:
 
-    polizasbajas:  
+    polizasbajas:
       script: SOME_SRC/somenergia-scripts/invoicing/measurefixing/Validacio2_eliminar_polisses_baixa.py
       title: Eliminar pòlisses de baixa
-      description: 
+      description:
 
     sobrestimacions_ab_re:
       script: reportrun -a -C SOME_SRC/somenergia-scripts/dbconfig.py -s [Web_Scripts]_Resultat_sobreestimacions_AB_i_RE -t {mail} -- python SOME_SRC/somenergia-scripts/invoicing/invoicefixing/fix_detained_invoicing.py
@@ -67,22 +67,22 @@ measurefixing:
     sobreestimaciones:
       script: SOME_SRC/somenergia-scripts/invoicing/measurefixing/Validacio3_sobre_estimacions.py
       title: Corregir Sobreestimaciones
-      description:  
+      description:
 
     sinlecturamaximetro:
       script: SOME_SRC/somenergia-scripts/invoicing/measurefixing/Validacio4_sense_lectura_maximetre.py
       title: Corregir errors en lectures de maximetre
-      description: 
+      description:
 
     validacionincompleta:
       script: SOME_SRC/somenergia-scripts/invoicing/measurefixing/Validacio5_incompleta.py
       title: Corregir lectures que estan incompletes
-      description: 
+      description:
 
     cierremejorado:
       script: SOME_SRC/somenergia-scripts/invoicing/measurefixing/Validacio7_tancament_millorat.py --doit
       title: Corregir lectures de tancament de comptadors
-      description: 
+      description:
 
     senselectureanterior:
       script: SOME_SRC/somenergia-scripts/invoicing/measurefixing/Validacio8_sense_lectura_anterior.py --doitDEstimada
@@ -122,13 +122,13 @@ invoicefixing:
 
     fixmoddate:
       script: python SOME_SRC/somenergia-scripts/invoicing/fix_modcontractual_orig.py
-      title: Corregir errors data de modificació contractual 
+      title: Corregir errors data de modificació contractual
       description:
 
-    fixextraline:  
+    fixextraline:
       script: SOME_SRC/somenergia-scripts/invoicing/fix_extra_line.py
       title: Corregir errors extra line
-      description: 
+      description:
 
     arreglar0lines:
       title: Arreglar Factures amb 0 Lines
@@ -174,24 +174,26 @@ invoicefixing:
         contracts:
           description: Números de contractes de 7 digits separats per comes (e.g. 0731234, 1230923)
         curve_types:
-          description: Tipus de corbes separat per comes (tg_cchval, tg_cchfact)
+          description: Tipus de corbes separat per comes (tg_cchval, tg_cchfact, tg_f1, P1, P2, tg_cchautoconsum, tg_gennetabeta)
         from_date:
           description: Introdueix la data d'inici del període que cal decarregar 'YYYY-mm-dd'
         to_date:
           description: Introdueix la data final del període que cal decarregar 'YYYY-mm-dd'
+        suma_total:
+          description: Afegeix una fila al final amb la suma total
         output:
           type: FILEDOWN
           extension: zip
           filename: cch_download.zip
 
-    # To Do: for future elimination, the ERP already can do the same and the script seems to be error prone 
+    # To Do: for future elimination, the ERP already can do the same and the script seems to be error prone
     #fixrefundinvoice:
     #  script:
     #    - SOME_SRC/somenergia-scripts/invoicing/invoicefixing/fix_refund_invoice.py
     #    - -i
     #    - "{invoice}"
     #  title: Corregir factura rectificativa
-    #  description: 
+    #  description:
     #  parameters:
     #    invoice:
     #      description: Invoice number
@@ -199,7 +201,7 @@ invoicefixing:
     fixinvoice:
       script: python SOME_SRC/somenergia-scripts/invoicing/invoicefixing/fix_invoice.py -c {contract_name} -s {start_date} -e {end_date}
       title: Abonar i rectificar
-      description: 
+      description:
       parameters:
         contract_name:
           description: Número de contracte
@@ -214,9 +216,9 @@ invoicefixing:
       description: Elimina les importacions de F1 amb el text d'error "Ja existeix una factura...", "XML erroni", "XML no correspon al tipus F1" i "Document invàlid"
 
     reqadq:
-        script: python SOME_SRC/somenergia-scripts/Peticions/peticio_lectures.py {nmsgs} 
+        script: python SOME_SRC/somenergia-scripts/Peticions/peticio_lectures.py {nmsgs}
         title: Petició d'autolectures
-        description: Petició d'autolectures (5 mesos sense lectures reals) 
+        description: Petició d'autolectures (5 mesos sense lectures reals)
         parameters:
           nmsgs:
             description: Número de missatges a enviar
@@ -227,7 +229,7 @@ invoicefixing:
       description: ATENCIÓ! Aquest script només s'ha d'utiltizar quan es vol fer canvi de lot i lot actual el volem tancar. Aquest scripts et permet moure les polisses que falten per facturar al següent lot
 
     groupinvoice:
-      script: python SOME_SRC/somenergia-scripts/invoicing/invoicefixing/group_invoice.py -c {contract_name} 
+      script: python SOME_SRC/somenergia-scripts/invoicing/invoicefixing/group_invoice.py -c {contract_name}
       title: Agrupar pagaments factures d'un contracte
       description: Cal informar número de contracte. Agafa les factures obertes i les agrupa en un sol pagament a la remesa que toqui.
       parameters:
@@ -437,20 +439,20 @@ gestiocontractes:
         date_end:
           description: Introdueix la data amb que vols que comencen l'anàlisi de ccvv i altres associacions
     seguiment3:
-      script: 
+      script:
       - python
       - SOME_SRC/somenergia-scripts/Informacio/seguiment_30A.py
       - "-d {date}"
 
       title: Seguiment de contractes nous 3.0A i contractes endarrerits en esborrany
-      description: 
+      description:
       parameters:
         date:
           description: Introdueix la data amb el format 'YYYY-mm-dd', l'última no inclosa
     cupstoemailc:
       script: SOME_SRC/cups2email/cups2email_lang_c.py {file}
       title: Email segon avís requeriment butlletí elèctric a partir dels CUPS facilitats per la distribuidora
-      description: 
+      description:
       parameters:
         file:
           type: FILE
@@ -458,7 +460,7 @@ gestiocontractes:
     cupstoemailb:
       script: SOME_SRC/cups2email/cups2email_lang_b.py {file}
       title: Email validació de instalació a partir dels CUPS facilitats per la distribuidora
-      description: 
+      description:
       parameters:
         file:
           type: FILE
@@ -466,7 +468,7 @@ gestiocontractes:
     cupstoemaila:
       script: SOME_SRC/cups2email/cups2email_lang_a.py {file}
       title: Email petició documentació a partir dels CUPS facilitats per la distribuidora
-      description: 
+      description:
       parameters:
         file:
           type: FILE
@@ -515,7 +517,7 @@ gestiocontractes:
           type: FILEDOWN
           extension: csv
     sips_comparator:
-      script: SOME_SRC/somenergia-scripts/CUPS/sips_comparator.py -d {date_from} -f {output} 
+      script: SOME_SRC/somenergia-scripts/CUPS/sips_comparator.py -d {date_from} -f {output}
       title: Script comparació adreça CUPS - adreça SIPS
       description: >
           Dada una data, mostra en un fitxer CSV les direccions sips del 2015 per cups. Utilitza la data "data firma contracte" per trobar els contractes
@@ -812,7 +814,7 @@ mailchimp:
           extension: csv
 
     archive_socis_mailchimp:
-      title: Arxivar mails de antics socis/sòcies 
+      title: Arxivar mails de antics socis/sòcies
       description: "Aquest script, quan s’activa, actua sobre la llista de Mailchimp que se li hagi indicat (ex: “Soci/a de Som Energia”). El que fa és que arxiva (dessubscriu però manté les dades antigues) les adreces de correu de les persones que abans eren sòcies i ara ja no ho són, segons dades de l’ERP.
       <h5>OBSERVACIONS: Si no hi ha emails amb aquestes característiques, a la llista de resultats apareixerà un error 404 (no s'ha trobat res a arxivar). Si les adreces d'email s'havien eliminat anteriorment, l'error que apareixerà serà el 405 (acció no permesa).</h5>"
       script: python SOME_SRC/somenergia-scripts/admin/Baixa_Socis/unsubscribe_members.py --list {list_name} --output {output}
