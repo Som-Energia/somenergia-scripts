@@ -13,6 +13,7 @@ from emili import sendMail
 import pymongo
 from datetime import datetime, timedelta, date, time
 from pymongo import DESCENDING
+import argparse
 
 from tqdm import tqdm
 from time import sleep
@@ -63,43 +64,53 @@ def get_count_and_date_firmeza(mongo_db, mongo_collection, cups, firmeza, date):
         data_ultima = cursor[0]['datetime']
     return count_curves, data_ultima
 
-def get_mongo_data(mongo_db, mongo_collection, curve_type, cups):
+def get_mongo_data(mongo_db, mongo_collection, curve_type, cups, from_date=None):
     data = dict()
-    last_year = datetime.combine(date.today(), time()) - timedelta(days=365)
+    if from_date:
+        from_date = datetime.strptime(from_date, "%Y-%m-%d")
+    else:
+        from_date = datetime.combine(date.today(), time()) - timedelta(days=365)
     all_curves_search_query = {
-            'name': {'$regex': '^{}'.format(cups[:20])},
-            'datetime': {"$gte": last_year},
+        'name': {'$regex': '^{}'.format(cups[:20])},
+        'datetime': {"$gte": from_date},
     }
     if mongo_collection == 'tg_p1':
         all_curves_search_query.update({"type": "p"})
-    fields = {'_id': False, 'datetime': True, 'create_at': True, 'source': True}
+    fields = {'_id': False, 'datetime': True, 'create_at': True, 'source': True, 'ai': True, 'ao': True}
     curves =  mongo_db[mongo_collection].find(
         all_curves_search_query,
         fields).sort('datetime', pymongo.ASCENDING)
-
     number_curves = curves.count()
     data['count_cch_period_{}'.format(curve_type)] = number_curves
 
     if number_curves > 0:
-        data_primera = curves[0]['datetime']
+        sum_ai = 0
+        sum_ao = 0
+        for curve in curves:
+            sum_ai += curve['ai']
+            sum_ao += curve['ao']
+        curves.rewind()
+        data_primera = curves.next()['datetime']
         data['data_primera_{}'.format(curve_type)] = data_primera.strftime("%Y-%m-%d %H:%M:%S")
-        cursor = curves.skip(number_curves -1)
-        data['ultima_data_creacio_{}'.format(curve_type)] = cursor[0].get(
+        curves.rewind()
+        curve = curves.skip(number_curves -1).next()
+        data['ultima_data_creacio_{}'.format(curve_type)] = curve.get(
             'create_at'
         ).strftime("%Y-%m-%d %H:%M:%S")
-        data_ultima = cursor[0].get('datetime')
+        data_ultima = curve.get('datetime')
         data['data_ultim_registre_{}'.format(curve_type)] = data_ultima.strftime("%Y-%m-%d %H:%M:%S")
         count_hores_period = (data_ultima - data_primera).days * 24
         data['count_diferencia_{}'.format(curve_type)] = number_curves - count_hores_period
         data['count_hores_period_{}'.format(curve_type)] = count_hores_period
-
+        data['ai_{}'.format(curve_type)] = sum_ai
+        data['ao_{}'.format(curve_type)] = sum_ao
 
         data['corbes_no_firmes_{}'.format(curve_type)], data['data_ultima_corbes_no_firmes_{}'.format(curve_type)] = get_count_and_date_firmeza(
                 mongo_db=mongo_db,
                 mongo_collection=mongo_collection,
                 firmeza = False,
                 cups=cups,
-                date=last_year,
+                date=from_date,
         )
         data['corbes_firmes_{}'.format(curve_type)] = number_curves - data['corbes_no_firmes_{}'.format(curve_type)]
 
@@ -123,7 +134,7 @@ def get_mongo_fields():
         'count_cch_period_{curve_type}', 'count_diferencia_{curve_type}',
         'ultima_data_creacio_{curve_type}', 'data_ultim_registre_{curve_type}',
         'corbes_firmes_{curve_type}', 'corbes_no_firmes_{curve_type}',
-        'data_ultima_corbes_no_firmes_{curve_type}',
+        'data_ultima_corbes_no_firmes_{curve_type}', 'ai_{curve_type}', 'ao_{curve_type}'
     ]
 
     for curve_type in ['f5d', 'f1', 'p5d', 'p1']:
@@ -134,7 +145,7 @@ def get_mongo_fields():
     return mongo_fields
 
 
-def main():
+def main(from_date):
     erp_client = Client(**configdb.erppeek)
     mongo_client = pymongo.MongoClient(configdb.mongodb)
     mongo_db = mongo_client.somenergia
@@ -146,7 +157,7 @@ def main():
         'tg', 'distribuidora', 'autoconsumo', 'cups', 'data_alta',
         'data_ultima_lectura', 'tarifa', 'name',
         'data_ultima_lectura_estimada', 'data_ultima_lectura_perfilada',
-        'data_ultima_lectura_f1', 'agree_tipus',
+        'data_ultima_lectura_f1', 'tipo_medida',
     ]
 
     mongo_fields = get_mongo_fields()
@@ -176,18 +187,22 @@ def main():
                 mongo_data_f5d = get_mongo_data(
                     mongo_db=mongo_db, mongo_collection='tg_cchfact',
                     curve_type='f5d', cups=polissa['cups'][1],
+                    from_date=from_date,
                 )
                 mongo_data_f1 = get_mongo_data(
                     mongo_db=mongo_db, mongo_collection='tg_f1',
                     curve_type='f1', cups=polissa['cups'][1],
+                    from_date=from_date,
                 )
                 mongo_data_p5d = get_mongo_data(
                     mongo_db=mongo_db, mongo_collection='tg_cchval',
                     curve_type='p5d', cups=polissa['cups'][1],
+                    from_date=from_date,
                 )
                 mongo_data_p1 = get_mongo_data(
                     mongo_db=mongo_db, mongo_collection='tg_p1',
                     curve_type='p1', cups=polissa['cups'][1],
+                    from_date=from_date,
                 )
 
                 cleared_polissa.update(mongo_data_f5d)
@@ -195,8 +210,8 @@ def main():
                 cleared_polissa.update(mongo_data_p5d)
                 cleared_polissa.update(mongo_data_p1)
                 add_row_in_csv(csv_name, header=csv_fields, element=cleared_polissa)
-        except:
-            print("Error a la polissa amb id {}".format(polissa_id))
+        except Exception as e:
+            print("Error a la polissa amb id {}: {}".format(polissa_id, e))
         sleep(0.1)
 
     step('ready to send the email')
@@ -206,4 +221,16 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(
+            description='Script curves molonguis'
+    )
+
+    parser.add_argument(
+        '--from_date',
+        dest='from_date',
+        required=False,
+        help="Introdueix la data d'inici del perídode que cal decarregar 'YYYY-mm-dd'. Si no es posa res, agafa els últims 365 dies."
+    )
+    args = parser.parse_args()
+
+    main(args.from_date)
