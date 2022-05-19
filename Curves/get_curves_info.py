@@ -150,7 +150,7 @@ def main(from_date):
         'tg', 'distribuidora', 'autoconsumo', 'cups', 'data_alta',
         'data_ultima_lectura', 'tarifa', 'name',
         'data_ultima_lectura_estimada', 'data_ultima_lectura_perfilada',
-        'data_ultima_lectura_f1', 'agree_tipus',
+        'data_ultima_lectura_f1', 'tipo_medida',
     ]
 
     mongo_fields = get_mongo_fields()
