@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 #from concurrent.futures import ThreadPoolExecutor, wait
 # concurrent no està disponible per python 3?
 # han fet un backport per python3 https://pypi.org/project/futures/
@@ -97,32 +100,11 @@ def get_cch_curves(contract, cch_type, start_date, end_date):
         results += process_next_page(next_page, token)
     return results
 
-
-def get_contracts_cch(contract_list):
-    results = dict()
-    with ThreadPoolExecutor(max_workers=20) as executor:
-        tasks = {
-            executor.submit(get_cch_curves, contract, 'tg_cchfact', '2021-12-16', '2021-12-17'): contract
-            for contract in contract_list
-        }
-        todo = tasks
-
-        while todo:
-            done, todo = wait(todo, timeout=10)
-            for task in done:
-                results[tasks[task]] = task.result()
-                print(tasks[task])
-
-    for result in results:
-        with open(f'{result}.json', 'w') as output:
-            json.dump(results[result], output)
-
 # TODO remove this patch once the backend is fixed and times are correct
 # currently it is returning one hour less than it should
 def bugfix_add_one_hour(df_column):
     df_column = df_column + pd.Timedelta(hours=1)
     return df_column
-
 
 def cch_json_to_dataframe(results, cch_type, from_date, to_date):
     columns = ('contractId','meteringPointId') + tuple(results[0]['measurements'].keys())
@@ -171,13 +153,13 @@ def cch_json_to_dataframe(results, cch_type, from_date, to_date):
 
     return measurements
 
-
-def df_to_csv(df, contract_id, cch_type, from_date, to_date):
-    filename = '{}/CCH_download_{}_{}_{}_{}.csv'.format(BASE_PATH, from_date, to_date, cch_type, contract_id)
+def df_to_csv(df, contract_id, cch_types, from_date, to_date):
+    cch_types_str = "-".join(cch_types)
+    filename = '{}/CCH_download_{}_{}_{}_{}.csv'.format(BASE_PATH, from_date, to_date, cch_types_str, contract_id)
     df.to_csv(filename, sep=';', index=False, decimal=',')
     return filename
 
-def get_cch_curves_csv(contract, cch_types, from_date, to_date):
+def get_cch_curves_csv(contract, cch_types, from_date, to_date, add_total_row=False):
 
     from_date_excess_dt = datetime.datetime.strptime(from_date, "%Y-%m-%d") - datetime.timedelta(days=1)
     from_date_excess = datetime.datetime.strftime(from_date_excess_dt, "%Y-%m-%d")
@@ -206,9 +188,8 @@ def get_cch_curves_csv(contract, cch_types, from_date, to_date):
 
     all_types_curves_df = truncate_date_range(all_types_curves_df, from_date, to_date)
 
-    csv_filename = df_to_csv(all_types_curves_df, contract, cch_type, from_date, to_date)
     # errors are handled via exceptions
-    return csv_filename
+    return all_types_curves_df
 
 def truncate_date_range(df, from_date, to_date):
 
@@ -221,13 +202,14 @@ def truncate_date_range(df, from_date, to_date):
     timezone = pytz.timezone('Europe/Madrid')
     from_date = datetime.datetime.strptime(from_date, "%Y-%m-%d").astimezone(timezone)
     to_date = timezone.localize(datetime.datetime.strptime(to_date, "%Y-%m-%d")) + datetime.timedelta(days=1)
+    # readings are end-hour
     return df[(from_date < df['date']) & (df['date'] <= to_date)]
 
-def get_contracts_cch_csv(contract_type_list):
+def get_contracts_cch(contract_type_list, add_total_row=False):
     results = dict()
     with ThreadPoolExecutor(max_workers=20) as executor:
         tasks = {
-            executor.submit(get_cch_curves_csv, contract, cch_types, from_date, to_date): contract
+            executor.submit(get_cch_curves_csv, contract, cch_types, from_date, to_date, add_total_row): contract
             for contract, cch_types, from_date, to_date in contract_type_list
         }
         todo = tasks
@@ -240,12 +222,21 @@ def get_contracts_cch_csv(contract_type_list):
 
     return results
 
-def main(contracts, curve_types, from_date, to_date, output_file):
+def merge_csvs_text(csvs, outfile):
+    # let's not use pandas and just concat csv text
+    # assumes csv fits in memory
+    with open(outfile, 'w') as out_csv_file:
+        for csv in csvs:
+            with open(csv) as infile:
+                out_csv_file.write(infile.read())
+
+    # return pd.concat(map(pd.read_csv, csvs), ignore_index=True)
+
+def main(contracts, curve_types, from_date, to_date, output_file, merge_in_one_csv=False, add_total_row=False):
 
     curve_types = [i.strip() for x in curve_types for i in x.split(',') if i.strip() != '']
 
     contracts = [i.strip() for x in contracts for i in x.split(',') if i.strip() != '']
-
 
     contract_type_list = [(contract, curve_types, from_date, to_date) for contract in contracts]
 
@@ -283,18 +274,36 @@ def main(contracts, curve_types, from_date, to_date, output_file):
     #     ('0173713', ['tg_gennetabeta'], '2022-01-01', '2022-03-01'),
     # ]
 
-    results = get_contracts_cch_csv(contract_type_list)
+    results = get_contracts_cch(contract_type_list, add_total_row)
+
+    # csv_filename = df_to_csv(all_types_curves_df, contract, cch_types, from_date, to_date)
+
+    if merge_in_one_csv:
+        curves_dfs = [df for df in results.values() if df is not None]
+        mdf = pd.concat(curves_dfs, ignore_index=True)
+        if add_total_row:
+            mdf = pd.concat([mdf, mdf.sum(numeric_only=True).to_frame().T], ignore_index=True)
+        filename = df_to_csv(mdf, 'many', curve_types, from_date, to_date)
+        filenames = [filename]
+
+    else:
+        filenames = []
+        for contract, df in results.items():
+            if add_total_row:
+                df = pd.concat([df, df.sum(numeric_only=True).to_frame().T], ignore_index=True)
+            filename = df_to_csv(df, contract, curve_types, from_date, to_date)
+            filenames.append(filename)
 
     # zip results
     zipfilename = output_file
     # zipfilename = "{}/cch_download.zip".format(BASE_PATH, datetime.datetime.now().isoformat())
     with zipfile.ZipFile(zipfilename, 'w') as archive:
 
-        for filename in results.values():
+        for filename in filenames:
             if filename:
                 archive.write(filename, os.path.basename(filename))
 
-    print(results)
+    print({contract: 'Not curves found' if df is None else '{} records'.format(len(df)) for contract, df in results.items()})
 
     print("csv cch files saved in {}".format(zipfilename))
 
@@ -347,9 +356,21 @@ if __name__ == '__main__':
         help="Fitxer de sortida amb els resultats"
     )
 
+    parser.add_argument(
+        '--merged',
+        help="Concatena els resultats en un únic fitxer",
+    )
+
+    parser.add_argument(
+        '--total',
+        help="Afegeix una fila al final amb la suma total",
+    )
+
     args = parser.parse_args()
     try:
-        main(args.contracts, args.curve_types, args.from_date, args.to_date, args.output_file)
+        merge_in_one_csv = args.merged == 'single_csv'
+        add_total_row = args.total == 'with_total'
+        main(args.contracts, args.curve_types, args.from_date, args.to_date, args.output_file, merge_in_one_csv, add_total_row)
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
         error("El procés no ha finalitzat correctament: {}", str(e))

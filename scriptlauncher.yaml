@@ -167,9 +167,9 @@ invoicefixing:
 
 
     download_cch:
-      script: sudo su -c 'export PATH=$HOME/.pyenv/bin:$PATH; eval "$(pyenv init -)"; python SOME_SRC/somenergia-scripts/Curves/download_cch.py --from_date {from_date} --to_date {to_date} --contracts {contracts} --curve_types {curve_types} --output {output}' somenergia
+      script: sudo su -c 'export PATH=$HOME/.pyenv/bin:$PATH; eval "$(pyenv init -)"; python SOME_SRC/somenergia-scripts/Curves/download_cch.py --from_date {from_date} --to_date {to_date} --contracts {contracts} --curve_types {curve_types} --output {output} --merged {merged} --total {total}' somenergia
       title: CCh - Descarrega corbes d'un conjunt de contractes filtrant per data i tipus de corba
-      description: Aquest script descarrega les corbes d'un conjunt de contractes imputats per l'usuari per un període de temps i tipus indicats. En cas d'haver-hi hores sense valors retorna l'hora amb els valors buits. No es poden descarregar més de 15000 corbes per petició.
+      description: Aquest script descarrega les corbes d'un conjunt de contractes imputats per l'usuari per un període de temps i tipus indicats. En cas d'haver-hi hores sense valors retorna l'hora amb els valors buits. L'hora que torna és l'endhour del període que indica. No es poden descarregar més de 15000 corbes per petició.
       parameters:
         contracts:
           description: Números de contractes de 7 digits separats per comes (e.g. 0731234, 1230923)
@@ -179,8 +179,20 @@ invoicefixing:
           description: Introdueix la data d'inici del període que cal decarregar 'YYYY-mm-dd'
         to_date:
           description: Introdueix la data final del període que cal decarregar 'YYYY-mm-dd'
-        suma_total:
+        merged:
+          description: Concatena els resultats en un únic fitxer
+          type: enum
+          options:
+            Concatena en un fitxer: single_csv
+            Un csv per corba: many_csvs
+          default: without_total
+        total:
           description: Afegeix una fila al final amb la suma total
+          type: enum
+          options:
+            Afegeix el total: with_total
+            Resultats desagregats: without_total
+          default: without_total
         output:
           type: FILEDOWN
           extension: zip
