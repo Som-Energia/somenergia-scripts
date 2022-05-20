@@ -14,6 +14,7 @@ import pymongo
 from datetime import datetime, timedelta, date, time
 from pymongo import DESCENDING
 import argparse
+from gestionatr.defs import TABLA_17
 
 from tqdm import tqdm
 from time import sleep
@@ -117,12 +118,15 @@ def get_mongo_data(mongo_db, mongo_collection, curve_type, cups, from_date=None)
     return data
 
 
-def get_polissa(erp_client, polissa_obj):
+def get_polissa(erp_client, polissa_obj, tariff):
     filters = [
         ('active', '=', True),
         ('state', '=', 'activa'),
         ('data_baixa', '=', False)
     ]
+
+    if tariff:
+        filters.append(('tarifa.name', '=', tariff))
 
     return polissa_obj.search(filters)
 
@@ -145,7 +149,7 @@ def get_mongo_fields():
     return mongo_fields
 
 
-def main(from_date):
+def main(from_date, tariff):
     erp_client = Client(**configdb.erppeek)
     mongo_client = pymongo.MongoClient(configdb.mongodb)
     mongo_db = mongo_client.somenergia
@@ -166,7 +170,7 @@ def main(from_date):
     step('creating csv...')
     create_csv(csv_name, csv_fields)
     step('Getting polissa data')
-    polissas = get_polissa(erp_client, polissa_obj)
+    polissas = get_polissa(erp_client, polissa_obj, tariff)
 
     step('Getting CCHs')
     for polissa_id in tqdm(polissas):
@@ -219,6 +223,19 @@ def main(from_date):
     make_tarfile(tar_filename, csv_name)
     sendmail2all(configdb.user, tar_filename)
 
+def valid_tariff(tariff):
+    tariff_name = None
+
+    if tariff:
+        tariff_dict = dict(TABLA_17)
+        for key, value in tariff_dict.items():
+            if value == tariff:
+                tariff_name = value
+
+        if not tariff_name:
+            msg = "La tarifa {} no es vàlida".format(tariff)
+            raise argparse.ArgumentTypeError(msg)
+    return tariff_name
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -231,6 +248,14 @@ if __name__ == '__main__':
         required=False,
         help="Introdueix la data d'inici del perídode que cal decarregar 'YYYY-mm-dd'. Si no es posa res, agafa els últims 365 dies."
     )
+    parser.add_argument(
+        '--tariff',
+        dest='tariff',
+        required=False,
+        type=valid_tariff,
+        help="Introdueix una tarifa (ex. 2.0TD). Si no es posa res, la tarifa no es tinguda en compte."
+    )
+
     args = parser.parse_args()
 
-    main(args.from_date)
+    main(args.from_date, args.tariff)
