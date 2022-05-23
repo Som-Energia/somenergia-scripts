@@ -160,13 +160,14 @@ def main(from_date, tariff):
     erp_fields = [
         'tg', 'distribuidora', 'autoconsumo', 'cups', 'data_alta',
         'data_ultima_lectura', 'tarifa', 'name',
-        'data_ultima_lectura_estimada', 'data_ultima_lectura_perfilada',
+        'data_ultima_lectura_estimada',
         'data_ultima_lectura_f1', 'tipo_medida',
     ]
 
     mongo_fields = get_mongo_fields()
     csv_name = 'curves_info_{}.csv'.format(datetime.now().strftime("%Y-%m-%d"))
-    csv_fields = erp_fields + ['data_avui'] + mongo_fields
+    csv_fields = erp_fields + ['data_ultima_lectura_factura_real', 'data_avui'] + mongo_fields
+    csv_fields.remove('data_ultima_lectura')
     step('creating csv...')
     create_csv(csv_name, csv_fields)
     step('Getting polissa data')
@@ -185,7 +186,9 @@ def main(from_date, tariff):
             cleared_polissa['data_avui'] = today
 
             lectura_F1ATR = polissa['data_ultima_lectura_f1']
+            cleared_polissa['data_ultima_lectura_factura_real'] = cleared_polissa['data_ultima_lectura']
             del cleared_polissa['id']
+            del cleared_polissa['data_ultima_lectura']
 
             if bool(lectura_F1ATR):
                 mongo_data_f5d = get_mongo_data(
