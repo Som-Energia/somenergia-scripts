@@ -16,7 +16,6 @@ from pymongo import DESCENDING
 import argparse
 from gestionatr.defs import TABLA_17
 
-from tqdm import tqdm
 from time import sleep
 
 def sendmail2all(user, attachment):
@@ -174,7 +173,7 @@ def main(from_date, tariff):
     polissas = get_polissa(erp_client, polissa_obj, tariff)
 
     step('Getting CCHs')
-    for polissa_id in tqdm(polissas):
+    for polissa_id in polissas:
         try:
             polissa = polissa_obj.read(polissa_id, erp_fields)
             cleared_polissa = {
@@ -229,7 +228,7 @@ def main(from_date, tariff):
 def valid_tariff(tariff):
     tariff_name = None
 
-    if tariff:
+    if tariff != 'None':
         tariff_dict = dict(TABLA_17)
         for key, value in tariff_dict.items():
             if value == tariff:

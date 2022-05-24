@@ -198,15 +198,17 @@ invoicefixing:
           extension: zip
           filename: cch_download.zip
 
-    get_curve_info:
-      script: python SOME_SRC/somenergia-scripts/Curves/get_curve_info.py --from_date {from_date} --tariff {tariff}' somenergia
+    get_curves_info:
+      script: python SOME_SRC/somenergia-scripts/Curves/get_curves_info.py --from_date {from_date} --tariff {tariff}
       title: CCh - Envia per email informació de les corves de cada contracte
-      description: Envia informació per cada contracte de vàries informacions (última lectura facturada F5D, última corba descaregada F1, etc...)
+      description: Envia informació per cada contracte de vàries informacions (última lectura facturada F5D, última corba descarregada F1, etc...)
       parameters:
         from_date:
           description: Introdueix la data d'inici del període que cal consultar 'YYYY-mm-dd'
+          default: None
         tariff:
           description: Introdueix la tarifa si vols filtrar per contractes amb una tarifa concreta
+          default: None
 
     # To Do: for future elimination, the ERP already can do the same and the script seems to be error prone
     #fixrefundinvoice:
