@@ -289,10 +289,11 @@ def main(contracts, curve_types, from_date, to_date, output_file, merge_in_one_c
     else:
         filenames = []
         for contract, df in results.items():
-            if add_total_row:
-                df = pd.concat([df, df.sum(numeric_only=True).to_frame().T], ignore_index=True)
-            filename = df_to_csv(df, contract, curve_types, from_date, to_date)
-            filenames.append(filename)
+            if df is not None:
+                if add_total_row:
+                    df = pd.concat([df, df.sum(numeric_only=True).to_frame().T], ignore_index=True)
+                filename = df_to_csv(df, contract, curve_types, from_date, to_date)
+                filenames.append(filename)
 
     # zip results
     zipfilename = output_file
