@@ -427,15 +427,25 @@ invoicefixing:
           extension: csv
 
     copy_f1_to_testing:
-      title: Copia els F1ns de productiu a testing de les pòlisses indicades.
+      title: Copia els F1ns de productiu a testing o pre de les pòlisses indicades.
       description: Copia els F1 que faltin de les pòlisses indicades, de productiu a testing.
-      script: python SOME_SRC/somenergia-scripts/invoicing/copy_f1_to_testing.py --file={csv_file} --from-date={from_date} --output={output}
+      script: python SOME_SRC/somenergia-scripts/invoicing/copy_f1_to_testing.py --file={csv_file} --polissa={polissa_name} --from-date={from_date} --output={output}
       parameters:
         csv_file:
           type: FILE
-          description: "CSV amb el nom de les pòlisses a la primera columna, sense capçalera."
+          description: "CSV amb el nom de les pòlisses a la primera columna, sense capçalera. Obligatori si no es proporciona un núm. de contracte"
+        polissa_name:
+          description: "Número de contracte. Obligatori si no es proporciona un fitxer"
+          default: None
         from_date:
           description: Des de quina cal actualitzar l'adjunt de testing, dels F1ns que ja existien, amb el format YYYY-mm-dd
+        server:
+          description: A quin servidor vols copiar-los (terp01, perp01...)
+          type: enum
+          options:
+            Testing (terp01): terp01
+            Preproducció (perp01): perp01
+          default: terp01
         output:
           type: FILEDOWN
           filename: resultat.csv
