@@ -80,10 +80,17 @@ def get_f1_import_replace_att(info_from, info_to, date_from):
     return missing, att_replace
 
 
-def copy_f1_to_testing(csv_file, date_from):
+def copy_f1_to_testing(csv_file, date_from, polissa_name, server):
     client_prod = Client(**configdb.erppeek)
-    client_test = Client(**configdb.erppeek_testing)
-    polissa_ids = search_polissa_by_names(read_polissa_names(csv_file, client_prod), client_prod)
+    if server == 'perp01':
+        client_test = Client(**configdb.erppeek_perp01)
+    else:
+        client_test = Client(**configdb.erppeek_testing)
+    if not polissa_name:
+        polissa_names = read_polissa_names(csv_file, client_prod)
+    else:
+        polissa_names = [polissa_name]
+    polissa_ids = search_polissa_by_names(polissa_names, client_prod)
     info = []
     total_pols_ok = 0
     for pol_info in client_prod.GiscedataPolissa.read(polissa_ids, ['name']):
@@ -126,8 +133,8 @@ def write_result(result, filename):
         for a in result:
             writer.writerow({k: unicode(v).encode('utf-8') for k, v in a.items()})
 
-def main(csv_file, output_file, from_date):
-    result = copy_f1_to_testing(csv_file, from_date)
+def main(csv_file, output_file, from_date, server, polissa_name):
+    result = copy_f1_to_testing(csv_file, from_date, polissa_name, server)
     write_result(result, output_file)
 
 def parseargs():
@@ -136,14 +143,23 @@ def parseargs():
     parser.add_argument(
         '--file',
         dest='csv_file',
-        required=True,
-        help="csv amb el nom de les pòlisses a modificar (a la primera columna i sense capçalera)"
+        required=False,
+        help="csv amb el nom de les pòlisses (a la primera columna i sense capçalera)"
+    )
+    parser.add_argument(
+        '--polissa',
+        dest='polissa_name',
+        required=False,
+        help="Nom de la pòlissa"
     )
     parser.add_argument(
         '--from-date',
         dest='from_date',
         required=True,
         help="Data a partir de la qual actualitzar l'adjunt dels F1 de testing"
+    )
+    parser.add_argument('-s', '--server',
+        help="Escull un servidor destí",
     )
     parser.add_argument(
         '--output',
@@ -155,7 +171,7 @@ def parseargs():
 
 if __name__ == '__main__':
     args=parseargs()
-    if not args.csv_file:
-        fail("Introdueix el fitxer amb els números de contracte")
+    if not args.csv_file and not args.polissa_name:
+        fail("Introdueix el fitxer amb els números de contracte o bé un número de contracte")
 
-    main(args.csv_file, args.output, args.from_date)
+    main(args.csv_file, args.output, args.from_date, args.server, args.polissa_name)

@@ -199,18 +199,25 @@ invoicefixing:
           filename: cch_download.zip
 
     get_curves_info:
-      script: python SOME_SRC/somenergia-scripts/Curves/get_curves_info.py --from_date {from_date} --to_date {to_date} --tariff {tariff}
-      title: CCh - Envia per email informació de les corves de cada contracte
-      description: Envia informació per cada contracte de vàries informacions (última lectura facturada F5D, última corba descarregada F1, etc...)
+      script: python SOME_SRC/somenergia-scripts/Curves/get_curves_info.py --from_date {from_date} --to_date {to_date} --tariff {tariff} --email {email}
+      title: CCh - Envia per email informació de les corbes de cada contracte
+      description: "
+        Envia informació per cada contracte de vàries informacions (última lectura facturada F5D, última corba descarregada F1, etc...), entre dues dates.
+        (Per exemple: per demanar les CCh del mes de maig, cal posar from_date: 2022-05-01 i to_date: 2022-06-01)
+        **Ull!!** La consulta és costosa, ja rebràs el correu quan acabi. Pots tancar la pestanya de l'scriptlauncher, que probablement et mostrarà un error.
+      "
       parameters:
         from_date:
-          description: Introdueix la data d'inici del període que cal consultar 'YYYY-mm-dd'
+          description: Introdueix la data d'inici del període que cal consultar 'YYYY-mm-dd'. Si es deixa buit, agafa els últims 365 dies.
           default: None
         to_date:
-          description: Introdueix la data d'final del període que cal consultar 'YYYY-mm-dd'
+          description: Introdueix la data d'final del període que cal consultar 'YYYY-mm-dd' (no inclosa). Si es deixa buit, agafa el dia d'avui.
           default: None
         tariff:
           description: Introdueix la tarifa si vols filtrar per contractes amb una tarifa concreta
+          default: None
+        email:
+          description: Direcció de correu on rebre la informació. Si n'hi ha més d'una, separar-les per comes (,)
           default: None
 
     # To Do: for future elimination, the ERP already can do the same and the script seems to be error prone
@@ -420,15 +427,25 @@ invoicefixing:
           extension: csv
 
     copy_f1_to_testing:
-      title: Copia els F1ns de productiu a testing de les pòlisses indicades.
+      title: Copia els F1ns de productiu a testing o pre de les pòlisses indicades.
       description: Copia els F1 que faltin de les pòlisses indicades, de productiu a testing.
-      script: python SOME_SRC/somenergia-scripts/invoicing/copy_f1_to_testing.py --file={csv_file} --from-date={from_date} --output={output}
+      script: python SOME_SRC/somenergia-scripts/invoicing/copy_f1_to_testing.py --file={csv_file} --polissa={polissa_name} --from-date={from_date} --output={output}
       parameters:
         csv_file:
           type: FILE
-          description: "CSV amb el nom de les pòlisses a la primera columna, sense capçalera."
+          description: "CSV amb el nom de les pòlisses a la primera columna, sense capçalera. Obligatori si no es proporciona un núm. de contracte"
+        polissa_name:
+          description: "Número de contracte. Obligatori si no es proporciona un fitxer"
+          default: None
         from_date:
           description: Des de quina cal actualitzar l'adjunt de testing, dels F1ns que ja existien, amb el format YYYY-mm-dd
+        server:
+          description: A quin servidor vols copiar-los (terp01, perp01...)
+          type: enum
+          options:
+            Testing (terp01): terp01
+            Preproducció (perp01): perp01
+          default: terp01
         output:
           type: FILEDOWN
           filename: resultat.csv

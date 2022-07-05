@@ -18,17 +18,19 @@ from gestionatr.defs import TABLA_17
 
 from time import sleep
 
-def sendmail2all(user, attachment):
+def sendmail2all(user, attachment, email):
     '''
     Sends csv by email
     '''
     warn('User info: {}'.format(user))
+    dest = user['recipients'] + email.split(',')
+
     sendMail(
         sender = user['sender'],
-        to =  user['recipients'],
+        to = dest,
         bcc = user['bcc'],
         subject = "[Analisi Indexada] Disponibilitat Corbes ",
-        md = "Hola, Us fem arribar el csv d'aquesta setmana :)",
+        md = "Hola, Us fem arribar el csv que heu demanat :)",
         attachments = [attachment],
         config = 'configdb.py',
     )
@@ -154,7 +156,7 @@ def get_mongo_fields():
     return mongo_fields
 
 
-def main(from_date, to_date, tariff):
+def main(from_date, to_date, tariff, email):
     erp_client = Client(**configdb.erppeek)
     mongo_client = pymongo.MongoClient(configdb.mongodb)
     mongo_db = mongo_client.somenergia
@@ -232,7 +234,7 @@ def main(from_date, to_date, tariff):
     step('ready to send the email')
     tar_filename = 'curves_molonguis_{}.tar.gz'.format(datetime.now().strftime("%Y-%m-%d"))
     make_tarfile(tar_filename, csv_name)
-    sendmail2all(configdb.user, tar_filename)
+    sendmail2all(configdb.user, tar_filename, email)
 
 def valid_tariff(tariff):
     tariff_name = None
@@ -266,6 +268,12 @@ if __name__ == '__main__':
         help="Introdueix la data d'final del perídode que cal decarregar 'YYYY-mm-dd'. Si no es posa res, agafa el dia d'avui."
     )
     parser.add_argument(
+        '--email',
+        dest='email',
+        required=True,
+        help="Introdueix la direcció de correu on rebre la informació. Si n'hi ha més d'una, separar-les per ,"
+    )
+    parser.add_argument(
         '--tariff',
         dest='tariff',
         required=False,
@@ -275,4 +283,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(args.from_date, args.to_date, args.tariff)
+    main(args.from_date, args.to_date, args.tariff, args.email)
