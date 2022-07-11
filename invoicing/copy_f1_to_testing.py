@@ -12,7 +12,13 @@ def import_f1_to_testing(f1_ids, client_from, client_to):
     wiz_import_to_o = client_to.model('wizard.importacio.f1')
 
     for f1_id in tqdm(sorted(f1_ids)):
-        xml_data = f1_from_obj.get_xml_from_adjunt(f1_id)
+        xml_data = ''
+        try:
+            xml_data = f1_from_obj.get_xml_from_adjunt(f1_id)
+        except Exception as e:
+            f1 = f1_from_obj.browse(f1_id)
+            xml_data = base64.b64decode(f1.attachment_id.datas)
+
         datas = base64.b64encode(xml_data.encode('utf-8'))
         filename = f1_from_obj.read(f1_id, ['name'])['name']
         wiz_id = wiz_import_to_o.create({'filename': 'copy_'+filename, 'file': datas})
