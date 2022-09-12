@@ -79,8 +79,8 @@ def load_invoice_data(fact_id):
     except Exception as e:
         error = True
         step("Error localitzat ...")
-        data = data_yaml.replace("\n", '\n')
-    return error, data
+        data_yaml = data_yaml.replace("\n", '\n')
+    return error, data_yaml
 
 def print_invoice_data(fact_id):
     f = fact_obj.browse(fact_id)
@@ -122,7 +122,7 @@ def main(invoice_name, invoice_id, invoice_ids):
                 errors = search_known_errors(res, fact_id)
             else:
                 success("La factura en pdf no te problemes a nivell de dades!")
-
+                step(res)
 
 def only_one(a, b, c):
     n = 0
