@@ -592,6 +592,13 @@ gestiocontractes:
           type: FILEDOWN
           extension: zip
           filename: cups_attachments.zip
+    energetica_category:
+      script: python SOME_SRC/somenergia-scripts/Revisions_periodiques/set_energetica_partners.py {doit}
+      title: Categoria als clients relacionats amb contractes d'energetica
+      description: Setejar la categoria energetica als clients relacionats amb contractes d'energetica (titular, pagador, adreça notificacio i adreça pagament).
+      parameters:
+        doit:
+          description: Vols fer els canvis? (escriu 'si' per aplicar-ho)
 
 
 it:
