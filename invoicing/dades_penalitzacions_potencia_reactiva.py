@@ -36,7 +36,7 @@ keys = item.keys()
 
 pol_ids = pol_obj.search(
     [('tarifa.codi_ocsum', 'in', ['019', '020', '021', '022', '023'])])
-for pol_id in pol_ids[0:2]:
+for pol_id in pol_ids:
     item = OrderedDict([('Contracte',0),('Tarifa Comercialitzadora',0),('Energia activa',0),('MAG',0),('Penalització reactiva',0),
         ('Potència',0),('Excés potència',0),('Excedents',0),('Lloguer comptador',0),('IVA',0),('IESE',0),('Altres',0),('TOTAL',0)])
 
@@ -69,17 +69,10 @@ for pol_id in pol_ids[0:2]:
         item['Altres'] += fact.total_altres
         item['TOTAL'] += fact.amount_total
 
-    item['MAG'] = round(item['MAG'] , 2)
-    item['Energia activa'] = round(item['Energia activa'] , 2)
-    item['Penalització reactiva'] = round(item['Penalització reactiva'] , 2)
-    item['Potència'] = round(item['Potència'] , 2)
-    item['Excés potència'] = round(item['Excés potència'] , 2)
-    item['Excedents'] = round(item['Excedents'] , 2)
-    item['Lloguer comptador'] = round(item['Lloguer comptador'] , 2)
-    item['IVA'] = round(item['IVA'] , 2)
-    item['IESE'] = round(item['IESE'] , 2)
-    item['Altres'] = round(item['Altres'] , 2)
-    item['TOTAL'] = round(item['TOTAL'] , 2)
+    item_values = item.items()
+    for key,value in item_values:
+        if isinstance(value, float):
+            item[key] = round(value,2)
 
     items.append(item)
 
