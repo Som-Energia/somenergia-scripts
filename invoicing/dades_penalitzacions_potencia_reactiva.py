@@ -47,27 +47,28 @@ for pol_id in pol_ids:
 
     fact_ids = fact_obj.search([('polissa_id', '=', pol_id), ('data_final', '<=', datetime.strftime(
         last_month_day, '%Y-%m-%d')), ('data_inici', '>', datetime.strftime(year_before, '%Y-%m-%d')), 
-        ('invoice_id.type','in',['out_invoice', 'out_refund'])])
+        ('type','in',['out_invoice', 'out_refund'])])
 
     for fact_id in fact_ids:
         fact = fact_obj.browse(fact_id)
+        factor = 1.0 if fact.type == 'out_invoice' else -1.0
         for line in fact.linies_energia:
             if 'topall del gas' in line.name:
-                item['MAG'] += line.price_subtotal
+                item['MAG'] += line.price_subtotal * factor
             else:
-                item['Energia activa'] += line.price_subtotal
-        item['Penalització reactiva'] += fact.total_reactiva
-        item['Potència'] += fact.total_potencia
-        item['Excés potència'] += fact.total_exces_potencia
-        item['Excedents'] += fact.total_generacio
-        item['Lloguer comptador'] += fact.total_lloguers
+                item['Energia activa'] += line.price_subtotal * factor
+        item['Penalització reactiva'] += fact.total_reactiva * factor
+        item['Potència'] += fact.total_potencia * factor
+        item['Excés potència'] += fact.total_exces_potencia * factor
+        item['Excedents'] += fact.total_generacio * factor
+        item['Lloguer comptador'] += fact.total_lloguers * factor
         for tax_line in fact.tax_line:
             if 'IVA' in tax_line.name or 'IGIC' in tax_line.name :
-                item['IVA'] += tax_line.amount # IVA / IGIC
+                item['IVA'] += tax_line.amount * factor # IVA / IGIC
             else:
-                item['IESE'] += tax_line.amount
-        item['Altres'] += fact.total_altres
-        item['TOTAL'] += fact.amount_total
+                item['IESE'] += tax_line.amount * factor
+        item['Altres'] += fact.total_altres * factor
+        item['TOTAL'] += fact.amount_total * factor
 
     item_values = item.items()
     for key,value in item_values:
