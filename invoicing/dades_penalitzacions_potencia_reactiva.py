@@ -3,8 +3,9 @@
 import argparse
 import sys
 import traceback
-import configdb
+# import configdb
 from erppeek import Client
+import configdb
 from yamlns import namespace as ns
 from consolemsg import step, success, error, warn
 import csv
@@ -12,7 +13,6 @@ from dateutil.relativedelta import relativedelta
 from datetime import datetime, timedelta
 from collections import OrderedDict
 from tqdm import tqdm
-import pandas as pd
 
 step("Connectant a l'erp")
 O = Client(**configdb.erppeek)
@@ -24,38 +24,38 @@ pol_obj = O.GiscedataPolissa
 fact_obj = O.GiscedataFacturacioFactura
 
 items = []
-item = OrderedDict([('Contracte',0),('Tarifa Comercialitzadora',0),('Indexada', 0),('Energia activa',0),('MAG',0),('Penalització reactiva',0),
-    ('Potència',0),('Excés potència',0),('Excedents',0),('Lloguer comptador',0),('IVA',0),('IGIC', 0),('IESE',0),('Altres',0),('TOTAL',0)])
+item = OrderedDict([('Contracte', 0), ('Tarifa Comercialitzadora', 0), ('Indexada', 0), ('Energia activa', 0), ('MAG', 0), ('Penalització reactiva', 0),
+                    ('Potència', 0), ('Excés potència', 0), ('Excedents', 0), ('Lloguer comptador', 0), ('IVA', 0), ('IGIC', 0), ('IESE', 0), ('Altres', 0), ('TOTAL', 0)])
 
 
 keys = item.keys()
 
+
 def output_results(from_date, to_date):
     success("Resultat final")
     success("----------------")
-    success("Total de contectes tractacts: {}",len(items))
+    success("Total de contectes tractacts: {}", len(items))
     success("Entre els dies: {} - {}", from_date, to_date)
 
 
 def write_results(filename):
-    """
-    df = pd.DataFrame(llistat, columns=headers)
-    with pd.ExcelWriter(
-        "output.xlsx",
-    ) as writer:
-        df.to_excel(writer)
-    """
     with open(filename, 'w') as output_file:
+        for e in items:
+            for key, value in e.items():
+                if isinstance(value, float):
+                    e[key] = str(value).replace('.', ',')
+
         dict_writer = csv.DictWriter(output_file, keys, delimiter=';')
         dict_writer.writeheader()
         dict_writer.writerows(items)
+
 
 def find_invoices(from_date, to_date):
     pol_ids = pol_obj.search(
         [('tarifa.codi_ocsum', 'in', ['019', '020', '021', '022', '023'])])
     for pol_id in tqdm(pol_ids[0:1]):
-        item = OrderedDict([('Contracte',0),('Tarifa Comercialitzadora',0),('Indexada', 0),('Energia activa',0),('MAG',0),('Penalització reactiva',0),
-            ('Potència',0),('Excés potència',0),('Excedents',0),('Lloguer comptador',0),('IVA',0),('IGIC', 0),('IESE',0),('Altres',0),('TOTAL',0)])
+        item = OrderedDict([('Contracte', 0), ('Tarifa Comercialitzadora', 0), ('Indexada', 0), ('Energia activa', 0), ('MAG', 0), ('Penalització reactiva', 0), (
+            'Potència', 0), ('Excés potència', 0), ('Excedents', 0), ('Lloguer comptador', 0), ('IVA', 0), ('IGIC', 0), ('IESE', 0), ('Altres', 0), ('TOTAL', 0)])
 
         pol = pol_obj.browse(pol_id)
 
@@ -64,7 +64,7 @@ def find_invoices(from_date, to_date):
         item['Indexada'] = 'Indexada' if 'indexada' in pol.llista_preu.name.lower() else 'No'
 
         fact_ids = fact_obj.search([('polissa_id', '=', pol_id), ('data_inici', '>', from_date), ('data_final', '<=', to_date),
-            ('type','in',['out_invoice', 'out_refund']), ('state','!=','draft')])
+                                    ('type', 'in', ['out_invoice', 'out_refund']), ('state', '!=', 'draft')])
 
         for fact_id in fact_ids:
             fact = fact_obj.browse(fact_id)
@@ -80,7 +80,7 @@ def find_invoices(from_date, to_date):
             item['Excedents'] += fact.total_generacio * factor
             item['Lloguer comptador'] += fact.total_lloguers * factor
             for tax_line in fact.tax_line:
-                if 'IVA' in tax_line.name or 'IGIC' in tax_line.name :
+                if 'IVA' in tax_line.name:
                     item['IVA'] += tax_line.amount * factor
                 elif 'IGIC' in tax_line.name:
                     item['IGIC'] += tax_line.amount * factor
@@ -90,11 +90,12 @@ def find_invoices(from_date, to_date):
             item['TOTAL'] += fact.amount_total * factor
 
         item_values = item.items()
-        for key,value in item_values:
+        for key, value in item_values:
             if isinstance(value, float):
-                item[key] = round(value,2)
+                item[key] = round(value, 2)
 
         items.append(item)
+
 
 def get_dates():
 
@@ -108,6 +109,7 @@ def get_dates():
     from_date = datetime.strftime(year_before, '%Y-%m-%d')
 
     return from_date, to_date
+
 
 def main(filename='output.csv'):
 
@@ -124,22 +126,15 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '--to-date',
-        dest='to_date',
-        required=True,
-        help="Data a partir de la qual es calcularà l'any enrera (per defecte es considera el dia d'avui i es calcularà l'últim dia del mès passat)"
-    )
-
-    parser.add_argument(
         '--output',
         dest='output',
         type=str,
         help="Output csv file",
-        )
+    )
     args = parser.parse_args()
 
     try:
-        main(args.to_date, args.output)
+        main(args.output)
     except (KeyboardInterrupt, SystemExit, SystemError):
         warn("Aarrggghh you kill me :(")
     except Exception as e:
