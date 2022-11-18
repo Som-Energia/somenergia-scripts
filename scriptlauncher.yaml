@@ -392,6 +392,18 @@ invoicefixing:
           filename: factures.csv
           extension: csv
 
+    dades_penalitzacions_potencia_reactiva:
+      title: Genera csv amb les dades desagregades de les factures dels contractes 3.0 i 6.X dels últims 12 mesos.
+      description: Genera csv amb les dades desagregades de les factures dels contractes 3.0 i 6.X dels últims 12 mesos (des del darrer dia del mes passat (per defecte) o considerant la data entrada, 12 mesos enrere).
+      script: python SOME_SRC/somenergia-scripts/invoicing/dades_penalitzacions_potencia_reactiva.py --output={output}
+      parameters:
+        to_date:
+          description: Data a partir de la qual es calcularà l'any enrera (ex. 2022-10-31 calcularà 2021-11-01)
+        output:
+          type: FILEDOWN
+          filename: dades_penalitzacions_potencia_reactiva.csv
+          extension: csv
+
     refund_rectify_from_origin:
       title: Abona i rectifica factures client a partir d'origen de proveidor.
       description: "
