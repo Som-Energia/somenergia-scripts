@@ -27,7 +27,6 @@ items = []
 item = OrderedDict([('Contracte', 0), ('Tarifa Comercialitzadora', 0), ('Indexada', 0), ('Energia activa', 0), ('MAG', 0), ('Penalització reactiva', 0),
                     ('Potència', 0), ('Excés potència', 0), ('Excedents', 0), ('Lloguer comptador', 0), ('IVA', 0), ('IGIC', 0), ('IESE', 0), ('Altres', 0), ('TOTAL', 0)])
 
-
 keys = item.keys()
 
 
@@ -37,9 +36,9 @@ def output_results(from_date, to_date):
     success("Total de contectes tractacts: {}", len(items))
     success("Entre els dies: {} - {}", from_date, to_date)
 
-
-def write_results(filename):
-    with open(filename, 'w') as output_file:
+def write_results(filename, from_date, to_date):
+    file_name = '_'.join([filename,from_date,to_date]) + ".csv"
+    with open(file_name, 'w') as output_file:
         for e in items:
             for key, value in e.items():
                 if isinstance(value, float):
@@ -49,11 +48,10 @@ def write_results(filename):
         dict_writer.writeheader()
         dict_writer.writerows(items)
 
-
 def find_invoices(from_date, to_date):
     pol_ids = pol_obj.search(
         [('tarifa.codi_ocsum', 'in', ['019', '020', '021', '022', '023'])])
-    for pol_id in tqdm(pol_ids[0:1]):
+    for pol_id in tqdm(pol_ids):
         item = OrderedDict([('Contracte', 0), ('Tarifa Comercialitzadora', 0), ('Indexada', 0), ('Energia activa', 0), ('MAG', 0), ('Penalització reactiva', 0), (
             'Potència', 0), ('Excés potència', 0), ('Excedents', 0), ('Lloguer comptador', 0), ('IVA', 0), ('IGIC', 0), ('IESE', 0), ('Altres', 0), ('TOTAL', 0)])
 
@@ -63,7 +61,7 @@ def find_invoices(from_date, to_date):
         item['Tarifa Comercialitzadora'] = pol.llista_preu.name.lower()
         item['Indexada'] = 'Indexada' if 'indexada' in pol.llista_preu.name.lower() else 'No'
 
-        fact_ids = fact_obj.search([('polissa_id', '=', pol_id), ('data_inici', '>', from_date), ('data_final', '<=', to_date),
+        fact_ids = fact_obj.search([('polissa_id', '=', pol_id), ('data_inici', '>=', from_date), ('data_final', '<=', to_date),
                                     ('type', 'in', ['out_invoice', 'out_refund']), ('state', '!=', 'draft')])
 
         for fact_id in fact_ids:
@@ -97,32 +95,39 @@ def find_invoices(from_date, to_date):
         items.append(item)
 
 
-def get_dates():
+def get_dates(start_date):
+    if start_date:
+        last_month_day = datetime.strptime(start_date, "%Y-%m-%d")
+    else:
+        today = datetime.today()
+        day_today = int(today.strftime("%d"))
+        last_month_day = today - timedelta(days=day_today)
 
-    today = datetime.today()
-
-    day_today = int(today.strftime("%d"))
-    last_month_day = today - timedelta(days=day_today)
-    year_before = last_month_day - relativedelta(months=12)
+    year_before = last_month_day - relativedelta(months=12) + timedelta(days=1)
 
     to_date = datetime.strftime(last_month_day, '%Y-%m-%d')
     from_date = datetime.strftime(year_before, '%Y-%m-%d')
 
     return from_date, to_date
 
+def main(start_date, filename='output'):
 
-def main(filename='output.csv'):
-
-    from_date, to_date = get_dates()
+    from_date, to_date = get_dates(start_date)
 
     find_invoices(from_date, to_date)
     output_results(from_date, to_date)
-    write_results(filename)
+    write_results(filename, from_date, to_date)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Automatische Kunde Profile erstellen'
+    )
+
+    parser.add_argument(
+        '--start_date',
+        dest='start_date',
+        help="Data a partir de la qual es calcularà un any enrera "
     )
 
     parser.add_argument(
@@ -134,7 +139,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     try:
-        main(args.output)
+        main(args.start_date, args.output)
     except (KeyboardInterrupt, SystemExit, SystemError):
         warn("Aarrggghh you kill me :(")
     except Exception as e:
