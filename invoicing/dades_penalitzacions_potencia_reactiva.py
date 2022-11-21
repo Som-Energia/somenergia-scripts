@@ -12,7 +12,6 @@ import csv
 from dateutil.relativedelta import relativedelta
 from datetime import datetime, timedelta
 from collections import OrderedDict
-from tqdm import tqdm
 
 step("Connectant a l'erp")
 O = Client(**configdb.erppeek)
@@ -37,8 +36,7 @@ def output_results(from_date, to_date):
     success("Entre els dies: {} - {}", from_date, to_date)
 
 def write_results(filename, from_date, to_date):
-    file_name = '_'.join([filename,from_date,to_date]) + ".csv"
-    with open(file_name, 'w') as output_file:
+    with open(filename, 'w') as output_file:
         for e in items:
             for key, value in e.items():
                 if isinstance(value, float):
@@ -51,7 +49,7 @@ def write_results(filename, from_date, to_date):
 def find_invoices(from_date, to_date):
     pol_ids = pol_obj.search(
         [('tarifa.codi_ocsum', 'in', ['019', '020', '021', '022', '023'])])
-    for pol_id in tqdm(pol_ids):
+    for pol_id in pol_ids:
         item = OrderedDict([('Contracte', 0), ('Tarifa Comercialitzadora', 0), ('Indexada', 0), ('Energia activa', 0), ('MAG', 0), ('Penalització reactiva', 0), (
             'Potència', 0), ('Excés potència', 0), ('Excedents', 0), ('Lloguer comptador', 0), ('IVA', 0), ('IGIC', 0), ('IESE', 0), ('Altres', 0), ('TOTAL', 0)])
 
