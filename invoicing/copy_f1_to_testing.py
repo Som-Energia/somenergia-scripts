@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 import base64, csv
 import configdb
@@ -119,22 +119,22 @@ def copy_f1_to_testing(csv_file, date_from, polissa_name, server):
             to_import_f1, to_replace_att = get_f1_import_replace_att(f1_prod_info, f1_test_info, date_from)
 
             if len(f1_prod_info) < len(f1_test_info) + len(to_import_f1):
-                txt = "hi ha algun F1 a testing que no hi és a real. No s'hi actua"
-                error("Per la pòlissa {} {}".format(pol_name, txt))
+                txt = "hi ha algun F1 a testing que no hi es a real. No s'hi actua"
+                error("Per la polissa {} {}".format(pol_name, txt))
                 info.append({'pol':pol_name, 'info': txt})
                 continue
 
             replace_att(to_replace_att, client_prod, client_test)
             import_f1_to_testing(to_import_f1, client_prod, client_test)
             txt = "importats {} F1 i {} adjunts actualitzats".format(len(to_import_f1), len(to_replace_att))
-            step("Per la pòlissa {} {}".format(pol_name, txt))
+            step("Per la polissa {} {}".format(pol_name, txt))
             info.append({'pol':pol_name, 'info': txt})
             total_pols_ok +=1
         except Exception as e:
-            error("Error en la pòlissa {}".format(pol_name))
+            error("Error en la polissa {}".format(pol_name))
             info.append({'pol':pol_name, 'info': "error inesperat"})
 
-    success("S'ha encuat la importació dels fitxers de {} pòlisses".format(total_pols_ok))
+    success("S'ha encuat la importacio dels fitxers de {} pòlisses".format(total_pols_ok))
     return info
 
 def write_result(result, filename):
