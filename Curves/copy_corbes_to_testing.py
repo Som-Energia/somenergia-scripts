@@ -10,22 +10,22 @@ import pymongo
 
 def get_mongo_data(mongo_db, mongo_collection, cups):
     data = dict()
-    all_curves_search_query = {'name': {'$regex': '^{}'.format(cups[:20])}}
+    query = {'name': {'$regex': '^{}'.format(cups[:20])}}
     fields = {'_id': False}
     curves =  mongo_db[mongo_collection].find(
-        all_curves_search_query,
+        query,
         fields)
     return curves
 
 
 def set_mongo_data(mongo_db, mongo_collection, curve_type, cups, mongo_data):
     try:
-        curves =  mongo_db[mongo_collection].insert(
+        result = mongo_db[mongo_collection].insert(
             mongo_data, continue_on_error=True)
     except pymongo.errors.DuplicateKeyError as e:
-        print "Alguns registres de la corba " + curve_type + " ja existeixen."
+        print("Alguns registres de la corba " + curve_type + " ja existeixen.")
     except Exception as e:
-        print "Error no controlat: " + str(e)
+        print("Error no controlat: " + str(e))
         return False
     return True
 
@@ -59,10 +59,10 @@ def main(cups, server):
     )
 
 
-    print "Corbes obtingudes F5D: " + str(mongo_data_f5d.count())
-    print "Corbes obtingudes P5D: " + str(mongo_data_p5d.count())
-    print "Corbes obtingudes F1: " + str(mongo_data_f1.count())
-    print "Corbes obtingudes P1: " + str(mongo_data_p1.count())
+    print("Corbes obtingudes F5D: " + str(mongo_data_f5d.count()))
+    print("Corbes obtingudes P5D: " + str(mongo_data_p5d.count()))
+    print("Corbes obtingudes F1: " + str(mongo_data_f1.count()))
+    print("Corbes obtingudes P1: " + str(mongo_data_p1.count()))
 
 
     if mongo_data_f5d.count() > 0:
@@ -90,9 +90,9 @@ def main(cups, server):
             mongo_db=mongo_db_test, mongo_collection='tm_profile',
             curve_type='TM_PROFILE', cups=cups, mongo_data=mongo_data_tmprofile
         )
-        print "Corbes obtingudes TM_PROFILE: " + str(mongo_data_tmprofile.count())
+        print("Corbes obtingudes TM_PROFILE: " + str(mongo_data_tmprofile.count()))
 
-    print "Les corbes disponibles s'han pujat a " + server
+    print("Les corbes disponibles s'han pujat a " + server)
 
 def parseargs():
     import argparse
