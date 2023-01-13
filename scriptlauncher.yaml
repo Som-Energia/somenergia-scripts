@@ -1,4 +1,5 @@
 general:
+
   description: Informació General
   scripts:
     quadrecontrolgeneral:
@@ -908,5 +909,25 @@ mailchimp:
           type: FILEDOWN
           extension: tar
           filename: archieve_resultarchieve_results.tar
+
+oficinavirtual:
+
+  description: Oficina Virtual
+  scripts:
+
+    CopyInfoEnergiaReportToTesting:
+      script: python SOME_SRC/somenergia-scripts/Curves/copy_infoenergia_to_testing.py -c {contracte} -s {server}
+      title: Copia Informes InfoEnegia de Productiu a Testing
+      description: Copia tots els informes InfoEnergia disponibles del Mongo de productiu al Mongo de testing
+      parameters:
+        contracte:
+          description: Introduir el Número de Contracte
+        server:
+          description: A quin servidor vols copiarles (terp01, perp01...)
+          type: enum
+          options:
+            Testing (terp01): terp01
+            Preproducció (perp01): perp01
+          default: terp01
 
 # vim: et ts=2 sw=2
