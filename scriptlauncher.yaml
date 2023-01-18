@@ -437,7 +437,7 @@ invoicefixing:
           default: null
         csv_file:
           type: FILE
-          default: null
+          default: /dev/null
           description: Quan hi ha més d'un, CSV amb els números de contracte a la primera columna, sense capçalera.
         from_date:
           description: Des de quina cal actualitzar l'adjunt de testing, dels F1ns que ja existien
