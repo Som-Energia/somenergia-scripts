@@ -106,10 +106,14 @@ def copy_f1_to_testing(csv_file, date_from, polissa_name, server):
     if polissa_name:
         polissa_names += [polissa_name]
 
+    polissa_names or fail("Cap polissa especificada")
+
     polissa_ids = search_polissa_by_names(polissa_names, client_prod)
+    polissa_ids or fail("Cap polissa trobada amb aquest nom: {names}", names=polissa_names)
+
     info = []
     total_pols_ok = 0
-    for pol_info in client_prod.GiscedataPolissa.read(polissa_ids, ['name']):
+    for pol_info in client_prod.GiscedataPolissa.read(polissa_ids, ['name']) if polissa_ids else []:
         pol_id = pol_info['id']
         pol_name = pol_info['name']
         try:
