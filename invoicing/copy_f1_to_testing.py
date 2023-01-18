@@ -99,10 +99,13 @@ def copy_f1_to_testing(csv_file, date_from, polissa_name, server):
         client_test = Client(**configdb.erppeek_perp01)
     else:
         client_test = Client(**configdb.erppeek_testing)
-    if not polissa_name:
-        polissa_names = read_polissa_names(csv_file, client_prod)
-    else:
-        polissa_names = [polissa_name]
+
+    polissa_names = []
+    if csv_file:
+        polissa_names += read_polissa_names(csv_file, client_prod)
+    if polissa_name:
+        polissa_names += [polissa_name]
+
     polissa_ids = search_polissa_by_names(polissa_names, client_prod)
     info = []
     total_pols_ok = 0

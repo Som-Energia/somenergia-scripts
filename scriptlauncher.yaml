@@ -432,14 +432,16 @@ invoicefixing:
       description: Copia els F1 que faltin de les pòlisses indicades, de productiu a testing.
       script: python SOME_SRC/somenergia-scripts/invoicing/copy_f1_to_testing.py --file={csv_file} --polissa={polissa_name} --server={server} --from-date={from_date} --output={output}
       parameters:
+        polissa_name:
+          description: Número de contracte
+          default: None
         csv_file:
           type: FILE
-          description: "CSV amb el nom de les pòlisses a la primera columna, sense capçalera. Obligatori si no es proporciona un núm. de contracte"
-        polissa_name:
-          description: "Número de contracte. Obligatori si no es proporciona un fitxer"
           default: None
+          description: Quan hi ha més d'un, CSV amb els números de contracte a la primera columna, sense capçalera.
         from_date:
-          description: Des de quina cal actualitzar l'adjunt de testing, dels F1ns que ja existien, amb el format YYYY-mm-dd
+          description: Des de quina cal actualitzar l'adjunt de testing, dels F1ns que ja existien
+          type: date
         server:
           description: A quin servidor vols copiar-los (terp01, perp01...)
           type: enum
