@@ -89,7 +89,13 @@ def get_f1_import_replace_att(info_from, info_to, date_from):
         else:
             missing.append(k)
 
-    att_replace = [x['id'] for x in filter(lambda x: x['id'] in f1ns_from.keys() and x['fecha_factura_hasta']>= date_from, info_to)]
+    att_replace = [
+        x['id']
+        for x in info_to
+        if x['id'] in f1ns_from.keys()
+        and x['fecha_factura_hasta']
+        and x['fecha_factura_hasta']>= date_from
+    ]
     return missing, att_replace
 
 
@@ -143,6 +149,7 @@ def copy_f1_to_testing(csv_file, date_from, polissa_name, server):
             total_pols_ok +=1
         except Exception as e:
             error("Error en la polissa {}".format(pol_name))
+            error(e)
             info.append({'pol':pol_name, 'info': "error inesperat"})
 
     success("S'ha encuat la importacio dels fitxers de {} pòlisses".format(total_pols_ok))
