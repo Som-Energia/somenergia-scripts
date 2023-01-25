@@ -155,12 +155,17 @@ invoicefixing:
           type: date
 
     CopyCurveToTesting:
-      script: python SOME_SRC/somenergia-scripts/Curves/copy_corbes_to_testing.py -c {cups} -s {server}
+      script: python SOME_SRC/somenergia-scripts/Curves/copy_corbes_to_testing.py -c {cups} -s {server} -f {csv_file}
       title: CCh - Copia corbes horaries de Productiu a Testing
       description: Copia totes les corbes disponibles (f5d, p5d, f1 i p1) del Mongo de productiu al Mongo de testing
       parameters:
         cups:
-          description: Introduir el CUPS
+          description: Codis CUPS, separats per comes
+          default: ''
+        csv_file:
+          type: FILE
+          default: /dev/null
+          description: CSV amb els cups a la primera columna, sense capçalera.
         server:
           description: A quin servidor vols copiarles (terp01, perp01...)
           type: enum
@@ -450,12 +455,12 @@ invoicefixing:
       script: python SOME_SRC/somenergia-scripts/invoicing/copy_f1_to_testing.py --file={csv_file} --polissa={polissa_name} --server={server} --from-date={from_date} --output={output}
       parameters:
         polissa_name:
-          description: Número de contracte
+          description: Números de contracte, separats per comes
           default: null
         csv_file:
           type: FILE
           default: /dev/null
-          description: Quan hi ha més d'un, CSV amb els números de contracte a la primera columna, sense capçalera.
+          description: CSV amb números de contracte a la primera columna, sense capçalera.
         from_date:
           description: Des de quina cal actualitzar l'adjunt de testing, dels F1ns que ja existien
           type: date
@@ -941,12 +946,17 @@ oficinavirtual:
   scripts:
 
     CopyInfoEnergiaReportToTesting:
-      script: python SOME_SRC/somenergia-scripts/Curves/copy_infoenergia_to_testing.py -c {contracte} -s {server}
+      script: python SOME_SRC/somenergia-scripts/Curves/copy_infoenergia_to_testing.py -c {contracte} -s {server} -f {csv_file}
       title: Copia Informes InfoEnegia de Productiu a Testing
       description: Copia tots els informes InfoEnergia disponibles del Mongo de productiu al Mongo de testing
       parameters:
         contracte:
-          description: Introduir el Número de Contracte
+          description: Números de Contracte, separats per comes
+          default: null
+        csv_file:
+          type: FILE
+          default: /dev/null
+          description: CSV amb els números de contracte a la primera columna, sense capçalera.
         server:
           description: A quin servidor vols copiarles (terp01, perp01...)
           type: enum
