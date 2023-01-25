@@ -4,7 +4,7 @@ from future import standard_library
 standard_library.install_aliases()
 
 import configdb
-from consolemsg import step, error, warn, fail, success
+from consolemsg import step, error, warn, fail, success, out
 import pymongo
 
 
@@ -27,8 +27,8 @@ def set_mongo_data(mongo_db, mongo_collection, curve_type, mongo_data):
         warn(str(e))
     except Exception as e:
         error("Error no controlat: " + str(e))
-        return False
-    return True
+        return result
+    return result
 
 
 def main(cups, server):
@@ -68,6 +68,7 @@ def main(cups, server):
                 curve_type=name,
                 mongo_data=mongo_data,
             )
+            out(result)
 
     print("Les corbes disponibles s'han pujat a " + server)
 
