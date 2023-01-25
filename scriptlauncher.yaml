@@ -13,7 +13,8 @@ general:
         mail:
           description: Introdueix el correu electrònic # TODO, si vols rebre la informació per correu
         date:
-          description: Introdueix la data (inclosa) fins a la que vols fer l'estudi amb el format 'YYYY-mm-dd'
+          description: Introdueix la data (inclosa) fins a la que vols fer l'estudi
+          type: date
 
 
 measurefixing:
@@ -119,7 +120,8 @@ invoicefixing:
       description: Serveix per quantificar els errors detectats a les importacions de F1
       parameters:
         date:
-          description: Introduir la data des de quan voleu fer la cerca amb format YYYY-mm-dd
+          description: Introduir la data des de quan voleu fer la cerca
+          type: date
 
     fixmoddate:
       script: python SOME_SRC/somenergia-scripts/invoicing/fix_modcontractual_orig.py
@@ -149,7 +151,8 @@ invoicefixing:
         info:
           description: Introduir un tros del missatge que indentifiqui clarament quin és
         date:
-          description: Introduir la data des de quan voleu fer la cerca amb format YYYY-mm-dd
+          description: Introduir la data des de quan voleu fer la cerca
+          type: date
 
     CopyCurveToTesting:
       script: python SOME_SRC/somenergia-scripts/Curves/copy_corbes_to_testing.py -c {cups} -s {server}
@@ -178,9 +181,11 @@ invoicefixing:
         curve_types:
           description: Tipus de corbes separat per comes (tg_cchval, tg_cchfact, tg_f1, P1, P2, tg_cchautoconsum, tg_gennetabeta)
         from_date:
-          description: Introdueix la data d'inici del període que cal decarregar 'YYYY-mm-dd'
+          description: Introdueix la data d'inici del període que cal decarregar
+          type: date
         to_date:
-          description: Introdueix la data final del període que cal decarregar 'YYYY-mm-dd'
+          description: Introdueix la data final del període que cal decarregar
+          type: date
         merged:
           description: Concatena els resultats en un únic fitxer
           type: enum
@@ -210,10 +215,12 @@ invoicefixing:
       "
       parameters:
         from_date:
-          description: Introdueix la data d'inici del període que cal consultar 'YYYY-mm-dd'. Si es deixa buit, agafa els últims 365 dies.
+          description: Introdueix la data d'inici del període que cal consultar. Si es deixa buit, agafa els últims 365 dies.
+          type: date
           default: None
         to_date:
-          description: Introdueix la data d'final del període que cal consultar 'YYYY-mm-dd' (no inclosa). Si es deixa buit, agafa el dia d'avui.
+          description: Introdueix la data d'final del període que cal consultar (no inclosa). Si es deixa buit, agafa el dia d'avui.
+          type: date
           default: None
         tariff:
           description: Introdueix la tarifa si vols filtrar per contractes amb una tarifa concreta
@@ -242,9 +249,11 @@ invoicefixing:
         contract_name:
           description: Número de contracte
         start_date:
-          description: data inici (YYYY-MM-DD)
+          description: data inici
+          type: date
         end_date:
-          description: data final (YYYY-MM-DD)
+          description: data final
+          type: date
 
     killalreadyexist:
       script: python SOME_SRC/somenergia-scripts/Importacions_F1_Q1/Fact_impF1_eliminar_Ja_existeix.py
@@ -285,9 +294,11 @@ invoicefixing:
         soci:
           description: Identificacio del titular dels contractes, per exemple S666999 o T666999
         start:
-          description: Data del mes inicial que es vol el resum YYYY-mm-dd, per exemple 2019-08-11 per agost de 2019
+          description: Data del mes inicial que es vol el resum, per exemple 2019-08-11 per agost de 2019
+          type: date
         end:
-          description: Data del mes final (inclos) que es vol el resum YYYY-mm-dd, per exemple 2019-12-22 per desembre de 2019
+          description: Data del mes final (inclos) que es vol el resum, per exemple 2019-12-22 per desembre de 2019
+          type: date
         output:
           type: FILEDOWN
           extension: zip
@@ -360,7 +371,8 @@ invoicefixing:
           type: FILE
           description: "CSV amb el nom de les pòlisses a la primera columna, sense capçalera"
         from_date:
-          description: Data d'inicial dels F1 tipus G que cal buscar, amb el format YYYY-mm-dd
+          description: Data d'inicial dels F1 tipus G que cal buscar
+          type: date
         output:
           type: FILEDOWN
           extension: csv
@@ -372,7 +384,8 @@ invoicefixing:
       script: python SOME_SRC/somenergia-scripts/invoicing/measurefixing/list_auto_contracts_f1_type_G.py --from-date={from_date} --show-fact={show_fact} --output={output}
       parameters:
         from_date:
-          description: Data d'inicial dels F1 tipus G que cal buscar, amb el format YYYY-mm-dd
+          description: Data d'inicial dels F1 tipus G que cal buscar
+          type: date
         show_fact:
           description: Mostrar les pòlisses amb l'F1 ja facturat? (s/n)
         output:
@@ -386,9 +399,11 @@ invoicefixing:
       script: python SOME_SRC/somenergia-scripts/invoicing/list_invoices_different_export_energy.py --from-date={from_date} --to-date={to_date} --output={output}
       parameters:
         from_date:
-          description: Des de quina data d'inici cal buscar les factures, amb el format YYYY-mm-dd
+          description: Des de quina data d'inici cal buscar les factures
+          type: date
         to_date:
-          description: Fins a quina data poden començar les factures que cal comprovar, amb el format YYYY-mm-dd
+          description: Fins a quina data poden començar les factures que cal comprovar
+          type: date
         output:
           type: FILEDOWN
           filename: factures.csv
@@ -419,7 +434,8 @@ invoicefixing:
       script: python SOME_SRC/somenergia-scripts/invoicing/list_contracts_empty_f1_period.py --from-date={from_date} --file={csv_file} --output={output}
       parameters:
         from_date:
-          description: Des de quina data d'inici cal buscar els "forats", amb el format YYYY-mm-dd
+          description: Des de quina data d'inici cal buscar els "forats"
+          type: date
         csv_file:
           type: FILE
           description: "CSV amb el nom de les pòlisses a la primera columna, sense capçalera. Opcional."
@@ -484,7 +500,8 @@ gestiocontractes:
       description: Aquest quadre de control està en construcció. Potser hi ha funcionalitats que s'haurien de tractar a fora d'aquest quadre. S'hi ha de treballar una mica més.
       parameters:
         date:
-          description: Introdueix la data dels des dels quals vols veure els nous contractes amb el format 'YYYY-mm-dd'
+          description: Introdueix la data dels des dels quals vols veure els nous contractes
+          type: date
         date_end:
           description: Introdueix la data amb que vols que comencen l'anàlisi de ccvv i altres associacions
     seguiment3:
@@ -497,7 +514,8 @@ gestiocontractes:
       description:
       parameters:
         date:
-          description: Introdueix la data amb el format 'YYYY-mm-dd', l'última no inclosa
+          description: Introdueix la data, l'última no inclosa
+          type: date
     cupstoemailc:
       script: SOME_SRC/cups2email/cups2email_lang_c.py {file}
       title: Email segon avís requeriment butlletí elèctric a partir dels CUPS facilitats per la distribuidora
@@ -536,9 +554,11 @@ gestiocontractes:
       description: Busca contractes, entre les dates especificades, en els quals no s'ha obert un cas ATR del tipus Alta o Switching (C1, C2, A3). Aquesta cerca es custosa, intenta acotar les dates.
       parameters:
         date_from:
-          description: Data dels contractes més antics 'YYYY-mm-dd'
+          description: Data dels contractes més antics
+          type: date
         date_to:
-          description: Data dels contractes més nous 'YYYY-mm-dd'
+          description: Data dels contractes més nous
+          type: date
     killingEstimation:
       script: python SOME_SRC/somenergia-scripts/invoicing/killing_estimations.py {doit}
       title: Posar a no estimable als telegestionats
@@ -573,7 +593,8 @@ gestiocontractes:
       parameters:
         date_from:
           description: >
-            Data a partir de la cual realitzar la cerca, en format 'YYYY-mm-dd'
+            Data a partir de la cual realitzar la cerca
+          type: date
         output:
           type: FILEDOWN
           extension: csv
@@ -784,11 +805,11 @@ accounting:
           default: NO ESPECIFICAT
         inici:
           type: date
-          description: Data d'inici de l'informe (en format YYYY-MM-DD)
+          description: Data d'inici de l'informe
           default: '2018-01-01'
         final:
           type: date
-          description: Data final de l'informe (en format YYYY-MM-DD)
+          description: Data final de l'informe
           default: '2018-07-24'
         report:
           type: FILEDOWN
