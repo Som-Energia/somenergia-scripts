@@ -6,11 +6,13 @@ standard_library.install_aliases()
 import configdb
 from consolemsg import step, error, warn, fail, success, out
 import pymongo
-
+import csv
 
 def get_mongo_data(mongo_db, mongo_collection, cups):
-    data = dict()
-    query = {'name': {'$regex': '^{}'.format(cups[:20])}}
+    query = {'$or': [
+        {'name': {'$regex': '^{}'.format(acups[:20])}}
+        for acups in cups
+    ]}
     fields = {'_id': False}
     curves =  mongo_db[mongo_collection].find(
         query,
@@ -78,9 +80,49 @@ def main(cups, server):
 
     print("Les corbes disponibles s'han pujat a " + server)
 
+
+def format_cups(item):
+    result = item.strip()[:20]
+    if len(result) != 20:
+        warn("Ignoring CUPS '{}'".format(result))
+        return ''
+    return result
+
+
+def parse_csv(csv_file):
+    if not csv_file: return []
+    with open(csv_file) as f:
+        reader = csv.reader(f)
+        for row in reader:
+            item = format_cups(row[0])
+            if not item: continue
+            yield item
+
+
+def parse_comma_separated_list(inputstring):
+    for item in inputstring.split(','):
+        item = format_cups(item)
+        if not item: continue
+        yield item
+
+
+def join_cli_and_csv(cli, csv_file):
+    return list(set(
+        parse_csv(csv_file)
+    ).union(
+        parse_comma_separated_list(cli)
+    ))
+
+
 def parseargs():
     import argparse
     parser = argparse.ArgumentParser(description='Copiar corbes a Testing')
+    parser.add_argument(
+        '--file',
+        dest='csv_file',
+        required=False,
+        help="csv amb el cups  (a la primera columna i sense capçalera)"
+    )
     parser.add_argument('-c', '--cups',
         help="CUPS a copiar",
         required=False,
@@ -92,9 +134,11 @@ def parseargs():
 
 if __name__ == '__main__':
     args=parseargs()
-    if not args.cups:
-        fail("Introdueix un cups o el missatge d'error o una data")
+    if not args.cups and not args.csv_file:
+        fail("Introdueix un cups o fitxer amb els cups")
     if not args.server:
         fail("Introdueix un servidor a on copiar les corbes")
 
-    main(args.cups, args.server)
+    cups = join_cli_and_csv(cli=args.cups, csv_file=args.csv_file)
+
+    main(cups, args.server)
