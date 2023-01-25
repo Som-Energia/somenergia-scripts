@@ -14,11 +14,19 @@ erppeek = dict(
    password=ooop['pwd'],
 )
 
-mongodb = 'mongodb://user:password@host:port/dbname'
-
 apinergia = {
    'server': 'https://somewhere.somenergia.coop',
    'user': 'PauRiba',
    'password': 'iestiguescontenta',
    'csv_output_directory: '/tmp'
 }
+
+mongodb_profiles=ns(
+   prod = 'mongodb://user:password@host:port/dbname',
+   test = 'mongodb://user:password@host:port/dbname',
+   pre = 'mongodb://user:password@host:port/dbname',
+   pre2 = 'mongodb://user:password@host:port/dbname',
+)
+
+mongodb = mongodb_profiles.testing
+
