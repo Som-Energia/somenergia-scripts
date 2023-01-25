@@ -20,7 +20,8 @@ def get_mongo_data(mongo_db, mongo_collection, cups):
 def set_mongo_data(mongo_db, mongo_collection, curve_type, mongo_data):
     try:
         result = mongo_db[mongo_collection].insert(
-            mongo_data, continue_on_error=True)
+            mongo_data, continue_on_error=True,
+        )
     except pymongo.errors.DuplicateKeyError as e:
         warn("Alguns registres de la corba " + curve_type + " ja existeixen.")
         warn(str(e))
@@ -53,7 +54,6 @@ def main(cups, server):
         GENNETABETA = 'tg_cch_gennetabeta',
         AUTOCONS = 'tg_cch_autocons',
     )
-    
     for name, collection in curve_types.items():
         mongo_data = get_mongo_data(
             mongo_db=mongo_db_prod, mongo_collection=collection, cups = cups
