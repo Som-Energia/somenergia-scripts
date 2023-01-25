@@ -23,10 +23,10 @@ def set_mongo_data(mongo_db, mongo_collection, curve_type, cups, mongo_data):
         result = mongo_db[mongo_collection].insert(
             mongo_data, continue_on_error=True)
     except pymongo.errors.DuplicateKeyError as e:
-        print("Alguns registres de la corba " + curve_type + " ja existeixen.")
-        print(str(e))
+        warn("Alguns registres de la corba " + curve_type + " ja existeixen.")
+        warn(str(e))
     except Exception as e:
-        print("Error no controlat: " + str(e))
+        error("Error no controlat: " + str(e))
         return False
     return True
 
