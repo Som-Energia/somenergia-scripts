@@ -17,8 +17,7 @@ def get_mongo_data(mongo_db, mongo_collection, cups):
         fields)
     return curves
 
-
-def set_mongo_data(mongo_db, mongo_collection, curve_type, cups, mongo_data):
+def set_mongo_data(mongo_db, mongo_collection, curve_type, mongo_data):
     try:
         result = mongo_db[mongo_collection].insert(
             mongo_data, continue_on_error=True)
@@ -67,7 +66,6 @@ def main(cups, server):
                 mongo_db=mongo_db_test,
                 mongo_collection=collection,
                 curve_type=name,
-                cups=cups,
                 mongo_data=mongo_data,
             )
 
