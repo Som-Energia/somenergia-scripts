@@ -45,64 +45,30 @@ def main(cups, server):
     mongo_db_prod = mongo_client_prod.somenergia
     mongo_db_test = mongo_client_test.somenergia
 
-    mongo_data_f5d = get_mongo_data(
-        mongo_db=mongo_db_prod, mongo_collection='tg_cchfact', cups = cups
+    curve_types = dict(
+        F5D = 'tg_cchfact',
+        F1 = 'tg_f1',
+        P5D = 'tg_cchval',
+        P1 = 'tg_p1',
+        TM_PROFILE = 'tm_profile',
+        GENNETABETA = 'tg_cch_gennetabeta',
     )
-    mongo_data_f1 = get_mongo_data(
-        mongo_db=mongo_db_prod, mongo_collection='tg_f1', cups = cups
-    )
-    mongo_data_p5d = get_mongo_data(
-        mongo_db=mongo_db_prod, mongo_collection='tg_cchval', cups = cups
-    )
-    mongo_data_p1 = get_mongo_data(
-        mongo_db=mongo_db_prod, mongo_collection='tg_p1', cups = cups
-    )
-    mongo_data_tmprofile = get_mongo_data(
-        mongo_db=mongo_db_prod, mongo_collection='tm_profile', cups = cups
-    )
-    mongo_data_gennetabeta = get_mongo_data(
-        mongo_db=mongo_db_prod, mongo_collection='tg_cch_gennetabeta', cups = cups
-    )
+    
+    for name, collection in curve_types.items():
+        mongo_data = get_mongo_data(
+            mongo_db=mongo_db_prod, mongo_collection=collection, cups = cups
+        )
 
+        step("Corbes obtingudes {}: {}".format(name, mongo_data.count()))
 
-    print("Corbes obtingudes F5D: " + str(mongo_data_f5d.count()))
-    print("Corbes obtingudes P5D: " + str(mongo_data_p5d.count()))
-    print("Corbes obtingudes F1: " + str(mongo_data_f1.count()))
-    print("Corbes obtingudes P1: " + str(mongo_data_p1.count()))
-    print("Corbes obtingudes TM_PROFILE: " + str(mongo_data_tmprofile.count()))
-    print("Corbes obtingudes GenNetaBeta: " + str(mongo_data_gennetabeta.count()))
-
-
-    if mongo_data_f5d.count() > 0:
-        result_f5d = set_mongo_data(
-            mongo_db=mongo_db_test, mongo_collection='tg_cchfact',
-            curve_type='F5D', cups=cups, mongo_data=mongo_data_f5d
-        )
-    if mongo_data_p5d.count() > 0:
-        result_p5d = set_mongo_data(
-            mongo_db=mongo_db_test, mongo_collection='tg_cchval',
-            curve_type='P5D', cups=cups, mongo_data=mongo_data_p5d
-        )
-    if mongo_data_f1.count() > 0:
-        result_f1 = set_mongo_data(
-            mongo_db=mongo_db_test, mongo_collection='tg_f1',
-            curve_type='F1', cups=cups, mongo_data=mongo_data_f1
-        )
-    if mongo_data_p1.count() > 0:
-        result_p1 = set_mongo_data(
-            mongo_db=mongo_db_test, mongo_collection='tg_p1',
-            curve_type='P1', cups=cups, mongo_data=mongo_data_p1
-        )
-    if mongo_data_tmprofile.count() > 0:
-        result_tmprofile = set_mongo_data(
-            mongo_db=mongo_db_test, mongo_collection='tm_profile',
-            curve_type='TM_PROFILE', cups=cups, mongo_data=mongo_data_tmprofile
-        )
-    if mongo_data_gennetabeta.count() > 0:
-        result_gennetabeta = set_mongo_data(
-            mongo_db=mongo_db_test, mongo_collection='tg_cch_gennetabeta',
-            curve_type='GenNetaBeta', cups=cups, mongo_data=mongo_data_gennetabeta
-        )
+        if mongo_data.count() > 0:
+            result = set_mongo_data(
+                mongo_db=mongo_db_test,
+                mongo_collection=collection,
+                curve_type=name,
+                cups=cups,
+                mongo_data=mongo_data,
+            )
 
     print("Les corbes disponibles s'han pujat a " + server)
 
