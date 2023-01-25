@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import base64, csv
 import configdb
-from consolemsg import step, error, warn, fail, success
+from consolemsg import step, error, warn, fail, success, u
 from erppeek import Client
 from tqdm import tqdm
 
@@ -155,7 +155,7 @@ def write_result(result, filename):
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         for a in result:
-            writer.writerow({k: unicode(v).encode('utf-8') for k, v in a.items()})
+            writer.writerow({k: u(v) for k, v in a.items()})
 
 def main(csv_file, output_file, from_date, server, polissa_name):
     result = copy_f1_to_testing(csv_file, from_date, polissa_name, server)
