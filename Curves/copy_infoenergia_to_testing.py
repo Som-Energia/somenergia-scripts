@@ -3,14 +3,19 @@
 from future import standard_library
 standard_library.install_aliases()
 
-import configdb
 from consolemsg import step, error, warn, fail, success
 import pymongo
+from curve_utils import (
+    mongo_profile,
+    mongo_profiles,
+    join_cli_and_csv,
+    contract_filter,
+)
 
-
-def get_mongo_data(mongo_db, mongo_collection, contract):
-    data = dict()
-    query = {'contractName': contract}
+def get_mongo_data(mongo_db, mongo_collection, contracts):
+    query = {
+        'contractName': {'$in': contracts}
+    }
     fields = {'_id': False}
     reports =  mongo_db[mongo_collection].find(
         query,
@@ -18,61 +23,73 @@ def get_mongo_data(mongo_db, mongo_collection, contract):
     return reports
 
 
-def set_mongo_data(mongo_db, mongo_collection, contract, mongo_data):
+def set_mongo_data(mongo_db, mongo_collection, mongo_data):
     try:
         result = mongo_db[mongo_collection].insert(
-            mongo_data, continue_on_error=True)
+            mongo_data, continue_on_error=True,
+        )
     except pymongo.errors.DuplicateKeyError as e:
-        print("Alguns informes del contracte " + contract + " ja existien.")
-        print(str(e))
+        warn("  Alguns informes ja existien.")
+        warn("  {}",e)
+        return True
     except Exception as e:
-        print("Error no controlat: " + str(e))
+        error("Error no controlat: " + str(e))
         return False
     return True
 
 
-def main(contract, server):
-    mongo_client_prod = pymongo.MongoClient(configdb.mongodb_prod)
-    if server == 'terp01':
-        mongo_client_test = pymongo.MongoClient(configdb.mongodb_test)
-    elif server == 'perp01':
-        mongo_client_test = pymongo.MongoClient(configdb.mongodb_pre)
-    else:
-        raise Exception("Servidor desconegut")
+def main(contracts, server):
+    mongo_db_src = pymongo.MongoClient(mongo_profile('erp01')).somenergia
+    mongo_db_dst = pymongo.MongoClient(mongo_profile(server)).somenergia
 
-    mongo_db_prod = mongo_client_prod.somenergia
-    mongo_db_test = mongo_client_test.somenergia
-
+    step("Descarregant de {} informes pels contractes {}", server, contracts)
     reports = get_mongo_data(
-        mongo_db=mongo_db_prod, mongo_collection='infoenergia_reports', contract=contract
+        mongo_db=mongo_db_src,
+        mongo_collection='infoenergia_reports',
+        contracts=contracts,
     )
 
-    print("Informes InfoEnergia obtinguts: " + str(reports.count()))
+    success("Informes InfoEnergia obtinguts: " + str(reports.count()))
 
     if reports.count() > 0:
+        step("Pujant informes a {}", server)
         result = set_mongo_data(
-            mongo_db=mongo_db_test, mongo_collection='infoenergia_reports',
-            contract=contract, mongo_data=reports
+            mongo_db=mongo_db_dst,
+            mongo_collection='infoenergia_reports',
+            mongo_data=reports,
         )
-
-    print("Els informes InfoEnergia disponibles s'han pujat a " + server)
+    success("Els informes InfoEnergia disponibles s'han pujat a " + server)
 
 def parseargs():
     import argparse
     parser = argparse.ArgumentParser(description='Copiar corbes a Testing')
+    parser.add_argument(
+        '--file',
+        dest='csv_file',
+        required=False,
+        help="csv amb els números de contracte (a la primera columna i sense capçalera)"
+    )
     parser.add_argument('-c', '--contract',
-        help="Escull per contract",
-        )
+        help="Contracte a copiar",
+        required=False,
+    )
     parser.add_argument('-s', '--server',
-        help="Escull un servidor destí",
-        )
+        help="Servidor de destí",
+        choices=[
+            x
+            for x in mongo_profiles().keys()
+            if x != 'erp01'
+        ]
+    )
     return parser.parse_args()
 
 if __name__ == '__main__':
     args=parseargs()
-    if not args.contract:
-        fail("Introdueix un contract o el missatge d'error o una data")
+    if not args.contract and not args.csv_file:
+        fail("Introdueix un contracte o fitxer amb els cups")
     if not args.server:
         fail("Introdueix un servidor a on copiar les corbes")
 
-    main(args.contract, args.server)
+    contracts = join_cli_and_csv(cli=args.contract, csv_file=args.csv_file, filter=contract_filter)
+
+    main(contracts, args.server)
