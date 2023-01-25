@@ -1,5 +1,8 @@
 ERPpeek
-pymongo
+pymongo<3
 futures
 pandas
 gestionatr
+future
+consolemsg
+yamlns
