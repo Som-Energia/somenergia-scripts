@@ -25,9 +25,11 @@ def set_mongo_data(mongo_db, mongo_collection, curve_type, mongo_data):
     except pymongo.errors.DuplicateKeyError as e:
         warn("Alguns registres de la corba " + curve_type + " ja existeixen.")
         warn(str(e))
+        print(e.details)
+        return False
     except Exception as e:
         error("Error no controlat: " + str(e))
-        return result
+        return False
     return result
 
 
@@ -55,11 +57,12 @@ def main(cups, server):
         AUTOCONS = 'tg_cch_autocons',
     )
     for name, collection in curve_types.items():
+        step("Traspassant {}...".format(name))
         mongo_data = get_mongo_data(
             mongo_db=mongo_db_prod, mongo_collection=collection, cups = cups
         )
 
-        step("Corbes obtingudes {}: {}".format(name, mongo_data.count()))
+        step("  Corbes obtingudes {}: {}".format(name, mongo_data.count()))
 
         if mongo_data.count() > 0:
             result = set_mongo_data(
