@@ -168,13 +168,13 @@ def parseargs():
         '--file',
         dest='csv_file',
         required=False,
-        help="csv amb el nom de les pòlisses (a la primera columna i sense capçalera)"
+        help="csv amb els números de contracte (a la primera columna i sense capçalera)"
     )
     parser.add_argument(
         '--polissa',
-        dest='polissa_name',
+        dest='contract',
+        help="Contracte a copiar",
         required=False,
-        help="Nom de la pòlissa"
     )
     parser.add_argument(
         '--from-date',
@@ -190,14 +190,14 @@ def parseargs():
         dest='output',
         type=str,
         help="Output csv file",
-        )
+    )
     return parser.parse_args()
 
 if __name__ == '__main__':
     args=parseargs()
-    if not args.csv_file and not args.polissa_name:
+    if not args.csv_file and not args.contract:
         fail("Introdueix el fitxer amb els números de contracte o bé un número de contracte")
     if not args.from_date:
         fail("Requires a first date")
 
-    main(args.csv_file, args.output, args.from_date, args.server, args.polissa_name)
+    main(args.csv_file, args.output, args.from_date, args.server, args.contract)

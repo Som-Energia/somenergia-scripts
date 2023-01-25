@@ -101,11 +101,12 @@ def parseargs():
     import argparse
     parser = argparse.ArgumentParser(description='Copiar corbes a Testing')
     parser.add_argument('-c', '--cups',
-        help="Escull per cups",
-        )
+        help="CUPS a copiar",
+        required=False,
+    )
     parser.add_argument('-s', '--server',
         help="Escull un servidor destí",
-        )
+    )
     return parser.parse_args()
 
 if __name__ == '__main__':
