@@ -953,6 +953,7 @@ oficinavirtual:
           options:
             Testing (terp01): terp01
             Preproducció (perp01): perp01
+            Preproducció 2 (serp01): serp01
           default: terp01
 
 # vim: et ts=2 sw=2
