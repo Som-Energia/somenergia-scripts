@@ -60,12 +60,17 @@ def main(cups, server):
     mongo_data_tmprofile = get_mongo_data(
         mongo_db=mongo_db_prod, mongo_collection='tm_profile', cups = cups
     )
+    mongo_data_gennetabeta = get_mongo_data(
+        mongo_db=mongo_db_prod, mongo_collection='tg_cch_gennetabeta', cups = cups
+    )
 
 
     print("Corbes obtingudes F5D: " + str(mongo_data_f5d.count()))
     print("Corbes obtingudes P5D: " + str(mongo_data_p5d.count()))
     print("Corbes obtingudes F1: " + str(mongo_data_f1.count()))
     print("Corbes obtingudes P1: " + str(mongo_data_p1.count()))
+    print("Corbes obtingudes TM_PROFILE: " + str(mongo_data_tmprofile.count()))
+    print("Corbes obtingudes GenNetaBeta: " + str(mongo_data_gennetabeta.count()))
 
 
     if mongo_data_f5d.count() > 0:
@@ -93,7 +98,11 @@ def main(cups, server):
             mongo_db=mongo_db_test, mongo_collection='tm_profile',
             curve_type='TM_PROFILE', cups=cups, mongo_data=mongo_data_tmprofile
         )
-        print("Corbes obtingudes TM_PROFILE: " + str(mongo_data_tmprofile.count()))
+    if mongo_data_gennetabeta.count() > 0:
+        result_gennetabeta = set_mongo_data(
+            mongo_db=mongo_db_test, mongo_collection='tg_cch_gennetabeta',
+            curve_type='GenNetaBeta', cups=cups, mongo_data=mongo_data_gennetabeta
+        )
 
     print("Les corbes disponibles s'han pujat a " + server)
 
