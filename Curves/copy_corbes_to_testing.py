@@ -47,7 +47,7 @@ def main(cups, server):
     mongo_db_prod = mongo_client_prod.somenergia
     mongo_db_test = mongo_client_test.somenergia
 
-    curve_types = dict(
+    curves = dict(
         F5D = 'tg_cchfact',
         F1 = 'tg_f1',
         P5D = 'tg_cchval',
@@ -56,13 +56,16 @@ def main(cups, server):
         GENNETABETA = 'tg_cch_gennetabeta',
         AUTOCONS = 'tg_cch_autocons',
     )
-    for name, collection in curve_types.items():
+    for name, collection in curves.items():
         step("Traspassant {}...".format(name))
         mongo_data = get_mongo_data(
-            mongo_db=mongo_db_prod, mongo_collection=collection, cups = cups
+            mongo_db=mongo_db_prod,
+            mongo_collection=collection,
+            cups=cups,
         )
+        n_downloaded = mongo_data.count()
 
-        step("  Corbes obtingudes {}: {}".format(name, mongo_data.count()))
+        step("  Corbes obtingudes {}: {}", name, n_downloaded)
 
         if mongo_data.count() > 0:
             result = set_mongo_data(
@@ -71,7 +74,7 @@ def main(cups, server):
                 curve_type=name,
                 mongo_data=mongo_data,
             )
-            out(result)
+        success("  Done")
 
     print("Les corbes disponibles s'han pujat a " + server)
 
