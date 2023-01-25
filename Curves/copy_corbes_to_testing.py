@@ -9,15 +9,18 @@ import pymongo
 import csv
 
 def get_mongo_data(mongo_db, mongo_collection, cups):
-    query = {'$or': [
-        {'name': {'$regex': '^{}'.format(acups[:20])}}
-        for acups in cups
-    ]}
+    query = {
+        '$or': [
+            {'name': {'$regex': '^{}'.format(acups[:20])}}
+            for acups in cups
+        ]
+    }
     fields = {'_id': False}
     curves =  mongo_db[mongo_collection].find(
         query,
         fields)
     return curves
+
 
 def set_mongo_data(mongo_db, mongo_collection, curve_type, mongo_data):
     try:
