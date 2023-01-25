@@ -52,6 +52,7 @@ def main(cups, server):
         P1 = 'tg_p1',
         TM_PROFILE = 'tm_profile',
         GENNETABETA = 'tg_cch_gennetabeta',
+        AUTOCONS = 'tg_cch_autocons',
     )
     
     for name, collection in curve_types.items():
