@@ -3,10 +3,14 @@
 from future import standard_library
 standard_library.install_aliases()
 
-import configdb
 from consolemsg import step, error, warn, fail, success, out
 import pymongo
-import csv
+from curve_utils import (
+    mongo_profile,
+    mongo_profiles,
+    join_cli_and_csv,
+    cups_filter,
+)
 
 def get_mongo_data(mongo_db, mongo_collection, cups):
     query = {
@@ -22,35 +26,24 @@ def get_mongo_data(mongo_db, mongo_collection, cups):
     return curves
 
 
-def set_mongo_data(mongo_db, mongo_collection, curve_type, mongo_data):
+def set_mongo_data(mongo_db, mongo_collection, mongo_data):
     try:
         result = mongo_db[mongo_collection].insert(
             mongo_data, continue_on_error=True,
         )
     except pymongo.errors.DuplicateKeyError as e:
-        warn("Alguns registres de la corba " + curve_type + " ja existeixen.")
-        warn(str(e))
-        print(e.details)
-        return False
+        warn("  Alguns registres ja existien.")
+        warn("  {}",e)
+        return True
     except Exception as e:
         error("Error no controlat: " + str(e))
         return False
-    return result
+    return True
 
 
 def main(cups, server):
-    mongo_client_prod = pymongo.MongoClient(configdb.mongodb_prod)
-    if server == 'terp01':
-        mongo_client_test = pymongo.MongoClient(configdb.mongodb_test)
-    elif server == 'perp01':
-        mongo_client_test = pymongo.MongoClient(configdb.mongodb_pre)
-    elif server == 'serp01':
-        mongo_client_test = pymongo.MongoClient(configdb.mongodb_serp)
-    else:
-        raise Exception("Servidor desconegut")
-
-    mongo_db_prod = mongo_client_prod.somenergia
-    mongo_db_test = mongo_client_test.somenergia
+    mongo_db_src = pymongo.MongoClient(mongo_profile('erp01')).somenergia
+    mongo_db_dst = pymongo.MongoClient(mongo_profile(server)).somenergia
 
     curves = dict(
         F5D = 'tg_cchfact',
@@ -64,7 +57,7 @@ def main(cups, server):
     for name, collection in curves.items():
         step("Traspassant {}...".format(name))
         mongo_data = get_mongo_data(
-            mongo_db=mongo_db_prod,
+            mongo_db=mongo_db_src,
             mongo_collection=collection,
             cups=cups,
         )
@@ -74,47 +67,14 @@ def main(cups, server):
 
         if mongo_data.count() > 0:
             result = set_mongo_data(
-                mongo_db=mongo_db_test,
+                mongo_db=mongo_db_dst,
                 mongo_collection=collection,
-                curve_type=name,
                 mongo_data=mongo_data,
             )
         success("  Done")
 
-    print("Les corbes disponibles s'han pujat a " + server)
+    success("Les corbes disponibles s'han pujat a " + server)
 
-
-def format_cups(item):
-    result = item.strip()[:20]
-    if len(result) != 20:
-        warn("Ignoring CUPS '{}'".format(result))
-        return ''
-    return result
-
-
-def parse_csv(csv_file):
-    if not csv_file: return []
-    with open(csv_file) as f:
-        reader = csv.reader(f)
-        for row in reader:
-            item = format_cups(row[0])
-            if not item: continue
-            yield item
-
-
-def parse_comma_separated_list(inputstring):
-    for item in inputstring.split(','):
-        item = format_cups(item)
-        if not item: continue
-        yield item
-
-
-def join_cli_and_csv(cli, csv_file):
-    return list(set(
-        parse_csv(csv_file)
-    ).union(
-        parse_comma_separated_list(cli)
-    ))
 
 
 def parseargs():
@@ -131,7 +91,12 @@ def parseargs():
         required=False,
     )
     parser.add_argument('-s', '--server',
-        help="Escull un servidor destí",
+        help="Servidor destí",
+        choices=[
+            x
+            for x in mongo_profiles().keys()
+            if x != 'erp01'
+        ]
     )
     return parser.parse_args()
 
@@ -142,6 +107,6 @@ if __name__ == '__main__':
     if not args.server:
         fail("Introdueix un servidor a on copiar les corbes")
 
-    cups = join_cli_and_csv(cli=args.cups, csv_file=args.csv_file)
+    cups = join_cli_and_csv(cli=args.cups, csv_file=args.csv_file, filter=cups_filter)
 
     main(cups, args.server)
