@@ -20,10 +20,10 @@ def get_mongo_data(mongo_db, mongo_collection, cups):
         ]
     }
     fields = {'_id': False}
-    curves =  mongo_db[mongo_collection].find(
+    documents =  mongo_db[mongo_collection].find(
         query,
         fields)
-    return curves
+    return documents
 
 
 def set_mongo_data(mongo_db, mongo_collection, mongo_data):

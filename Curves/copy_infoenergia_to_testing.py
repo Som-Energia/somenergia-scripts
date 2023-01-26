@@ -17,10 +17,10 @@ def get_mongo_data(mongo_db, mongo_collection, contracts):
         'contractName': {'$in': contracts}
     }
     fields = {'_id': False}
-    reports =  mongo_db[mongo_collection].find(
+    documents =  mongo_db[mongo_collection].find(
         query,
         fields)
-    return reports
+    return documents
 
 
 def set_mongo_data(mongo_db, mongo_collection, mongo_data):
