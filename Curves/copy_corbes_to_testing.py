@@ -36,6 +36,8 @@ def main(cups, server):
         mongo_client_test = pymongo.MongoClient(configdb.mongodb_test)
     elif server == 'perp01':
         mongo_client_test = pymongo.MongoClient(configdb.mongodb_pre)
+    elif server == 'serp01':
+        mongo_client_test = pymongo.MongoClient(configdb.mongodb_serp)
     else:
         raise Exception("Servidor desconegut")
 
