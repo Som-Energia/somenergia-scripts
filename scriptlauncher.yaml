@@ -164,6 +164,7 @@ invoicefixing:
           options:
             Testing (terp01): terp01
             Preproducció (perp01): perp01
+            Staging (serp01): serp01
           default: terp01
 
 
