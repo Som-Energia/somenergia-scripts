@@ -1,18 +1,65 @@
+from yamlns import ns
 
-ooop = dict(
-   dbname = 'dbname',
-   port = port,
-   user = 'user',
-   uri = 'http://localhost',
-   pwd = 'password',
+ooop_profiles = ns(
+    prod = dict(
+        dbname = 'dbname',
+        port = port,
+        user = 'user',
+        uri = 'http://localhost',
+        pwd = 'password',
+    ),
+    test = dict(
+        dbname = 'dbname',
+        port = port,
+        user = 'user',
+        uri = 'http://localhost',
+        pwd = 'password',
+    ),
+    pre = dict(
+        dbname = 'dbname',
+        port = port,
+        user = 'user',
+        uri = 'http://localhost',
+        pwd = 'password',
+    ),
+    stage = dict(
+        dbname = 'dbname',
+        port = port,
+        user = 'user',
+        uri = 'http://localhost',
+        pwd = 'password',
+    ),
 )
 
-erppeek = dict(
-   server='{uri}:{port}'.format(**ooop),
-   db=ooop['dbname'],
-   user=ooop['user'],
-   password=ooop['pwd'],
+mongodb_profiles = ns(
+    prod = 'mongodb://user:password@host:port/dbname',
+    test = 'mongodb://user:password@host:port/dbname',
+    pre = 'mongodb://user:password@host:port/dbname',
+    stage = 'mongodb://user:password@host:port/dbname',
 )
+
+def ooop2erppeek(ooop):
+    return dict(
+        server='{uri}:{port}'.format(**ooop),
+        db=ooop['dbname'],
+        user=ooop['user'],
+        password=ooop['pwd'],
+    )
+
+erppeek_profiles = ns(
+    k = ooop2erppeek(v)
+    for k,v in ooop_profiles.items()
+)
+
+erppeek_prod = erppeek_profiles.prod
+erppeek_stage = erppeek_profiles.stage
+erppeek_pre = erppeek_profiles.pre
+erppeek_test = erppeek_profiles.test
+
+# Default
+mongodb = mongodb_profiles.prod
+erppeek = erppeek_profiles.prod
+
 
 apinergia = {
    'server': 'https://somewhere.somenergia.coop',
@@ -20,13 +67,4 @@ apinergia = {
    'password': 'iestiguescontenta',
    'csv_output_directory: '/tmp'
 }
-
-mongodb_profiles=ns(
-   prod = 'mongodb://user:password@host:port/dbname',
-   test = 'mongodb://user:password@host:port/dbname',
-   pre = 'mongodb://user:password@host:port/dbname',
-   pre2 = 'mongodb://user:password@host:port/dbname',
-)
-
-mongodb = mongodb_profiles.testing
 
