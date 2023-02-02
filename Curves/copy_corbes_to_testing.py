@@ -81,7 +81,7 @@ def parseargs():
     import argparse
     parser = argparse.ArgumentParser(description='Copiar corbes a Testing')
     parser.add_argument(
-        '--file',
+        '-f', '--file',
         dest='csv_file',
         required=False,
         help="csv amb el cups  (a la primera columna i sense capçalera)"

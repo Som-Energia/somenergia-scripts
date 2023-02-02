@@ -1,7 +1,8 @@
 import csv
+from consolemsg import warn
 
 def parse_csv(csv_file, filter):
-    if not csv_file: return []
+    if not csv_file: return
     with open(csv_file) as f:
         reader = csv.reader(f)
         for row in reader:
@@ -37,7 +38,7 @@ def contract_filter(item):
     result = item.strip()
     if not result.isdigit(): # equiv /[0-9]+/
         return ignore()
-    if len(item)>CONTRACT_CODE_LENGTH:
+    if len(result)>CONTRACT_CODE_LENGTH:
         return ignore()
     return result.zfill(CONTRACT_CODE_LENGTH)
 
