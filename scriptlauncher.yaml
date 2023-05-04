@@ -328,7 +328,7 @@ invoicefixing:
           description: dies màxims de factura curta
 
     check_errors_invoice_data_pdf:
-      title: Comprobador de les dades per generar pdf de factura
+      title: Comprovador de les dades per generar pdf de factura
       description: Script per comprobar les dades per generar un pdf de factura, quan una factura no imprimeix el pdf aquest script detecta si es un dels errors coneguts de la factura i no del model de dades.
       script: python SOME_SRC/somenergia-scripts/invoicing/errors_in_invoice_data_pdf.py --invoice_name={invoice_name} --invoice_ids={invoice_ids}
       parameters:
@@ -336,6 +336,20 @@ invoicefixing:
           description: numero de la factura FE....
         invoice_ids:
           description: id's de factures separats per comes
+
+    check_invoice_f1_consume:
+      title: Comprovador de consums de factures i les seus F1
+      description: Script per comprovar el consum de factures i els seus f1's, si no s'indiquen factures agafarà les factures en esborrany.
+      script: python SOME_SRC/somenergia-scripts/invoicing/errors_in_invoice_data_pdf.py --invoice_names={invoice_names} --invoice_ids={invoice_ids} {output}
+      parameters:
+        invoice_names:
+          description: numeros de la factura FE separats per comes
+        invoice_ids:
+          description: id's de factures separats per comes
+        output:
+          type: FILEDOWN
+          extension: csv
+          filename: factures_f1s.csv
 
     get_extended_data_from_errors_in_lot:
       title: Obté llistat amb infomació extesa de les polisses facturades amb incidencia

@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import StringIO
 import csv
+import argparse
+import sys
 from datetime import datetime, timedelta
 from yamlns import namespace as ns
 from consolemsg import step, success
@@ -37,6 +39,7 @@ def line_add(data, name, period, quantity):
     value = data.get(key, 0)
     data[key] = value + quantity
 
+
 def line_max(data, name, period, quantity):
     key = name + period
     value = data.get(key, 0)
@@ -44,14 +47,63 @@ def line_max(data, name, period, quantity):
 
 
 def parse_arguments():
-    import argparse
     parser = argparse.ArgumentParser(description=__doc__)
+
+    parser.add_argument(
+        '--invoice_names',
+        dest='i_names',
+        help="llista de noms de les factures"
+    )
+
+    parser.add_argument(
+        '--invoice_ids',
+        dest='i_ids',
+        help="llista d'Id de les factures"
+    )
+
     parser.add_argument(
         'output',
         type=str,
         help="Output csv file",
         )
-    return parser.parse_args(namespace=ns())
+
+    args = parser.parse_args(namespace=ns())
+
+    if bool(args.i_names) and bool(args.i_ids):
+        parser.print_help()
+        sys.exit()
+
+    return args
+
+
+def search_invoice_by_ids(invoice_ids):
+    ret_ids = []
+    invoice_ids = [int(i) for i in invoice_ids.split(',')]
+    for invoice_id in invoice_ids:
+        step("Cerquem la factura...", invoice_id)
+        fact_ids = fact_obj.search([('id', '=', invoice_id)])
+        if len(fact_ids) == 0:
+            warn("Cap factura trobada amb aquest id!!")
+        if len(fact_ids) > 1:
+            warn("Multiples factures trobades!! {}", fact_ids)
+        ret_ids.append(fact_ids[0])
+        step("Factura amb ID {} existeix", fact_ids[0])
+    return ret_ids
+
+
+def search_invoice_by_names(invoice_numbers):
+    ret_ids = []
+    invoice_number_list = invoice_numbers.split(',')
+    for invoice_number in invoice_number_list:
+        step("Cerquem la factura...{}", invoice_number)
+        fact_ids = fact_obj.search([('number', '=', invoice_number)])
+        if len(fact_ids) == 0:
+            warn("Cap factura trobada amb aquest numero!!")
+        if len(fact_ids) > 1:
+            warn("Multiples factures trobades!! {}", fact_ids)
+        ret_ids.append(fact_ids[0])
+        step("Factura amb numero {} existeix {}", invoice_number, fact_ids[0])
+    return ret_ids
 
 
 def search_draft_invoices():
@@ -111,7 +163,16 @@ def extract_invoice_lines_data(fact, data):
                 if linia.name.startswith(p):
                     line_max(data, 'potencia_', p, linia.quantity)
                     break
-
+        elif linia.tipus == 'exces_potencia':
+            for p in periodes:
+                if linia.name.startswith(p):
+                    line_add(data, 'exces_potencia_', p, linia.quantity)
+                    break
+        elif linia.tipus == 'reactiva':
+            for p in periodes:
+                if linia.name.startswith(p):
+                    line_add(data, 'reactiva_', p, linia.quantity)
+                    break
     return data
 
 
@@ -120,11 +181,19 @@ def extract_invoice_data(fact):
 
 
 def extract_f1_data(f1_ids):
+    anulades = set()
     data = ns()
-    for f1_id in f1_ids:
+
+    for f1_id in sorted(f1_ids, reverse=True):
         f1 = f1_obj.browse(f1_id)
-        for fact in f1.liniafactura_id:
-            extract_invoice_lines_data(fact, data)
+
+        if f1.type_factura == 'R':
+            anulades.add(f1.codi_rectificada_anulada)
+
+        if f1.invoice_number_text not in anulades:
+            for fact in f1.liniafactura_id:
+                if fact.type == 'in_invoice':
+                    extract_invoice_lines_data(fact, data)
 
     return data
 
@@ -144,11 +213,15 @@ def compare_invoice_consumption(fact, f1_ids):
 
         return False, text
 
+    errors = []
     for key in sorted(fa_data.keys()):
         if abs(fa_data[key] - f1_data[key]) > TOLERANCE:
-            return False, 'Consum en {} excedeix la tolerancia, factura {} kWh vs f1 {} kWh'.format(key, fa_data[key], f1_data[key])
+            errors.append('Consum en {} excedeix la tolerancia, factura {} kWh vs f1 {} kWh'.format(key, fa_data[key], f1_data[key]))
 
-    return True, "Ok"
+    if not errors:
+        return True, "Ok"
+    else:
+        return False, "\n".join(errors)
 
 
 def process_draft_invoices(fact_ids):
@@ -227,9 +300,17 @@ def build_repport(report, filename):
 
 
 if __name__ == '__main__':
-    filename = parse_arguments().output
 
-    fact_ids = search_draft_invoices()
+    args = parse_arguments()
+    filename = args.output
+
+    fact_ids = []
+    if args.i_names:
+        fact_ids.extend(search_invoice_by_names(args.i_names))
+    elif args.i_ids:
+        fact_ids.extend(search_invoice_by_ids(args.i_ids))
+    else:
+        fact_ids.extend(search_draft_invoices())
     step("Factures trobades: {}", len(fact_ids))
 
     data, f1, cmp, ok = process_draft_invoices(fact_ids)
