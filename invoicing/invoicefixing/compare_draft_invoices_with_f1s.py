@@ -37,6 +37,11 @@ def line_add(data, name, period, quantity):
     value = data.get(key, 0)
     data[key] = value + quantity
 
+def line_max(data, name, period, quantity):
+    key = name + period
+    value = data.get(key, 0)
+    data[key] = max(value, quantity)
+
 
 def parse_arguments():
     import argparse
@@ -99,12 +104,12 @@ def extract_invoice_lines_data(fact, data):
         elif linia.tipus == 'generacio':
             for p in periodes:
                 if linia.name.startswith(p):
-                    line_add(data, 'energia_sortint_', p, linia.quantity)
+                    line_add(data, 'energia_sortint_', p, abs(linia.quantity))
                     break
         elif linia.tipus == 'potencia':
             for p in periodes:
                 if linia.name.startswith(p):
-                    line_add(data, 'potencia_', p, linia.quantity)
+                    line_max(data, 'potencia_', p, linia.quantity)
                     break
 
     return data
@@ -128,13 +133,20 @@ def compare_invoice_consumption(fact, f1_ids):
     fa_data = extract_invoice_data(fact)
     f1_data = extract_f1_data(f1_ids)
 
-
     if set(fa_data.keys()) != set(f1_data.keys()):
-        return False, 'Periodes incongruents!!'
+        text = 'Periodes incongruents!!'
+        faf1 = set(fa_data.keys()) - set(f1_data.keys())
+        f1fa = set(f1_data.keys()) - set(fa_data.keys())
+        if faf1:
+            text += " linies a la factura que no estan al f1: {}".format(",".join(sorted(faf1)))
+        if f1fa:
+            text += " linies al f1 que no estan a la factura: {}".format(",".join(sorted(f1fa)))
 
-    for key in fa_data.keys():
+        return False, text
+
+    for key in sorted(fa_data.keys()):
         if abs(fa_data[key] - f1_data[key]) > TOLERANCE:
-            return False, 'Consum en {} excedeix la tolerancia, factura {} kWh vs f1 {} kWh'.format(TOLERANCE, fa_data[key], f1_data[key])
+            return False, 'Consum en {} excedeix la tolerancia, factura {} kWh vs f1 {} kWh'.format(key, fa_data[key], f1_data[key])
 
     return True, "Ok"
 
@@ -205,7 +217,7 @@ def build_repport(report, filename):
 
     csv_doc = StringIO.StringIO()
     writer_report = csv.writer(csv_doc, delimiter=';')
-    writer_report.writerow(header)    
+    writer_report.writerow(header)
     for data in report:
         writer_report.writerow(report_process(data))
 
