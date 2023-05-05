@@ -340,7 +340,7 @@ invoicefixing:
     check_invoice_f1_consume:
       title: Comprovador de consums de factures i les seus F1
       description: Script per comprovar el consum de factures i els seus f1's, si no s'indiquen factures agafarà les factures en esborrany.
-      script: python SOME_SRC/somenergia-scripts/invoicing/errors_in_invoice_data_pdf.py --invoice_names={invoice_names} --invoice_ids={invoice_ids} {output}
+      script: python SOME_SRC/somenergia-scripts/invoicing/invoicefixing/compare_draft_invoices_with_f1s.py --invoice_names={invoice_names} --invoice_ids={invoice_ids} {output}
       parameters:
         invoice_names:
           description: numeros de la factura FE separats per comes
