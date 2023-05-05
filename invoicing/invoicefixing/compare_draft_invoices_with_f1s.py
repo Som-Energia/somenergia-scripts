@@ -11,7 +11,11 @@ from validacio_eines import lazyOOOP
 from tqdm import tqdm
 
 periodes = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6']
-TOLERANCE = 1.0
+TOLERANCE = {
+    'kWh': 1.0,
+    'kW/dia': 1.0,
+    'eur': 0.01,
+}
 
 Obj = lazyOOOP()
 step("Connectat al ERP")
@@ -34,16 +38,20 @@ def date_minus(day, minus_days=1):
     return str_from_date(pre_day)
 
 
-def line_add(data, name, period, quantity):
+def line_add(data, name, period, quantity, unit):
     key = name + period
-    value = data.get(key, 0)
-    data[key] = value + quantity
+    info = data.get(key, ns({'value': 0, 'unit': unit}))
+    data[key] = info
+    info.value = info.value + quantity
+    info.unit = unit
 
 
-def line_max(data, name, period, quantity):
+def line_max(data, name, period, quantity, unit):
     key = name + period
-    value = data.get(key, 0)
-    data[key] = max(value, quantity)
+    info = data.get(key, ns({'value': 0, 'unit': unit}))
+    data[key] = info
+    info.value = max(info.value, quantity)
+    info.unit = unit
 
 
 def parse_arguments():
@@ -118,6 +126,7 @@ def search_draft_invoices():
 def find_f1_in_invoice_dates_ordered(fact):
     return f1_obj.search([
         ('import_phase', '>', 30),
+        ('cups_id', '=', fact.polissa_id.cups.id),
         ('polissa_id', '=', fact.polissa_id.id),
         ('fecha_factura_desde', '>=', date_minus(fact.data_inici, 1)),
         ('fecha_factura_hasta', '<=', fact.data_final),
@@ -146,38 +155,46 @@ def get_and_validate_appropiate_f1(f1_ids):
     return False, "sortida no esperada"
 
 
-def extract_invoice_lines_data(fact, data):
+def extract_invoice_lines_data(fact, is_inv, data):
     for linia in fact.linia_ids:
+        p = linia.name[0:2]
+
         if linia.tipus == 'energia':
-            for p in periodes:
-                if linia.name.startswith(p):
-                    line_add(data, 'energia_entrant_', p, linia.quantity)
-                    break
+            if p in periodes:
+                line_add(data, 'energia_entrant_', p, linia.quantity, 'kWh')
+
         elif linia.tipus == 'generacio':
-            for p in periodes:
-                if linia.name.startswith(p):
-                    line_add(data, 'energia_sortint_', p, abs(linia.quantity))
-                    break
+            if p in periodes:
+                line_add(data, 'energia_sortint_', p, abs(linia.quantity), 'kWh')
+
         elif linia.tipus == 'potencia':
-            for p in periodes:
-                if linia.name.startswith(p):
-                    line_max(data, 'potencia_', p, linia.quantity)
-                    break
-        elif linia.tipus == 'exces_potencia':
-            for p in periodes:
-                if linia.name.startswith(p):
-                    line_add(data, 'exces_potencia_', p, linia.quantity)
-                    break
-        elif linia.tipus == 'reactiva':
-            for p in periodes:
-                if linia.name.startswith(p):
-                    line_add(data, 'reactiva_', p, linia.quantity)
-                    break
+            if p in periodes:
+                line_max(data, 'potencia_', p, linia.quantity, 'kW/dia')
+
+        elif is_inv and linia.tipus == 'exces_potencia':
+            if p in periodes:
+                line_add(data, 'exces_potencia', '', linia.price_subtotal, 'eur')
+
+        elif not is_inv and linia.tipus == 'subtotal_xml_exc':
+            line_add(data, 'exces_potencia', '', linia.price_subtotal, 'eur')
+
+        elif is_inv and linia.tipus == 'reactiva':
+            if p in periodes:
+                line_add(data, 'reactiva', '', linia.price_subtotal, 'eur')
+        elif not is_inv and linia.tipus == 'subtotal_xml_rea':
+            line_add(data, 'reactiva', '', linia.price_subtotal, 'eur')
+
+        elif is_inv and linia.tipus == 'lloguer':
+            line_add(data, 'lloguer', '', linia.price_subtotal, 'eur')
+
+        elif not is_inv and linia.tipus == 'subtotal_xml_ren':
+            line_add(data, 'lloguer', '', linia.price_subtotal, 'eur')
+
     return data
 
 
 def extract_invoice_data(fact):
-    return extract_invoice_lines_data(fact, ns())
+    return extract_invoice_lines_data(fact, True, ns())
 
 
 def extract_f1_data(f1_ids):
@@ -193,7 +210,7 @@ def extract_f1_data(f1_ids):
         if f1.invoice_number_text not in anulades:
             for fact in f1.liniafactura_id:
                 if fact.type == 'in_invoice':
-                    extract_invoice_lines_data(fact, data)
+                    extract_invoice_lines_data(fact, False, data)
 
     return data
 
@@ -215,8 +232,13 @@ def compare_invoice_consumption(fact, f1_ids):
 
     errors = []
     for key in sorted(fa_data.keys()):
-        if abs(fa_data[key] - f1_data[key]) > TOLERANCE:
-            errors.append('Consum en {} excedeix la tolerancia, factura {} kWh vs f1 {} kWh'.format(key, fa_data[key], f1_data[key]))
+
+        if fa_data[key].unit != f1_data[key].unit:
+            errors.append('Comparant unitats diferents {} !!, factura {} {} vs f1 {} {}'.format(key, fa_data[key].value, fa_data[key].unit, f1_data[key].value, f1_data[key].unit))
+
+        tolerance = TOLERANCE[fa_data[key].unit]
+        if abs(fa_data[key].value - f1_data[key].value) > tolerance:
+            errors.append('Consum en {} excedeix la tolerancia, factura {} {} vs f1 {} {}'.format(key, fa_data[key].value, fa_data[key].unit, f1_data[key].value, f1_data[key].unit))
 
     if not errors:
         return True, "Ok"
