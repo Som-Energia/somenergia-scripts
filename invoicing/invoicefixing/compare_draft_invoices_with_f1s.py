@@ -6,7 +6,7 @@ import argparse
 import sys
 from datetime import datetime, timedelta
 from yamlns import namespace as ns
-from consolemsg import step, success
+from consolemsg import step, success, warn
 from validacio_eines import lazyOOOP
 from tqdm import tqdm
 
