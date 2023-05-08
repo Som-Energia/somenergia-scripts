@@ -13,7 +13,7 @@ O = Client(**configdb.erppeek)
 # script.py inscripcions.csv
 DESC_MANAGE = { "ca_ES" : 'Despeses de Som Energia per la organització i gestió de la compra conjunta',
         "es_ES" : 'Gastos de Som Energia para la organización y gestión de la compra conjunta'}
-DESC_ADVANCE = { "ca_ES" : '1r pagament a compte Enginyeria', 
+DESC_ADVANCE = { "ca_ES" : '1r pagament a compte Enginyeria',
         "es_ES" : '1r pago a cuenta de la Ingenieria'}
 
 class InvoiceMaker:
@@ -27,7 +27,7 @@ class InvoiceMaker:
             print "La inscripció amb DNI ", dni, " no existeix al ERP, no s'ha fet factura"
             return None
 
-        date_invoice = str(date.today())        
+        date_invoice = str(date.today())
         account_id = self.O.AccountAccount.search([('code','=','430000000000')])
         journal_id = self.O.AccountJournal.search([('code','=','VENTA')])
         payment_type_id = self.O.PaymentType.search([('code','=','TRANSFERENCIA_CSB')])
@@ -47,7 +47,7 @@ class InvoiceMaker:
 
     def getValsLine(self, invoice_id, account_name, line_name, price_unit):
         account_id = self.O.AccountAccount.search([('code','=',account_name)])
-        tax_id = self.O.AccountTax.search([('name','=','IVA 21%')])
+        tax_id = self.O.AccountTax.search([('name','=','IVA 21% (Vendes)')])
         line = dict(
             invoice_id = invoice_id,
             name = line_name,
