@@ -20,6 +20,7 @@ TOLERANCE = {
 Obj = lazyOOOP()
 step("Connectat al ERP")
 
+pol_obj = Obj.GiscedataPolissa
 fact_obj = Obj.GiscedataFacturacioFactura
 f1_obj = Obj.GiscedataFacturacioImportacioLinia
 
@@ -56,6 +57,12 @@ def line_max(data, name, period, quantity, unit):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description=__doc__)
+
+    parser.add_argument(
+        '--file',
+        dest='csv_file',
+        help="csv amb el nom de les pòlisses per cercar les seves fatures en esborrany (a la primera columna i sense capçalera)"
+    )
 
     parser.add_argument(
         '--invoice_names',
@@ -112,6 +119,45 @@ def search_invoice_by_names(invoice_numbers):
         ret_ids.append(fact_ids[0])
         step("Factura amb numero {} existeix {}", invoice_number, fact_ids[0])
     return ret_ids
+
+
+def read_polissa_names(csv_file):
+    first_id = pol_obj.search([], limit=1)[0]
+    first_name = pol_obj.read(first_id, ['name'])['name']
+    name_len = len(first_name)
+    with open(csv_file, 'rb') as f:
+        reader = csv.reader(f)
+        csv_content = [row[0].zfill(name_len) for row in reader if row[0]]
+    return list(set(csv_content))
+
+
+def get_polissa_ids(polissa_names):
+    ret_ids = []
+    for polissa_name in polissa_names:
+        step("Cerquem la polissa...", polissa_name)
+        pol_ids = pol_obj.search([('name', '=', polissa_name)], context={'active_test': False})
+        if len(pol_ids) == 0:
+            warn("Cap polissa trobada amb aquest id!!")
+        elif len(pol_ids) > 1:
+            warn("Multiples polisses trobades!! {}", pol_ids)
+        else:
+            ret_ids.append(pol_ids[0])
+            step("Polissa amb ID {} existeix", pol_ids[0])
+    return ret_ids
+
+
+def search_draft_invoices_by_csv_file(csv_file):
+    pol_names = read_polissa_names(csv_file)
+    pol_ids = get_polissa_ids(pol_names)
+    if not pol_ids:
+        return []
+    fact_ids = fact_obj.search([
+        ('state', '=', 'draft'),
+        ('polissa_id', 'in', pol_ids),
+        ('tipo_rectificadora', '=', 'N'),
+        ('type', 'in', ['out_refund', 'out_invoice']),
+        ], order='polissa_id ASC, data_inici ASC')
+    return fact_ids
 
 
 def search_draft_invoices():
@@ -322,7 +368,6 @@ def build_repport(report, filename):
 
 
 if __name__ == '__main__':
-
     args = parse_arguments()
     filename = args.output
 
@@ -331,6 +376,8 @@ if __name__ == '__main__':
         fact_ids.extend(search_invoice_by_names(args.i_names))
     elif args.i_ids:
         fact_ids.extend(search_invoice_by_ids(args.i_ids))
+    elif args.csv_file:
+        fact_ids.extend(search_draft_invoices_by_csv_file(args.csv_file))
     else:
         fact_ids.extend(search_draft_invoices())
     step("Factures trobades: {}", len(fact_ids))
