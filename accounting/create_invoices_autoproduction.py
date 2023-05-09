@@ -58,6 +58,17 @@ class InvoiceMaker:
         )
         return line
 
+    def getValsLineRounding(self, invoice_id, account_name, line_name, price_unit):
+        account_id = self.O.AccountAccount.search([('code','=',account_name)])
+        line = dict(
+            invoice_id = invoice_id,
+            name = line_name,
+            quantity = -1,
+            price_unit = price_unit,
+            account_id = account_id[0],
+        )
+        return line
+
     def getValsLine_without_tax(self, invoice_id, account_name, line_name, price_unit):
         account_id = self.O.AccountAccount.search([('code','=',account_name)])
         line = dict(
@@ -78,6 +89,8 @@ class InvoiceMaker:
         valsLineManage = self.getValsLine(invoice.id, '705000000100',
                 DESC_MANAGE[partner_lang], 82.65)
         invoice_line_services = self.O.AccountInvoiceLine.create(valsLineManage)
+        valsLineRounding = self.getValsLineRounding(invoice.id, '626000000005', 'Ajust factura', 0.01)
+        self.O.AccountInvoiceLine.create(valsLineRounding)
         #valsLineAdvance = self.getValsLine_without_tax(invoice.id, '419000000001', DESC_ADVANCE[partner_lang], 100.00)
         #invoice_line_services = self.O.AccountInvoiceLine.create(valsLineAdvance)
         self.O.AccountInvoice.button_reset_taxes([invoice.id])
