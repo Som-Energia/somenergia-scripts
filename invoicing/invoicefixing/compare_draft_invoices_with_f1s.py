@@ -61,13 +61,31 @@ def parse_arguments():
     parser.add_argument(
         '--file',
         dest='csv_file',
-        help="csv amb el nom de les pòlisses per cercar les seves fatures (a la primera columna i sense capçalera)"
+        help="csv amb el nom de les pòlisses per cercar les seves factures (a la primera columna i sense capçalera) requereix data --from"
     )
 
     parser.add_argument(
-        '--file_type',
-        dest='csv_type',
-        help="tipus de csv amb nom de pòlisses, amb columna d'inici, columna de final o sense cap"
+        '--polissa_names',
+        dest='p_names',
+        help="nùmeros de les pòlisses per cercar les seves factures (separats per comes) requereix data --from"
+    )
+
+    parser.add_argument(
+        '--from',
+        dest='date_from',
+        help="data d'inici per cercar factures de pòlisses, obligatiori si s'especifica --file o --polissa_names"
+    )
+
+    parser.add_argument(
+        '--to',
+        dest='date_to',
+        help="data de fi per cercar factures de pòlisses"
+    )
+
+    parser.add_argument(
+        '--type',
+        dest='inv_type',
+        help="tipus de factures a cercar (draft) només en esborrany, (all) totes"
     )
 
     parser.add_argument(
@@ -91,6 +109,16 @@ def parse_arguments():
     args = parser.parse_args(namespace=ns())
 
     if bool(args.i_names) and bool(args.i_ids):
+        parser.print_help()
+        sys.exit()
+
+    if args.csv_file and not args.date_from:
+        warn("Falta data al parametre --from")
+        parser.print_help()
+        sys.exit()
+
+    if args.p_names and not args.date_from:
+        warn("Falta data al parametre --from")
         parser.print_help()
         sys.exit()
 
@@ -138,7 +166,7 @@ def try_get_date(text):
         return None
 
 
-def get_polissa_data(csv_file, type):
+def get_polissa_data(csv_file):
     ret = {}
 
     first_id = pol_obj.search([], limit=1)[0]
@@ -165,75 +193,70 @@ def get_polissa_data(csv_file, type):
             else:
                 step("Polissa amb nom {} existeix, ID: {}", pol_name, pol_ids[0])
 
-            pol_data = {'name': pol_name}
-            ret[pol_ids[0]] = pol_data
-
-            if type in ('ini', 'ini_end'):
-                date = try_get_date(row[1])
-                if date:
-                    pol_data['ini'] = date
-                else:
-                    warn("Error extraient data d'inici >{}<", row[1])
-
-            if type == 'ini_end':
-                date = try_get_date(row[2])
-                if date:
-                    pol_data['end'] = date
-                else:
-                    warn("Error extraient data final >{}<", row[2])
+            ret[pol_ids[0]] = pol_name
 
     return ret
 
 
-def search_draft_invoices_by_csv_file(csv_file):
-    pols = get_polissa_data(csv_file, 'draft')
-    if not pols:
-        return []
+def get_polissa_from_names(raw_pol_names):
+    ret = {}
 
+    first_id = pol_obj.search([], limit=1)[0]
+    first_name = pol_obj.read(first_id, ['name'])['name']
+    name_len = len(first_name)
+    pol_names = raw_pol_names.split(',')
+    for row in pol_names:
+        if not row:
+            continue
+
+        pol_name = row.zfill(name_len)
+
+        step("Cerquem la polissa...", pol_name)
+        pol_ids = pol_obj.search([('name', '=', pol_name)], context={'active_test': False})
+        if len(pol_ids) == 0:
+            warn("Cap polissa trobada amb aquest nom!! {}", pol_name)
+            continue
+        elif len(pol_ids) > 1:
+            warn("Multiples polisses trobades per {}!! IDS: {}", pol_name, pol_ids)
+        else:
+            step("Polissa amb nom {} existeix, ID: {}", pol_name, pol_ids[0])
+
+        ret[pol_ids[0]] = pol_name
+
+    return ret
+
+
+def search_invoices_from_pol_set(pols, date_from, date_to, inv_type):
     fact_ids = []
     for pol_id in sorted(pols.keys()):
-        fact_ids.extend(fact_obj.search([
-            ('state', '=', 'draft'),
+        domain = [
             ('polissa_id', '=', pol_id),
             ('tipo_rectificadora', '=', 'N'),
             ('type', 'in', ['out_refund', 'out_invoice']),
-            ], order='data_inici ASC'))
+        ]
+        if inv_type == 'draft':
+            domain.append(('state', '=', 'draft'))
+        if date_from:
+            domain.append(('data_inici', '>=', date_from))
+        if date_to:
+            domain.append(('data_final', '<=', date_to))
+        fact_ids.extend(fact_obj.search(domain, order='data_inici ASC'))
+
     return fact_ids
 
 
-def search_invoices_by_csv_file_ini(csv_file):
-    pols = get_polissa_data(csv_file, 'ini')
+def search_invoices_by_csv_file(csv_file, date_from, date_to, inv_type):
+    pols = get_polissa_data(csv_file)
     if not pols:
         return []
-
-    fact_ids = []
-    for pol_id in sorted(pols.keys()):
-        pol = pols[pol_id]
-        fact_ids.extend(fact_obj.search([
-            ('polissa_id', '=', pol_id),
-            ('data_inici', '>=', pol.get('ini')),
-            ('tipo_rectificadora', '=', 'N'),
-            ('type', 'in', ['out_refund', 'out_invoice']),
-            ], order='data_inici ASC'))
-    return fact_ids
+    return search_invoices_from_pol_set(pols, date_from, date_to, inv_type)
 
 
-def search_invoices_by_csv_file_ini_end(csv_file):
-    pols = get_polissa_data(csv_file, 'ini_end')
+def search_invoices_by_polissa_names(pol_names, date_from, date_to, inv_type):
+    pols = get_polissa_from_names(pol_names)
     if not pols:
         return []
-
-    fact_ids = []
-    for pol_id in sorted(pols.keys()):
-        pol = pols[pol_id]
-        fact_ids.extend(fact_obj.search([
-            ('polissa_id', '=', pol_id),
-            ('data_inici', '>=', pol.get('ini')),
-            ('data_final', '<=', pol.get('end')),
-            ('tipo_rectificadora', '=', 'N'),
-            ('type', 'in', ['out_refund', 'out_invoice']),
-            ], order='data_inici ASC'))
-    return fact_ids
+    return search_invoices_from_pol_set(pols, date_from, date_to, inv_type)
 
 
 def search_draft_invoices():
@@ -454,12 +477,10 @@ if __name__ == '__main__':
         fact_ids.extend(search_invoice_by_names(args.i_names))
     elif args.i_ids:
         fact_ids.extend(search_invoice_by_ids(args.i_ids))
-    elif args.csv_file and args.csv_type == 'none':
-        fact_ids.extend(search_draft_invoices_by_csv_file(args.csv_file))
-    elif args.csv_file and args.csv_type == 'ini':
-        fact_ids.extend(search_invoices_by_csv_file_ini(args.csv_file))
-    elif args.csv_file and args.csv_type == 'ini_end':
-        fact_ids.extend(search_invoices_by_csv_file_ini_end(args.csv_file))
+    elif args.csv_file and args.date_from:
+        fact_ids.extend(search_invoices_by_csv_file(args.csv_file, args.date_from, args.date_to, args.inv_type))
+    elif args.p_names and args.date_from:
+        fact_ids.extend(search_invoices_by_polissa_names(args.p_names, args.date_from, args.date_to, args.inv_type))
     else:
         fact_ids.extend(search_draft_invoices())
     step("Factures trobades: {}", len(fact_ids))
