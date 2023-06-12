@@ -340,12 +340,27 @@ invoicefixing:
     check_invoice_f1_consume:
       title: Comprovador de consums de factures i les seus F1
       description: Script per comprovar el consum de factures i els seus f1's, si no s'indiquen factures agafarà les factures en esborrany.
-      script: python SOME_SRC/somenergia-scripts/invoicing/invoicefixing/compare_draft_invoices_with_f1s.py --invoice_names={invoice_names} --invoice_ids={invoice_ids} {output}
+      script: python SOME_SRC/somenergia-scripts/invoicing/invoicefixing/compare_draft_invoices_with_f1s.py --invoice_names={invoice_names} --invoice_ids={invoice_ids} --polissa_names={polissa_names} --from={date_from} --to={date_to} --type={invoice_type} {output}
       parameters:
         invoice_names:
           description: numeros de la factura FE separats per comes
         invoice_ids:
           description: id's de factures separats per comes
+        polissa_names:
+          description: números de polissaes separats per comes
+        date_from:
+          type: date
+          description: "Data d'inici per cercar factures"
+        date_to:
+          type: date
+          description: "Data d e fi per cercar factures (fins avui si no s'especifica)"
+        invoice_type:
+          description: "Tipus de factures a cercar"
+          type: enum
+          options:
+            Nomes factures en esborrany: draft
+            Totes les factures: all
+          default: all
         output:
           type: FILEDOWN
           extension: csv
@@ -354,19 +369,24 @@ invoicefixing:
     check_invoice_f1_consume_csv:
       title: Comprovador de consums de factures i les seus F1 a partir de csv de polisses
       description: Script per comprovar el consum de factures i els seus f1's, si no s'indiquen factures agafarà les factures en esborrany.
-      script: python SOME_SRC/somenergia-scripts/invoicing/invoicefixing/compare_draft_invoices_with_f1s.py --file {csv_file} --file_type {csv_type} {output}
+      script: python SOME_SRC/somenergia-scripts/invoicing/invoicefixing/compare_draft_invoices_with_f1s.py --file={csv_file} --from={date_from} --to={date_to} --type={invoice_type} {output}
       parameters:
         csv_file:
           type: FILE
           description: "CSV amb el nom de les pòlisses a la primera columna, sense capçalera"
-        csv_type:
-          description: "El csv incou dates per les pòlisses? (format YYYY-MM-DD)"
+        date_from:
+          type: date
+          description: "Data d'inici per cercar factures"
+        date_to:
+          type: date
+          description: "Data d e fi per cercar factures (fins avui si no s'especifica)"
+        invoice_type:
+          description: "Tipus de factures a cercar"
           type: enum
           options:
-            No, cerca nomes factures en esborrany: none
-            Si, data inici: ini
-            Si, data d'inici i final: ini_end
-          default: draft
+            Nomes factures en esborrany: draft
+            Totes les factures: all
+          default: all
         output:
           type: FILEDOWN
           extension: csv
