@@ -231,7 +231,6 @@ def search_invoices_from_pol_set(pols, date_from, date_to, inv_type):
     for pol_id in sorted(pols.keys()):
         domain = [
             ('polissa_id', '=', pol_id),
-            ('tipo_rectificadora', '=', 'N'),
             ('type', 'in', ['out_refund', 'out_invoice']),
         ]
         if inv_type == 'draft':
@@ -262,7 +261,6 @@ def search_invoices_by_polissa_names(pol_names, date_from, date_to, inv_type):
 def search_draft_invoices():
     fact_ids = fact_obj.search([
         ('state', '=', 'draft'),
-        ('tipo_rectificadora', '=', 'N'),
         ('type', 'in', ['out_refund', 'out_invoice']),
         ], order='polissa_id ASC, data_inici ASC')
     return fact_ids
@@ -271,6 +269,16 @@ def search_draft_invoices():
 def find_f1_in_invoice_dates_ordered(fact):
     return f1_obj.search([
         ('import_phase', '>', 30),
+        ('cups_id', '=', fact.polissa_id.cups.id),
+        ('polissa_id', '=', fact.polissa_id.id),
+        ('fecha_factura_desde', '>=', date_minus(fact.data_inici, 1)),
+        ('fecha_factura_hasta', '<=', fact.data_final),
+    ], order='fecha_factura ASC')
+
+
+def find_error_f1_in_invoice_dates_ordered(fact):
+    return f1_obj.search([
+        ('import_phase', '<=', 30),
         ('cups_id', '=', fact.polissa_id.cups.id),
         ('polissa_id', '=', fact.polissa_id.id),
         ('fecha_factura_desde', '>=', date_minus(fact.data_inici, 1)),
@@ -391,7 +399,69 @@ def compare_invoice_consumption(fact, f1_ids):
         return False, "\n".join(errors)
 
 
-def process_draft_invoices(fact_ids):
+def get_f1_dates(f1_ids):
+    datas = []
+    for f1_id in f1_ids:
+        data = f1_obj.read(f1_id, ['fecha_factura_desde', 'fecha_factura_hasta'])
+        if 'fecha_factura_desde' in data and \
+           data['fecha_factura_desde'] and \
+           'fecha_factura_hasta' in data and \
+           data['fecha_factura_hasta']:
+            datas.append((data['fecha_factura_desde'], data['fecha_factura_hasta']))
+    return datas
+
+
+def get_next(tlist, end):
+    for counter, item in enumerate(tlist):
+        if item[0] == end:
+            return counter
+    return None
+
+
+def compare_dates(fact, f1_ids, f1_error_ids):
+    dates = []
+    dates.extend(get_f1_dates(f1_ids))
+    dates.extend(get_f1_dates(f1_error_ids))
+
+    if not dates:
+        return False, "F1's sense dates"
+
+    if len(dates) != len(f1_ids) + len(f1_error_ids):
+        return False, "Algún F1 sense dates dates {} != f1 {} + f1 err {}".format(len(dates), len(f1_ids), len(f1_error_ids))
+
+    dates = sorted(dates)
+    start = dates[0][0]
+    lines = 0
+    for data in dates:
+        if data[0] < start:
+            start = data[0]
+        elif data[0] == start:
+            lines += 1
+
+    f_data_inici_1 = date_minus(fact.data_inici)
+    if start != f_data_inici_1:
+        return False, "Data d'inici de factura i f1s incorrectes f1 {} +1 vs fact {}, lines {}".format(start, fact.data_inici, lines)
+
+    item = dates.pop(0)
+    while dates:
+        idx = get_next(dates, item[1])
+        if idx is None:
+            if item[1] != fact.data_final:
+                return False, "Data final de factura i f1s diferents f1 {} vs fact {}, lines {}".format(item[1], fact.data_final, lines)
+            lines -= 1
+            idx = 0
+            if dates[idx][0] != f_data_inici_1:
+                return False, "Data d'inici de factura i f1s incorrectes f1 {} +1 vs fact {}, lines {}".format(dates[idx][0], fact.data_inici, lines)
+        item = dates.pop(idx)
+
+    if item[1] != fact.data_final:
+        return False, "Data final de factura i f1s diferents f1 {} vs fact {}, lines {}".format(item[1], fact.data_final, lines)
+
+    return True, "Ok"
+
+
+def process_invoices(fact_ids):
+    dates_error_counter = 0
     f1_error_counter = 0
     compare_error_counter = 0
     ok_counter = 0
@@ -408,21 +478,31 @@ def process_draft_invoices(fact_ids):
         f1_ids = find_f1_in_invoice_dates_ordered(fact)
         data['f1_ids'] = f1_ids
 
-        ok, error = get_and_validate_appropiate_f1(f1_ids)
-        if not ok:
+        f1_error_ids = find_error_f1_in_invoice_dates_ordered(fact)
+        data['f1_error_ids'] = f1_error_ids
+
+        ok1, error = get_and_validate_appropiate_f1(f1_ids)
+        if not ok1:
             data['f1_error'] = error
             f1_error_counter += 1
             continue
 
-        ok, error = compare_invoice_consumption(fact, f1_ids)
-        if not ok:
+        ok2, error = compare_dates(fact, f1_ids, f1_error_ids)
+        if not ok2:
+            data['dates_error'] = error
+            dates_error_counter += 1
+            continue
+
+        ok3, error = compare_invoice_consumption(fact, f1_ids)
+        if not ok3:
             data['cmp_error'] = error
             compare_error_counter += 1
             continue
 
-        ok_counter += 1
+        if ok1 and ok2 and ok3:
+            ok_counter += 1
 
-    return report, f1_error_counter, compare_error_counter, ok_counter
+    return report, dates_error_counter, f1_error_counter, compare_error_counter, ok_counter
 
 
 def report_header():
@@ -435,7 +515,9 @@ def report_header():
         'data_final',
         'ok',
         'f1 trobats',
+        'f1 erronis trobats',
         'error f1',
+        'error dates',
         'error consum']
 
 
@@ -447,9 +529,11 @@ def report_process(data):
         data.fact.polissa_id.tarifa_codi,
         data.fact.data_inici,
         data.fact.data_final,
-        'error' if 'f1_error' in data or 'cmp_error' in data else 'ok',
+        'error' if 'f1_error' in data or 'cmp_error' in data or 'dates_error' in data else 'ok',
         len(data.f1_ids),
+        len(data.f1_error_ids),
         data.get('f1_error', ''),
+        data.get('dates_error', ''),
         data.get('cmp_error', ''),
     ]
 
@@ -485,9 +569,10 @@ if __name__ == '__main__':
         fact_ids.extend(search_draft_invoices())
     step("Factures trobades: {}", len(fact_ids))
 
-    data, f1, cmp, ok = process_draft_invoices(fact_ids)
+    data, dat, f1, cmp, ok = process_invoices(fact_ids)
     step("Factures processades: .. {}", len(data))
     step(" Error d'f1: ........... {}", f1)
+    step(" Error dates: .......... {}", dat)
     step(" Error de consums: ..... {}", cmp)
     step(" Ok: ................... {}", ok)
 
