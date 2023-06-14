@@ -40,19 +40,21 @@ def date_minus(day, minus_days=1):
 
 
 def line_add(data, name, period, quantity, unit):
-    key = name + period
-    info = data.get(key, ns({'value': 0, 'unit': unit}))
-    data[key] = info
-    info.value = info.value + quantity
-    info.unit = unit
+    if quantity:
+        key = name + period
+        info = data.get(key, ns({'value': 0, 'unit': unit}))
+        data[key] = info
+        info.value = info.value + quantity
+        info.unit = unit
 
 
 def line_max(data, name, period, quantity, unit):
-    key = name + period
-    info = data.get(key, ns({'value': 0, 'unit': unit}))
-    data[key] = info
-    info.value = max(info.value, quantity)
-    info.unit = unit
+    if quantity:
+        key = name + period
+        info = data.get(key, ns({'value': 0, 'unit': unit}))
+        data[key] = info
+        info.value = max(info.value, quantity)
+        info.unit = unit
 
 
 def parse_arguments():
@@ -276,6 +278,46 @@ def find_f1_in_invoice_dates_ordered(fact):
     ], order='fecha_factura ASC')
 
 
+def find_f1_in_invoice_dates_ordered_no_refactured(fact):
+    f1r_ids = f1_obj.search([
+        ('import_phase', '>', 30),
+        ('type_factura', '=', 'R'),
+        ('cups_id', '=', fact.polissa_id.cups.id),
+        ('polissa_id', '=', fact.polissa_id.id),
+        ('fecha_factura_desde', '>=', date_minus(fact.data_inici, 1)),
+        ('fecha_factura_hasta', '<=', fact.data_final),
+    ], order='fecha_factura ASC')
+
+    domain = [
+        ('import_phase', '>', 30),
+        ('cups_id', '=', fact.polissa_id.cups.id),
+        ('polissa_id', '=', fact.polissa_id.id),
+        ('fecha_factura_desde', '>=', date_minus(fact.data_inici, 1)),
+        ('fecha_factura_hasta', '<=', fact.data_final),
+    ]
+    if f1r_ids:
+        rs = f1_obj.read(f1r_ids, ['factura_rectificada'])
+        r_names = [r['factura_rectificada'] for r in rs]
+        domain.append(('invoice_number_text', 'not in', r_names))
+
+    return f1_obj.search(domain, order='fecha_factura ASC')
+
+
+def get_all_f1_types(fact):
+    f1_ids = f1_obj.search([
+        ('cups_id', '=', fact.polissa_id.cups.id),
+        ('polissa_id', '=', fact.polissa_id.id),
+        ('fecha_factura_desde', '>=', date_minus(fact.data_inici, 1)),
+        ('fecha_factura_hasta', '<=', fact.data_final),
+    ], order='fecha_factura ASC')
+
+    if not f1_ids:
+        return ''
+
+    f1_data = f1_obj.read(f1_ids, ['type_factura'])
+    return "".join([f1['type_factura'] for f1 in reversed(f1_data)])
+
+
 def find_error_f1_in_invoice_dates_ordered(fact):
     return f1_obj.search([
         ('import_phase', '<=', 30),
@@ -481,6 +523,8 @@ def process_invoices(fact_ids):
         f1_error_ids = find_error_f1_in_invoice_dates_ordered(fact)
         data['f1_error_ids'] = f1_error_ids
 
+        data['f1_types'] = get_all_f1_types(fact)
+
         ok1, error = get_and_validate_appropiate_f1(f1_ids)
         if not ok1:
             data['f1_error'] = error
@@ -493,6 +537,7 @@ def process_invoices(fact_ids):
             dates_error_counter += 1
             continue
 
+        f1_ids = find_f1_in_invoice_dates_ordered_no_refactured(fact)
         ok3, error = compare_invoice_consumption(fact, f1_ids)
         if not ok3:
             data['cmp_error'] = error
@@ -516,6 +561,7 @@ def report_header():
         'ok',
         'f1 trobats',
         'f1 erronis trobats',
+        'tipus f1',
         'error f1',
         'error dates',
         'error consum']
@@ -532,6 +578,7 @@ def report_process(data):
         'error' if 'f1_error' in data or 'cmp_error' in data or 'dates_error' in data else 'ok',
         len(data.f1_ids),
         len(data.f1_error_ids),
+        data.get('f1_types', ''),
         data.get('f1_error', ''),
         data.get('dates_error', ''),
         data.get('cmp_error', ''),
@@ -555,7 +602,6 @@ def build_repport(report, filename):
 if __name__ == '__main__':
     args = parse_arguments()
     filename = args.output
-
     fact_ids = []
     if args.i_names:
         fact_ids.extend(search_invoice_by_names(args.i_names))
