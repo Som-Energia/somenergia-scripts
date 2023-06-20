@@ -9,12 +9,13 @@ from yamlns import namespace as ns
 from consolemsg import step, success, warn
 from validacio_eines import lazyOOOP
 from tqdm import tqdm
+from decimal import Decimal
 
 periodes = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6']
 TOLERANCE = {
     'kWh': 1.0,
     'kW/dia': 1.0,
-    'eur': 0.01,
+    'eur': Decimal("0.01"),
 }
 
 Obj = lazyOOOP()
@@ -40,21 +41,35 @@ def date_minus(day, minus_days=1):
 
 
 def line_add(data, name, period, quantity, unit):
-    if quantity:
-        key = name + period
-        info = data.get(key, ns({'value': 0, 'unit': unit}))
-        data[key] = info
-        info.value = info.value + quantity
-        info.unit = unit
+    if not quantity:
+        return
+
+    if unit == 'eur':
+        quantity = Decimal(str(quantity))
+
+    key = name + period
+
+    if key in data:
+        data[key].value = data[key].value + quantity
+        data[key].unit = unit
+    else:
+        data[key] = ns({'value': quantity, 'unit': unit})
 
 
 def line_max(data, name, period, quantity, unit):
-    if quantity:
-        key = name + period
-        info = data.get(key, ns({'value': 0, 'unit': unit}))
-        data[key] = info
-        info.value = max(info.value, quantity)
-        info.unit = unit
+    if not quantity:
+        return
+
+    if unit == 'eur':
+        quantity = Decimal(str(quantity))
+
+    key = name + period
+
+    if key in data:
+        data[key].value = max(data[key].value, quantity)
+        data[key].unit = unit
+    else:
+        data[key] = ns({'value': quantity, 'unit': unit})
 
 
 def parse_arguments():
@@ -556,6 +571,7 @@ def report_header():
         'numero factura',
         'polissa',
         'tarifa',
+        'import total',
         'data_inici',
         'data_final',
         'ok',
@@ -573,6 +589,7 @@ def report_process(data):
         data.fact.number,
         data.fact.polissa_id.name,
         data.fact.polissa_id.tarifa_codi,
+        data.fact.amount_total,
         data.fact.data_inici,
         data.fact.data_final,
         'error' if 'f1_error' in data or 'cmp_error' in data or 'dates_error' in data else 'ok',
