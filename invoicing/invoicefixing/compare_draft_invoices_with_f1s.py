@@ -589,7 +589,7 @@ def report_process(data):
         data.fact.number,
         data.fact.polissa_id.name,
         data.fact.polissa_id.tarifa_codi,
-        data.fact.amount_total,
+        data.fact.amount_total if data.fact.type == 'out_invoice' else data.fact.amount_total * -1.0,
         data.fact.data_inici,
         data.fact.data_final,
         'error' if 'f1_error' in data or 'cmp_error' in data or 'dates_error' in data else 'ok',
