@@ -156,8 +156,11 @@ def get_contract(contract_id):
             for period in contract_power_obj.read(periods_id,fields)})
 
     search_params = [('polissa','=',contract_id)]
-    meter_id = meter_obj.search(search_params)[0]
-    contract['lloguer'] = 'Si' if meter_obj.read(meter_id, ['lloguer'])['lloguer'] else 'No'
+    meter_ids = meter_obj.search(search_params)
+    if not meter_ids:
+        contract['lloguer'] = 'Nd'
+    else:
+        contract['lloguer'] = 'Si' if meter_obj.read(meter_ids[0], ['lloguer'])['lloguer'] else 'No'
     return contract 
 
 def get_energy(bill_id):
