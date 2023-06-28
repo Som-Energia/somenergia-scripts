@@ -329,8 +329,14 @@ def get_all_f1_types(fact):
     if not f1_ids:
         return ''
 
-    f1_data = f1_obj.read(f1_ids, ['type_factura'])
-    return "".join([f1['type_factura'] for f1 in reversed(f1_data)])
+    f1_data = f1_obj.read(f1_ids, ['type_factura', 'import_phase'])
+    ret = ''
+    for f1 in reversed(f1_data):
+        if 'import_phase' in f1 and f1['import_phase'] > 30:
+            ret += f1['type_factura']
+        else:
+            ret += f1['type_factura'].lower()
+    return ret
 
 
 def find_error_f1_in_invoice_dates_ordered(fact):
@@ -583,6 +589,18 @@ def report_header():
         'error consum']
 
 
+def is_ok(data):
+    if 'f1_error_ids' in data and len(data['f1_error_ids']) > 0:
+        return False
+    if 'f1_error' in data:
+        return False
+    if 'cmp_error' in data:
+        return False
+    if 'dates_error' in data:
+        return False
+    return True
+
+
 def report_process(data):
     return [
         data.fact.id,
@@ -592,7 +610,7 @@ def report_process(data):
         data.fact.amount_total if data.fact.type == 'out_invoice' else data.fact.amount_total * -1.0,
         data.fact.data_inici,
         data.fact.data_final,
-        'error' if 'f1_error' in data or 'cmp_error' in data or 'dates_error' in data else 'ok',
+        'ok' if is_ok(data) else 'error',
         len(data.f1_ids),
         len(data.f1_error_ids),
         data.get('f1_types', ''),
