@@ -347,13 +347,13 @@ invoicefixing:
         invoice_ids:
           description: id's de factures separats per comes
         polissa_names:
-          description: números de polissaes separats per comes
+          description: números de polisses separats per comes
         date_from:
           type: date
           description: "Data d'inici per cercar factures"
         date_to:
           type: date
-          description: "Data d e fi per cercar factures (fins avui si no s'especifica)"
+          description: "Data de fi per cercar factures (fins avui si no s'especifica)"
         invoice_type:
           description: "Tipus de factures a cercar"
           type: enum
@@ -379,7 +379,7 @@ invoicefixing:
           description: "Data d'inici per cercar factures"
         date_to:
           type: date
-          description: "Data d e fi per cercar factures (fins avui si no s'especifica)"
+          description: "Data de fi per cercar factures (fins avui si no s'especifica)"
         invoice_type:
           description: "Tipus de factures a cercar"
           type: enum
@@ -391,6 +391,44 @@ invoicefixing:
           type: FILEDOWN
           extension: csv
           filename: factures_f1s.csv
+
+    check_invoice_specific_validation:
+      title: Comprovador de validacions de factures
+      description: Script per comprovar el resultat de passar validacions de factura en esborrany a qualsevol fatura.
+      script: python SOME_SRC/somenergia-scripts/invoicing/invoicefixing/recheck_validation_over_any_invoice.py --invoice_names={invoice_names} --invoice_ids={invoice_ids} --polissa_names={polissa_names} --from={date_from} --to={date_to} --type={invoice_type} --validation={validation_name} --stored={stored_searchs} {output}
+      parameters:
+        invoice_names:
+          description: numeros de la factura FE separats per comes
+        invoice_ids:
+          description: id's de factures separats per comes
+        polissa_names:
+          description: números de polisses separats per comes
+        date_from:
+          type: date
+          description: "Data d'inici per cercar factures"
+        date_to:
+          type: date
+          description: "Data de fi per cercar factures (fins avui si no s'especifica)"
+        invoice_type:
+          description: "Tipus de factures a cercar"
+          type: enum
+          options:
+            Nomes factures en esborrany: draft
+            Totes les factures: all
+          default: all
+        validation_name:
+          description: Codi de la validació de factura a testejar.
+        stored_searchs:
+          description: Cerques pre-guardades
+          type: enum
+          options:
+            cap: none
+            factures de polisses amb autoconsum actiu ara: auto1
+          default: none
+        output:
+          type: FILEDOWN
+          extension: csv
+          filename: validacions.csv
 
     get_extended_data_from_errors_in_lot:
       title: Obté llistat amb infomació extesa de les polisses facturades amb incidencia
