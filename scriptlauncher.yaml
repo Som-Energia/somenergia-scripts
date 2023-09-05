@@ -874,6 +874,21 @@ admin:
           description: >
             Fitxer CSV amb la llista d'empleats a crear. El format és una capçalera "nom,cognoms,jornada,equips,email" i les línies per exmple "NÚRIA,IGLESIAS MARTÍNEZ,40,Entorn Laboral,nuria.iglesias@somenergia.coop"
 
+    migracioVersioTarifa:
+      script: python SOME_SRC/somenergia-scripts/comer/migracio_versio_tarifa/migracio_versio_tarifa.py --tarifa {nom_tarifa_preu} --desti {desti}
+      title: Copiar Versió de llista de preus de producció al servidor de destí
+      description: Còpia la última versió d'una llista de preus de Producció al servidor de destí
+      parameters:
+        nom_tarifa_preu:
+          description: Nom de la tarifa a còpiar
+        desti:
+          description: URL del servidor de destí
+          type: enum
+          options:
+            servidor de test: testing
+            servidor de staging: staging
+          default: testing
+
 generation:
   description: Generació
   scripts:
