@@ -431,6 +431,42 @@ invoicefixing:
           extension: csv
           filename: validacions.csv
 
+    check_invoice_specific_validation_csv:
+      title: Comprovador de validacions de factures a partir de csv de polisses
+      description: Script per comprovar el resultat de passar validacions de factura en esborrany a qualsevol factura.
+      script: python SOME_SRC/somenergia-scripts/invoicing/invoicefixing/recheck_validation_over_any_invoice.py --file={csv_file} --from={date_from} --to={date_to} --type={invoice_type} --validation={validation_name} --stored={stored_searchs} {output}
+      parameters:
+        csv_file:
+          type: FILE
+          description: "CSV amb el nom de les pòlisses a la primera columna, sense capçalera (Obligatori)"
+        date_from:
+          type: date
+          description: "Data d'inici per cercar factures (Obligatori)"
+        date_to:
+          type: date
+          description: "Data de fi per cercar factures (fins avui si no s'especifica)"
+        invoice_type:
+          description: "Tipus de factures a cercar"
+          type: enum
+          options:
+            Nomes factures en esborrany: draft
+            Totes les factures: all
+          default: all
+        validation_name:
+          description: Codi de la validació de factura a testejar (Obligatori).
+        stored_searchs:
+          description: Cerques pre-guardades
+          type: enum
+          options:
+            cap: none
+            factures de polisses amb autoconsum actiu ara (lent): auto1
+            factures de polisses amb autoconsum en algun moment (molt lent): auto2
+          default: none
+        output:
+          type: FILEDOWN
+          extension: csv
+          filename: validacions.csv
+
     get_extended_data_from_errors_in_lot:
       title: Obté llistat amb infomació extesa de les polisses facturades amb incidencia
       description: Obté llistat amb infomació extesa de les polisses facturades amb incidencia del lot de factucació actiu actualment.
