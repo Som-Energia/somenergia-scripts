@@ -267,10 +267,37 @@ def search_invoices_by_polissa_names(pol_names, date_from, date_to, inv_type):
     return search_invoices_from_pol_set(pols.keys(), date_from, date_to, inv_type)
 
 
+def had_autoconsum(pol_id):
+    pol = pol_obj.browse(pol_id)
+    for mod in pol.modcontractuals_ids:
+        if mod.autoconsumo != '00':
+            return True
+    return False
+
+
 def search_invoices_stored(stored, date_from, date_to, inv_type):
     pols = []
     if stored == 'auto1':
-        pols = pol_obj.search([('autoconsumo', '!=', '00')])
+        pols = pol_obj.search([('autoconsumo', '!=', '00'), ('active', '=', True)])
+
+    if stored == 'auto2':
+        a_pols = pol_obj.search([('autoconsumo', '!=', '00'), ('active', '=', True)],
+                                context={'active_test': False})
+        b_pols = pol_obj.search([('autoconsumo', '!=', '00'), ('active', '=', False)],
+                                context={'active_test': False})
+        ids = pol_obj.search([('autoconsumo', '=', '00')], context={'active_test': False})
+        c_pols = []
+        step("Cercant polisses amb autoconsum en algun moment")
+        for p_id in tqdm(ids):
+            if had_autoconsum(p_id):
+                c_pols.append(p_id)
+
+        step("Trobades {} polisses amb autoconsum i actives", len(a_pols))
+        step("Trobades {} polisses amb autoconsum i no actives", len(b_pols))
+        step("Trobades {} polisses amb autoconsum en algun moment i ara no", len(c_pols))
+        pols = list(set(a_pols + b_pols + c_pols))
+        step("Trobades {} polisses totals", len(pols))
+
     if not pols:
         return []
     return search_invoices_from_pol_set(pols, date_from, date_to, inv_type)
@@ -330,20 +357,20 @@ def process_invoices(fact_ids, validation_id):
 # ---------------
 # report funcions
 # ---------------
-def report_header():
+def report_header(code):
     return [
-        'id factura',
-        'numero factura',
-        'polissa',
-        'tarifa',
-        'import total',
-        'data_inici',
-        'data_final',
-        'numero de f1 trobats',
-        'tipus de factures',
-        'fases',
-        'Num factura origen del F1',
-        'error validacio',
+        'Id factura',
+        'Numero factura',
+        'Polissa',
+        'Tarifa',
+        'Import total',
+        'Data_inici',
+        'Data_final',
+        'Número de f1 trobats',
+        "Tipus d'F1",
+        "Fases d'F1",
+        "Num factura origen d'F1",
+        '[{}] Error validacio detectat'.format(code),
     ]
 
 
@@ -358,14 +385,14 @@ def report_process(data):
         data.fact.data_final,
         len(data.f1s),
         ', '.join([f1['type_factura'] for f1 in data.f1s]),
-        ', '.join([str(f1['import_phase']) for f1 in data.f1s]),
+        ', '.join([str(f1['import_phase'])[0] for f1 in data.f1s]),
         ', '.join([f1['invoice_number_text'] for f1 in data.f1s]),
         data.val['message'].encode('utf-8'),
     ]
 
 
-def build_repport(report, filename):
-    header = report_header()
+def build_repport(report, code, filename):
+    header = report_header(code)
 
     csv_doc = StringIO.StringIO()
     writer_report = csv.writer(csv_doc, delimiter=';')
@@ -409,7 +436,7 @@ if __name__ == '__main__':
     step(" Validacio sense error: ..... {}", v_ok)
     step(" Validacio amb  error: ...... {}", v_error)
 
-    repport = build_repport(data, filename)
+    repport = build_repport(data, val_data['code'], filename)
     success("Generated file: {}", filename)
 
 # vim: et ts=4 sw=4
