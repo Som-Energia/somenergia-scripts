@@ -80,7 +80,7 @@ def load_invoice_data(fact_id):
         error = True
         step("Error localitzat ...")
         data_yaml = data_yaml.replace("\n", '\n')
-    return error, data_yaml
+    return error, data_yaml, data
 
 def print_invoice_data(fact_id):
     f = fact_obj.browse(fact_id)
@@ -105,6 +105,96 @@ def search_known_errors(res, fact_id):
     return errors
 
 
+def get_parameter_or_error(params, key, default = None):
+    if key in params:
+        step("parameter '{}' = {}", key, float(params[key]))
+        return float(params[key])
+
+    if default is not None:
+        step("parameter '{}' = {} defaulted, not found!!", key, default)
+        return default
+
+    warn("parameter '{}' not found in qr link, replaced by 0.0!!", key)
+    return 0.0
+
+
+def validate_cnmc_qr_code_formula(data, fact_id):
+    success("Analitzant link del qr de la factura:")
+    if fact_id not in data:
+        warn("no data returned for the invoice data!!")
+        return
+
+    f_data = data.get(fact_id)
+    if 'cnmc_comparator_qr_link' not in f_data:
+        warn("no 'cnmc_comparator_qr_link' in invoice data!!")
+        return
+
+    qr_data = f_data['cnmc_comparator_qr_link']
+    if 'link_qr' not in qr_data:
+        warn("no 'qr_link' in the qr_data!!")
+        return
+
+    qr_link = qr_data['link_qr']
+    l = qr_link.split("?")
+    if len(l) != 2:
+        warn("Error spliting the link by the ? symbol")
+        return
+
+    qr_head = l[0]
+    qr_tail = l[1]
+
+    parameters = {}
+    params = qr_tail.split("&")
+    for param in params:
+        l = param.split("=")
+        key = l[0]
+        value = l[1]
+        parameters[key] = value
+
+    step("Definitions at https://www.boe.es/diario_boe/txt.php?id=BOE-A-2022-16989")
+    imp = get_parameter_or_error(parameters, 'imp')
+    impPot = get_parameter_or_error(parameters, 'impPot')
+    dtoBS = get_parameter_or_error(parameters, 'dtoBS', 0.0)
+    finBS = get_parameter_or_error(parameters, 'finBS')
+    ajuste = get_parameter_or_error(parameters, 'ajuste')
+    exc = get_parameter_or_error(parameters, 'exc' , 0.0)
+    impEner = get_parameter_or_error(parameters, 'impEner')
+    impOtrosConIE = get_parameter_or_error(parameters, 'impOtrosConIE')
+    dto = get_parameter_or_error(parameters, 'dto', 0.0)
+    impOtrosSinIE = get_parameter_or_error(parameters, 'impOtrosSinIE')
+    impSA = get_parameter_or_error(parameters, 'impSA')
+
+    IE_vigente_a_fecha_factura_fFact = 0.005
+    IVAELECTRICO_o_equivalente_vigente_a_fecha_factura_fFact = 0.05
+    IVAESTANDAR_o_equivalente_vigente_a_fecha_factura_fFact = 0.21
+
+    A = (((impPot + impEner - dtoBS + finBS + ajuste - min(exc,impEner) + impOtrosConIE) * (1 + IE_vigente_a_fecha_factura_fFact)) * (1+ IVAELECTRICO_o_equivalente_vigente_a_fecha_factura_fFact))
+    B =  ((- dto + impOtrosSinIE) * (1+ IVAELECTRICO_o_equivalente_vigente_a_fecha_factura_fFact))
+    C = (impSA * (1+ IVAESTANDAR_o_equivalente_vigente_a_fecha_factura_fFact))
+
+    step("Fixed values: ")
+    step("IE_vigente_a_fecha_factura_fFact = {}", IE_vigente_a_fecha_factura_fFact)
+    step("IVAELECTRICO_o_equivalente_vigente_a_fecha_factura_fFact = {}", IVAELECTRICO_o_equivalente_vigente_a_fecha_factura_fFact)
+    step("IVAESTANDAR_o_equivalente_vigente_a_fecha_factura_fFact = {}", IVAESTANDAR_o_equivalente_vigente_a_fecha_factura_fFact)
+
+    step("Formula:")
+    step("A = (((impPot + impEner - dtoBS + finBS + ajuste - min(exc,impEner) + impOtrosConIE) * (1 + IE_vigente_a_fecha_factura_fFact)) * (1 + IVAELECTRICO_o_equivalente_vigente_a_fecha_factura_fFact))")
+    step("B = ((- dto + impOtrosSinIE) * (1+ IVAELECTRICO_o_equivalente_vigente_a_fecha_factura_fFact))")
+    step("C = (impSA * (1+ IVAESTANDAR_o_equivalente_vigente_a_fecha_factura_fFact))")
+    step("A + B + C =+-= imp")
+    step("A = {}", A)
+    step("B = {}", B)
+    step("C = {}", C)
+    tot = A + B + C
+    step("A + B + C = {}", tot)
+    step("{} =+-= {} ", tot, imp)
+    if abs(tot - imp) <= 0.01:
+        step("A + B + C =+-= imp ==> equals!")
+    else:
+        warn("A + B + C =+-= imp ==> diferents!! {}", abs(tot - imp))
+    step("")
+    step("")
+
 def main(invoice_name, invoice_id, invoice_ids):
     fact_ids = []
     if invoice_name:
@@ -117,7 +207,8 @@ def main(invoice_name, invoice_id, invoice_ids):
     for fact_id in fact_ids:
         if fact_id:
             print_invoice_data(fact_id)
-            error, res = load_invoice_data(fact_id)
+            error, res, data = load_invoice_data(fact_id)
+            validate_cnmc_qr_code_formula(data, fact_id)
             if error:
                 errors = search_known_errors(res, fact_id)
             else:
