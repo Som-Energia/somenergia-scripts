@@ -107,8 +107,12 @@ def search_known_errors(res, fact_id):
 
 def get_parameter_or_error(params, key, default = None):
     if key in params:
-        step("parameter '{}' = {}", key, float(params[key]))
-        return float(params[key])
+        value = params[key]
+        if ',' in value:
+            warn("parameter '{}' = {} bad formatted, do not use , use . instead", key, float(value.replace(',','.')))
+        else:
+            step("parameter '{}' = {}", key, float(value))
+        return float(value)
 
     if default is not None:
         step("parameter '{}' = {} defaulted, not found!!", key, default)
