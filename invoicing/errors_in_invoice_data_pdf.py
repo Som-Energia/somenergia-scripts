@@ -109,7 +109,8 @@ def get_parameter_or_error(params, key, default = None):
     if key in params:
         value = params[key]
         if ',' in value:
-            warn("parameter '{}' = {} bad formatted, do not use , use . instead", key, float(value.replace(',','.')))
+            value = value.replace(',','.')
+            warn("parameter '{}' = {} bad formatted, do not use , use . instead", key, float(value))
         else:
             step("parameter '{}' = {}", key, float(value))
         return float(value)
