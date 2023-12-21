@@ -123,6 +123,24 @@ def get_parameter_or_error(params, key, default = None):
     return 0.0
 
 
+def get_invoice_taxes(fact_id):
+    result = {}
+    ivas = []
+
+    f = fact_obj.browse(fact_id)
+    for tax_l in f.tax_line:
+        if "IVA" in tax_l.tax_id.name:
+            ivas.append(tax_l.tax_id.amount)
+        elif "IGIC" in tax_l.tax_id.name:
+            ivas.append(tax_l.tax_id.amount)
+        elif "IESE" in tax_l.tax_id.description:
+            result['iese'] = tax_l.tax_id.amount
+
+    ivas = sorted(set(ivas))
+    result['ivae'] = ivas[0]
+    result['iva'] = ivas[-1]
+    return result
+
 def validate_cnmc_qr_code_formula(data, fact_id):
     success("Analitzant link del qr de la factura:")
     if fact_id not in data:
@@ -169,9 +187,10 @@ def validate_cnmc_qr_code_formula(data, fact_id):
     impOtrosSinIE = get_parameter_or_error(parameters, 'impOtrosSinIE')
     impSA = get_parameter_or_error(parameters, 'impSA')
 
-    IE_vigente_a_fecha_factura_fFact = 0.005
-    IVAELECTRICO_o_equivalente_vigente_a_fecha_factura_fFact = 0.05
-    IVAESTANDAR_o_equivalente_vigente_a_fecha_factura_fFact = 0.21
+    fact_taxes = get_invoice_taxes(fact_id)
+    IE_vigente_a_fecha_factura_fFact = fact_taxes.get('iese', 0.005)
+    IVAELECTRICO_o_equivalente_vigente_a_fecha_factura_fFact = fact_taxes.get('ivae', 0.05)
+    IVAESTANDAR_o_equivalente_vigente_a_fecha_factura_fFact = fact_taxes.get('iva', 0.21)
 
     A = (((impPot + impEner - dtoBS + finBS + ajuste - min(exc,impEner) + impOtrosConIE) * (1 + IE_vigente_a_fecha_factura_fFact)) * (1+ IVAELECTRICO_o_equivalente_vigente_a_fecha_factura_fFact))
     B =  ((- dto + impOtrosSinIE) * (1+ IVAELECTRICO_o_equivalente_vigente_a_fecha_factura_fFact))
@@ -184,8 +203,8 @@ def validate_cnmc_qr_code_formula(data, fact_id):
 
     step("Formula:")
     step("A = (((impPot + impEner - dtoBS + finBS + ajuste - min(exc,impEner) + impOtrosConIE) * (1 + IE_vigente_a_fecha_factura_fFact)) * (1 + IVAELECTRICO_o_equivalente_vigente_a_fecha_factura_fFact))")
-    step("B = ((- dto + impOtrosSinIE) * (1+ IVAELECTRICO_o_equivalente_vigente_a_fecha_factura_fFact))")
-    step("C = (impSA * (1+ IVAESTANDAR_o_equivalente_vigente_a_fecha_factura_fFact))")
+    step("B = ((- dto + impOtrosSinIE) * (1 + IVAELECTRICO_o_equivalente_vigente_a_fecha_factura_fFact))")
+    step("C = (impSA * (1 + IVAESTANDAR_o_equivalente_vigente_a_fecha_factura_fFact))")
     step("A + B + C =+-= imp")
     step("A = {}", A)
     step("B = {}", B)
@@ -197,6 +216,10 @@ def validate_cnmc_qr_code_formula(data, fact_id):
         step("A + B + C =+-= imp ==> equals!")
     else:
         warn("A + B + C =+-= imp ==> diferents!! {}", abs(tot - imp))
+    step("")
+    step("")
+    step("link de testeig:")
+    step(qr_link.replace("QRE","QRE2"))
     step("")
     step("")
 
