@@ -55,25 +55,46 @@ def search_invoice_by_id(invoice_id):
     return fact_id
 
 
-def search_invoice_by_name(invoice_number):
-    step("Cerquem la factura...{}", invoice_number)
-    fact_ids = fact_obj.search([('number', '=', invoice_number)])
-    if len(fact_ids) == 0:
-        warn("Cap factura trobada amb aquest numero!!")
-        return None
-    if len(fact_ids) > 1:
-        warn("Multiples factures trobades!! {}", fact_ids)
-        return None
-    fact_id = fact_ids[0]
-    step("Factura amb ID {} trobada", fact_id)
-    return fact_id
+def search_invoice_by_name(invoice_numbers):
+    f_ids = []
+    invoice_numbers = [i.strip() for i in invoice_numbers.split(',')]
+    for invoice_number in invoice_numbers:
+
+        step("Cerquem la factura...{}", invoice_number)
+        fact_ids = fact_obj.search([('number', '=', invoice_number)])
+        if len(fact_ids) == 0:
+            warn("Cap factura trobada amb aquest numero!!")
+            return None
+        if len(fact_ids) > 1:
+            warn("Multiples factures trobades!! {}", fact_ids)
+            return None
+        fact_id = fact_ids[0]
+        step("Factura amb ID {} trobada", fact_id)
+        f_ids.append(fact_id)
+    return f_ids
 
 
-def load_invoice_data(fact_id):
+def search_components(components):
+    step("Cerquem components a mostrar")
+
+    components_list = [i.strip() for i in components.split(',')]
+    if not components_list:
+        return None
+
+    step("Mostrarem dades de {} components", len(components_list))
+    return components_list
+
+
+def load_invoice_data(fact_id, comp_lst):
+    if comp_lst:
+        contxt = {'allow_list': comp_lst}
+    else:
+        contxt = {}
+
     step("Carregant dades de la factura...")
     error = False
     data = ""
-    data_yaml = rprt_obj.get_components_data_yaml([fact_id])
+    data_yaml = rprt_obj.get_components_data_yaml([fact_id], contxt)
     try:
         data = ns.loads(data_yaml)
     except Exception as e:
@@ -223,19 +244,20 @@ def validate_cnmc_qr_code_formula(data, fact_id):
     step("")
     step("")
 
-def main(invoice_name, invoice_id, invoice_ids):
+def main(invoice_name, invoice_id, invoice_ids, components):
     fact_ids = []
     if invoice_name:
-        fact_ids.append(search_invoice_by_name(invoice_name))
+        fact_ids.extend(search_invoice_by_name(invoice_name))
     if invoice_id:
         fact_ids.append(search_invoice_by_id(invoice_id))
     if invoice_ids:
         fact_ids.extend(search_invoice_by_ids(invoice_ids))
 
+    cmps_lst = search_components(components) if components else None
     for fact_id in fact_ids:
         if fact_id:
             print_invoice_data(fact_id)
-            error, res, data = load_invoice_data(fact_id)
+            error, res, data = load_invoice_data(fact_id, cmps_lst)
             validate_cnmc_qr_code_formula(data, fact_id)
             if error:
                 errors = search_known_errors(res, fact_id)
@@ -278,6 +300,12 @@ if __name__=='__main__':
         help="llista d'Id de les factures"
     )
 
+    parser.add_argument(
+        '--components',
+        dest='comps',
+        help="llista de components a carregar"
+    )
+
     args = parser.parse_args()
 
     if not only_one(args.i_name, args.i_id, args.i_ids):
@@ -285,7 +313,7 @@ if __name__=='__main__':
         sys.exit()
 
     try:
-        main(args.i_name, args.i_id, args.i_ids)
+        main(args.i_name, args.i_id, args.i_ids, args.comps)
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
         error("El proces no ha finalitzat correctament: {}", str(e))

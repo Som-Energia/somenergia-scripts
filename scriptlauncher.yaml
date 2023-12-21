@@ -330,12 +330,14 @@ invoicefixing:
     check_errors_invoice_data_pdf:
       title: Comprovador de les dades per generar pdf de factura
       description: Script per comprobar les dades per generar un pdf de factura, quan una factura no imprimeix el pdf aquest script detecta si es un dels errors coneguts de la factura i no del model de dades.
-      script: python SOME_SRC/somenergia-scripts/invoicing/errors_in_invoice_data_pdf.py --invoice_name={invoice_name} --invoice_ids={invoice_ids}
+      script: python SOME_SRC/somenergia-scripts/invoicing/errors_in_invoice_data_pdf.py --invoice_name={invoice_name} --invoice_ids={invoice_ids} --components={components}
       parameters:
         invoice_name:
           description: numero de la factura FE....
         invoice_ids:
           description: id's de factures separats per comes
+        components:
+          description: components a ser mostrats a la factura
 
     check_invoice_f1_consume:
       title: Comprovador de consums de factures i les seus F1
