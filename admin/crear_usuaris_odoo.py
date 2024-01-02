@@ -145,7 +145,7 @@ class ImportData:
                 'user_id': user_id,
                 'resource_calendar_id': jornada_id,
                 #'birthday':  datetime.strftime(datetime.strptime(employee_data['data_neixement'], "%d/%m/%Y"), "%Y-%m-%d"),
-                #'theoretical_hours_start_date': '2024-01-01',
+                'theoretical_hours_start_date': '2024-01-01',
             }
             try:
                 if O.HrEmployee.search([('work_email','=',employee_data['email'])]):
