@@ -157,15 +157,18 @@ def get_invoice_taxes(fact_id):
     f = fact_obj.browse(fact_id)
     for tax_l in f.tax_line:
         if "IVA" in tax_l.tax_id.name:
-            ivas.append(do_tax_calculation(tax_l.tax_id))
+            ivas.append(tax_l.tax_id.amount)
         elif "IGIC" in tax_l.tax_id.name:
-            ivas.append(do_tax_calculation(tax_l.tax_id))
+            ivas.append(tax_l.tax_id.amount)
         elif "IESE" in tax_l.tax_id.description:
             result['iese'] = do_tax_calculation(tax_l.tax_id)
 
     ivas = sorted(set(ivas))
     result['ivae'] = ivas[0]
-    result['iva'] = ivas[-1]
+    if len(ivas) != 1:
+        result['iva'] = ivas[-1]
+    else:
+        result['iva'] = 0.21
     return result
 
 def validate_cnmc_qr_code_formula(data, fact_id):
