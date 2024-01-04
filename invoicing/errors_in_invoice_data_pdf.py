@@ -144,6 +144,12 @@ def get_parameter_or_error(params, key, default = None):
     return 0.0
 
 
+def do_tax_calculation(tax):
+    localdict = {'price_unit':1.0}
+    exec(tax.python_compute, localdict)
+    return localdict['result']
+
+
 def get_invoice_taxes(fact_id):
     result = {}
     ivas = []
@@ -151,11 +157,11 @@ def get_invoice_taxes(fact_id):
     f = fact_obj.browse(fact_id)
     for tax_l in f.tax_line:
         if "IVA" in tax_l.tax_id.name:
-            ivas.append(tax_l.tax_id.amount)
+            ivas.append(do_tax_calculation(tax_l.tax_id))
         elif "IGIC" in tax_l.tax_id.name:
-            ivas.append(tax_l.tax_id.amount)
+            ivas.append(do_tax_calculation(tax_l.tax_id))
         elif "IESE" in tax_l.tax_id.description:
-            result['iese'] = tax_l.tax_id.amount
+            result['iese'] = do_tax_calculation(tax_l.tax_id)
 
     ivas = sorted(set(ivas))
     result['ivae'] = ivas[0]
