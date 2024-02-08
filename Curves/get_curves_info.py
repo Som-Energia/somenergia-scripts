@@ -95,8 +95,8 @@ def get_mongo_data(mongo_db, mongo_collection, curve_type, cups, from_date=None,
         sum_ai = 0
         sum_ao = 0
         for curve in curves:
-            sum_ai += curve['ai']
-            sum_ao += curve['ao']
+            sum_ai += curve['ai'] if curve['ai'] != None else 0
+            sum_ao += curve['ao'] if curve['ao'] != None else 0
         curves.rewind()
         data_primera = curves.next()['datetime']
         data['data_primera_{}'.format(curve_type)] = data_primera.strftime("%Y-%m-%d %H:%M:%S")
