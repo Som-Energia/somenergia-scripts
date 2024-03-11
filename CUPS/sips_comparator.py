@@ -9,7 +9,7 @@ from datetime import datetime, date
 
 import configdb
 
-ATR_CASES = ['C2']
+ATR_CASES = ['C2','C1']
 ATR_STEPS = ['01']
 ATR_EXCLUDE_STATES = ['cancel']
 
