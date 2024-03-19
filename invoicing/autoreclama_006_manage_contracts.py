@@ -153,9 +153,12 @@ def main(polissa_names, state, batch_size, overwrite_state, doit):
 
     step("")
     step("trobades {} pòlisses a tractar.", len(pol_ids))
-    if batch_size:
+    if batch_size > 0:
         pol_ids = pol_ids[:batch_size]
         step("limitant a les primeres {} pòlisses.", batch_size)
+    else:
+        error("Sense efecte batch ha de ser positiu i no {}.", batch_size)
+        return
 
     result = {}
     for pol_id in tqdm(pol_ids):
