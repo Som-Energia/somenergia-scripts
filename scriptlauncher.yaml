@@ -767,7 +767,7 @@ Reclama:
   description: Autoreclama
   scripts:
     autoreclama_bathc_activator:
-      script: python SOME_SRC/somenergia-scripts/invoicing/measurefixing/autoreclama_006_manage_contracts.py --doit {doit} --polissa_names {polissa_names} --initial_state {initial_state} --overwrite_state {overwrite_state} --batch {batch}
+      script: python SOME_SRC/somenergia-scripts/invoicing/autoreclama_006_manage_contracts.py --doit {doit} --polissa_names {polissa_names} --initial_state {initial_state} --overwrite_state {overwrite_state} --batch {batch}
       title: Script d'activació de contractes per autoreclama R1 006
       description: Setejar els estats d'inici d'autoreclama per contractes segons paràmetres esitjats.
       parameters:
