@@ -787,7 +787,7 @@ Reclama:
         overwrite_state:
           type: enum
           options:
-            Si ja te estat autoreclama no modifica: false
+            Si ja te estat autoreclama NO MODIFICA: false
             Afegeix un nou estat autoreclama: true
           default: false
         batch:

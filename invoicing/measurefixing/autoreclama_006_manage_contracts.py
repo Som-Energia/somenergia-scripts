@@ -141,6 +141,8 @@ def search_polisses_by_name(pol_names, overwrite):
 def main(polissa_names, state, batch_size, overwrite_state, doit):
     if doit:
         success("Es FARAN CANVIS!")
+    else:
+        success("NO es faran canvis!")
 
     step("")
     step("cercant polisses.")
@@ -194,6 +196,11 @@ def main(polissa_names, state, batch_size, overwrite_state, doit):
                 [p['name'] for p in pol_obj.read(result[stat], ['name'])]
             )
         )
+
+    if doit:
+        success("S'HAN FET CANVIS!")
+    else:
+        success("NO s'han fet canvis!")
 
 
 if __name__ == '__main__':
