@@ -769,7 +769,7 @@ Reclama:
     autoreclama_bathc_activator:
       script: python SOME_SRC/somenergia-scripts/invoicing/autoreclama_006_manage_contracts.py --doit {doit} --polissa_names {polissa_names} --initial_state {initial_state} --overwrite_state {overwrite_state} --batch {batch}
       title: Script d'activació de contractes per autoreclama R1 006
-      description: Setejar els estats d'inici d'autoreclama per contractes segons paràmetres esitjats.
+      description: Setejar els estats d'inici d'autoreclama per contractes segons paràmetres desitjats.
       parameters:
         doit:
           description: Vols fer els canvis? (escriu 'si' per aplicar-ho)
@@ -792,7 +792,33 @@ Reclama:
           default: false
         batch:
           description: Número de polisses que seràn afectades.
-
+    autoreclama_bathc_activator_csv:
+      script: python SOME_SRC/somenergia-scripts/invoicing/autoreclama_006_manage_contracts.py --doit {doit} --file={csv_file} --initial_state {initial_state} --overwrite_state {overwrite_state} --batch {batch}
+      title: Script d'activació de contractes per autoreclama R1 006 desde CSV
+      description: Setejar els estats d'inici d'autoreclama per contractes segons paràmetres desitjats a partir de CSV.
+      parameters:
+        doit:
+          description: Vols fer els canvis? (escriu 'si' per aplicar-ho)
+        csv_file:
+          type: FILE
+          description: "CSV amb el nom de les pòlisses a la primera columna, sense capçalera (Obligatori)"
+        initial_state:
+          description: Estat incial de les polisses trobades.
+          type: enum
+          options:
+            Correcte, preparat per reclamar als 70 dies: correct
+            Bucle, ja ha reclamat i ho tornarà a fer en 20 dies, cerca cas R1 006 previ: loop
+            Desactivat, gestió manual: disabled
+            Correcte o Bucle depenent de si troba un R1 006 de fa menys d'un any: auto
+          default: correct
+        overwrite_state:
+          type: enum
+          options:
+            Si ja te estat autoreclama NO MODIFICA: false
+            Afegeix un nou estat autoreclama: true
+          default: false
+        batch:
+          description: Número de polisses que seràn afectades.
 it:
   description: Ronda IT
   scripts:
