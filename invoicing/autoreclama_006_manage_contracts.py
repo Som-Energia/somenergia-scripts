@@ -5,6 +5,7 @@ from erppeek import Client
 import configdb
 import argparse
 import sys
+import csv
 from consolemsg import error, step, success, warn
 from tqdm import tqdm
 from datetime import datetime, timedelta
@@ -107,38 +108,56 @@ def search_polisses_to_activate():
     return pol_ids
 
 
+def search_and_add(pol_name, overwrite):
+    pol_name = pol_name.strip().zfill(7)
+    step("Cerquem la polissa... {}", pol_name)
+    found_ids = pol_obj.search(
+        [('name', '=', pol_name)],
+        context={'active_test': False}
+    )
+
+    if len(found_ids) != 1:
+        warn("item {} ha trobat {} polisses! {}", pol_name, len(found_ids), found_ids)
+        return []
+
+    found_id = found_ids[0]
+    if overwrite:
+        step("Trobada id {} afegint (overwrite)", found_id)
+        return found_ids
+
+    pol_data = pol_obj.read(found_id, ['autoreclama_state'])
+    if pol_data['autoreclama_state']:
+        warn("item {} ja te estat autoreclama eskipant.", pol_name)
+    else:
+        step("Trobada id {} afegint", found_id)
+        return found_ids
+    return []
+
+
 def search_polisses_by_name(pol_names, overwrite):
     pol_ids = []
-
     pol_names_list = pol_names.split(',')
     step("Trobades {} noms de possibles pòlisses", len(pol_names_list))
-    for pol_name in tqdm(pol_names_list):
-        if len(pol_name) != 7:
-            pol_name = pol_name.zfill(7)
-
-        found_ids = pol_obj.search(
-            [('name', '=', pol_name)],
-            context={'active_test': False}
-        )
-
-        if len(found_ids) != 1:
-            warn("item {} ha trobat {} polisses!", pol_name, len(found_ids))
-        else:
-            found_id = found_ids[0]
-            if overwrite:
-                pol_ids.append(found_id)
-            else:
-                pol_data = pol_obj.read(found_id, ['autoreclama_state'])
-                if pol_data['autoreclama_state']:
-                    warn("item {} ja te estat autoreclama eskipant.", pol_name)
-                else:
-                    pol_ids.append(found_id)
+    for pol_name in pol_names_list:
+        pol_ids.extend(search_and_add(pol_name, overwrite))
 
     step("Trobades {} pòlisses", len(pol_ids))
     return pol_ids
 
 
-def main(polissa_names, state, batch_size, overwrite_state, doit):
+def search_polisses_by_csv(csv_file, overwrite):
+    pol_ids = []
+    with open(csv_file, 'rb') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            if row and row[0]:
+                pol_ids.extend(search_and_add(row[0], overwrite))
+
+    step("Trobades {} pòlisses", len(pol_ids))
+    return pol_ids
+
+
+def main(polissa_names, fitxer_csv, state, batch_size, overwrite_state, doit):
     if doit:
         success("Es FARAN CANVIS!")
     else:
@@ -148,6 +167,8 @@ def main(polissa_names, state, batch_size, overwrite_state, doit):
     step("cercant polisses.")
     if polissa_names:
         pol_ids = search_polisses_by_name(polissa_names, overwrite_state)
+    elif fitxer_csv:
+        pol_ids = search_polisses_by_csv(fitxer_csv, overwrite_state)
     else:
         pol_ids = search_polisses_to_activate()
 
@@ -224,6 +245,12 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
+        '--file',
+        dest='csv_file',
+        help="csv amb el nom de les pòlisses (a la primera columna i sense capçalera)"
+    )
+
+    parser.add_argument(
         '--initial_state',
         dest='initial_state',
         help="Estat inicial a assignar"
@@ -246,6 +273,7 @@ if __name__ == '__main__':
     try:
         main(
             args.pol_names,
+            args.csv_file,
             args.initial_state,
             args.batch,
             args.overwrite_state == 'True',
