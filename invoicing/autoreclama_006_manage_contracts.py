@@ -80,7 +80,7 @@ def search_actual_r1_006_for_polissa(pol_id):
 def search_polisses_to_activate():
     pol_actives_ids = pol_obj.search(
         [
-            ("state", "in", ['activa', 'impagament', 'modcontractual']),
+            ("state", "in", ['activa', 'impagament', 'modcontractual', 'esborrany']),
             ("autoreclama_state", "=", None),
         ],
         context={'active_test': False},
