@@ -472,7 +472,7 @@ invoicefixing:
     search_non_lot_polisses:
       title: Cercador de polisses sense lot
       description: Script per cercar les pòlisses que no tenen un lot de facturació assignat però hauren de tenir-ne o que tenen lot i no n'haurien de tenir.
-      script: python SOME_SRC/somenergia-scripts/invoicing/measurefixing/search_non_lot_polissa.py
+      script: python SOME_SRC/somenergia-scripts/invoicing/search_non_lot_polissa.py
 
     get_extended_data_from_errors_in_lot:
       title: Obté llistat amb infomació extesa de les polisses facturades amb incidencia
