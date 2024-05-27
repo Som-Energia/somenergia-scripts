@@ -817,6 +817,8 @@ Reclama:
             Bucle, ja ha reclamat i ho tornarà a fer en 20 dies, cerca cas R1 006 previ: loop
             Desactivat, gestió manual: disabled
             Correcte o Bucle depenent de si troba un R1 006 de fa menys d'un any: auto
+            Revisar, despres de 2 R1 006 seguits: review
+            Fue autocac, estat posat manualment: fue
           default: correct
         overwrite_state:
           type: enum
