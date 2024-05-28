@@ -33,11 +33,19 @@ loop_state_id = imd_obj.get_object_reference(
 disabled_state_id = imd_obj.get_object_reference(
     "som_autoreclama", "disabled_state_workflow_polissa"
 )[1]
+review_state_id = imd_obj.get_object_reference(
+    "som_autoreclama", "review_state_workflow_polissa"
+)[1]
+fue_state_id = imd_obj.get_object_reference(
+    "som_autoreclama", "fue_state_workflow_polissa"
+)[1]
 
 state_names = {
     correct_state_id: u"Correcte",
     loop_state_id: u"Reclamació Bucle",
     disabled_state_id: u"Desactivat - Gestió Manual",
+    review_state_id: u"Revisar",
+    fue_state_id: u"FUE Autocac",
 }
 
 
@@ -194,6 +202,10 @@ def main(polissa_names, fitxer_csv, state, batch_size, overwrite_state, doit):
             state_id = disabled_state_id
         if state == 'correct':
             state_id = correct_state_id
+        if state == 'review':
+            state_id = review_state_id
+        if state == 'fue':
+            state_id = fue_state_id
 
         if state_id not in result:
             result[state_id] = [pol_id]
