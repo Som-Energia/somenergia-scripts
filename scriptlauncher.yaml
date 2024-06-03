@@ -828,6 +828,15 @@ Reclama:
           default: false
         batch:
           description: Número de polisses que seràn afectades.
+    autoreclama_review_tester:
+      script: python SOME_SRC/somenergia-scripts/invoicing/autoreclama_state_checker.py --polissa_names {polissa_names} --days {days}
+      title: Script de testeig de polisses amb canvi d'estat autoreclama
+      description: Permet testejar les polisses que han canviat d'estat recopilant dades necessaries per fer uan inspecció ràpida.
+      parameters:
+        polissa_names:
+          description: Números de polissa separats per coma.
+        days:
+          description: Dies a endarrerir respecte avuí (posar 0 per avui, 1 per ahir, ...)
 it:
   description: Ronda IT
   scripts:
