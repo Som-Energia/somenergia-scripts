@@ -17,29 +17,51 @@ class CreateGurbCups:
 
     def createGurbCups(self):
         n_gurb_cups = 0
-        gurb_id = self.c.SomGurb.search([("code", "=", gurb_code)])
+
+        gurb_id = self.c.SomGurb.search([("code", "=", self.gurb_code)])
         if not gurb_id:
-            print("No s'ha trobat cap GURB amb codi {} .".format(gurb_code))
+            print("No s'ha trobat cap GURB amb codi {}.".format(self.gurb_code))
             return
+        else:
+            gurb_id = gurb_id[0]
+
         for contract in self.contract_list:
             pol_br = self.c.GiscedataPolissa.browse(
                 [("name", "=", contract["name"])]
             )
             if not pol_br:
                 print("No s'ha trobat la pòlissa {}.".format(contract["name"]))
-            gurb_cups_id = self.c.SomGurbCups().create({
+                continue
+
+            gurb_cups_id = self.c.SomGurbCups.search([
+                ("gurb_id", "=", gurb_id),
+                ("cups_id", "=", pol_br[0].cups.id),
+            ])
+            if gurb_cups_id:
+                print(
+                    "El CUPS {} ja és al GURB {}.".format(
+                        pol_br[0].cups.name,
+                        self.gurb_code,
+                    )
+                )
+                continue
+
+            gurb_cups_id = self.c.SomGurbCups.create({
                 "gurb_id": gurb_id,
-                "cups_id": pol_br.cups.id,
-                "start_date": date.today(),
-                "betas_ids": [
-                    (0, 0, {
-                        "beta_kw": contract["beta"],
-                        "start_date": date.today(),
-                    }),
-                ],
+                "cups_id": pol_br[0].cups.id,
+                "start_date": str(date.today()),
             })
             if gurb_cups_id:
+                self.c.SomGurbCupsBeta.create({
+                    "active": True,
+                    "gurb_cups_id": gurb_cups_id.id,
+                    "beta_kw": contract["beta"],
+                    "extra_beta_kw": 0.0,
+                    "start_date": str(date.today()),
+                })
+
                 n_gurb_cups += 1
+
         print("S'han creat correctament {} GURB CUPS.".format(n_gurb_cups))
 
 
@@ -49,15 +71,13 @@ contract_list = []
 
 with open(enrolment_file, "r") as csvfile:
     reader = csv.reader(csvfile, delimiter=",")
-    next(reader)
     for row in reader:
-        if row[0] and not row[1]:
-            contract_list.append(
-                {
-                    "name": row[0],
-                    "beta": row[1],
-                }
-            )
+        contract_list.append(
+            {
+                "name": row[0],
+                "beta": float(row[1].replace(',', '.')),
+            }
+        )
 
 cgc = CreateGurbCups(c, contract_list, gurb_code)
 cgc.createGurbCups()
