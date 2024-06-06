@@ -82,6 +82,15 @@ def search_polisses_by_csv(csv_file):
     return pol_ids
 
 
+def add_day(base, key, date, today_str):
+    if date:
+        base['data_' + key] = date
+        base['dies_' + key] = days_between(date[:10], today_str)
+    else:
+        base['data_' + key] = ''
+        base['dies_' + key] = 'F'
+
+
 def main(polissa_names, fitxer_csv, date_offset):
     step("")
     step("cercant polisses.")
@@ -103,15 +112,28 @@ def main(polissa_names, fitxer_csv, date_offset):
 
         polissa = {}
         polissa['numero'] = pol.name
-        polissa['data_ultima_lectura_f1'] = pol.data_ultima_lectura_f1
-        data_f1 = polissa['data_ultima_lectura_f1']
-        if data_f1:
-            polissa['dies_ultima_lectura_f1'] = days_between(data_f1, today_str)
+        polissa['estat'] = pol.state
+        polissa['activa'] = pol.active
+
+        add_day(polissa, 'baixa', pol.data_baixa, today_str)
+        add_day(polissa, 'ultima_lectura_f1', pol.data_ultima_lectura_f1, today_str)
+
+        polissa['facturat'] = (
+            polissa['data_baixa'] and
+            polissa['data_ultima_lectura_f1'] == polissa['data_baixa'] and
+            polissa['estat'] == 'baixa')
+
+        if polissa['data_baixa']:
+            polissa['facturat'] = (
+                polissa['data_ultima_lectura_f1'] == polissa['data_baixa'] and
+                polissa['estat'] == 'baixa'
+            )
+            polissa['antiga'] = days_between(polissa['data_baixa'], today_str) > 300
         else:
-            polissa['dies_ultima_lectura_f1'] = 'F'
+            polissa['facturat'] = '-'
+            polissa['antiga'] = False
 
         states = len(pol.autoreclama_history_ids)
-
         if states > 0:
             polissa['estat_autoreclama_actual'] = pol.autoreclama_history_ids[0].state_id.name
         else:
@@ -138,21 +160,25 @@ def main(polissa_names, fitxer_csv, date_offset):
 
         polissa['cassos_atc_006_previs'] = found_cases
         polissa['estat_ultim_atc_006'] = last_case_state
-        polissa['data_tancament_ultim_atc_006'] = last_case_close_date if last_case_close_date else ''
-        polissa['dies_tancament_ultim_atc_006'] = days_between(last_case_close_date[:10], today_str) if last_case_close_date else ''
-
+        add_day(polissa, 'tancament_ultim_atc_006', last_case_close_date, today_str)
         result[pol_id] = polissa
 
     step("")
     success("Resum")
-    step("polissa   ultim f1 dies       estat actual         estat previ  006 estat      ultim tancament dies")
+    step("Polissa      Estat Ac   D.Baixa dies  Ultim f1 dies  FACT ANTG       Estat actual         Estat previ  006 Estat      Ultim tancament dies")
     for pol_id in sorted(result.keys()):
         v = result[pol_id]
         step(
-            "{}  {} {:3}  >{:16}<  >{:16}< {:3} {:6} {:7} {}",
+            "{} {:>10}  {:1} {:>10} {:>3} {:>10} {:>3}    {:1}    {:1}   >{:>16}<  >{:>16}< {:>3} {:>6} {:>7} {}",
             v['numero'],
+            v['estat'],
+            v['activa'],
+            v['data_baixa'],
+            v['dies_baixa'],
             v['data_ultima_lectura_f1'],
             v['dies_ultima_lectura_f1'],
+            v['facturat'],
+            v['antiga'],
             v['estat_autoreclama_actual'],
             v['estat_autoreclama_anterior'],
             v['cassos_atc_006_previs'],
