@@ -76,14 +76,14 @@ def create_conversation(hs_conversation):
         response = requests.post(POST_CONVERSATION_URL, json=body, headers=FS_HEADERS)
 
         if response.status_code != 201:
-            print(response.status_code, hs_conversation['subject'])
+            print(response.status_code, hs_conversation.get('subject', ""), hs_conversation.get('id', ""))
         elif fs_tags:
             response_tags = requests.put(ADD_TAGS_URL.format(response.json()['id']), json={'tags': fs_tags}, headers=FS_HEADERS)
             if response_tags.status_code != 204:
                 print("Tag Error: ", response_tags.status_code, hs_conversation['subject'])
 
     except Exception as e:
-        print("No he pogut gestionar:", hs_conversation.get('subject', ""))
+        print("No he pogut gestionar:", hs_conversation.get('subject', ""), hs_conversation.get('id', ""))
         print(e)
 
 
