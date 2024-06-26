@@ -93,7 +93,7 @@ if __name__ == '__main__':
     start_date = '2010-03-04T00:00:00Z'
     end_date = '2025-03-04T23:59:59Z'
 
-    url = f'https://api.helpscout.net/v2/conversations?mailbox={mailbox}&embed=threads&query=(createdAt:[{start_date} TO {end_date}])&status=all'
+    url = f'https://api.helpscout.net/v2/conversations?mailbox={mailbox}&embed=threads&query=(createdAt:[{start_date} TO {end_date}] AND tag:(NOT "nagios" AND NOT "fail2ban" AND NOT "backups"))&status=all'
 
     next_url = url
     while next_url:
