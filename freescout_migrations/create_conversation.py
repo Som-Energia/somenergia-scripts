@@ -32,10 +32,11 @@ def create_conversation(hs_conversation):
             if th['type'] == 'customer':
                 thread['cc'] = th['cc']
                 thread['bcc'] = th['bcc']
-                thread['customer'] = {'email': th['customer']['email']}
+                customer_email = th['customer'].get('email', '') or 'unidentified_visitor@somenergia.coop'
+                thread['customer'] = {'email': customer_email}
                 thread['createdAt'] = th['createdAt']
             else:
-                thread["user"] = USER_MAPPING[th['createdBy']['id']]
+                thread["user"] = USER_MAPPING.get(th['createdBy']['id'], 1)
             thread['attachments'] = []
             for attach in th['_embedded']['attachments']:
                 attachment_ref = attach['_links']['data']['href']
@@ -56,7 +57,7 @@ def create_conversation(hs_conversation):
             "mailboxId": MAILBOX_DESTINATION,
             "subject": hs_conversation['subject'],
             "customer": {
-                "email": hs_conversation['primaryCustomer'].get('email', ""),
+                "email": hs_conversation['primaryCustomer'].get('email', '') or 'unidentified_visitor@somenergia.coop',
                 "firstName": hs_conversation['primaryCustomer'].get('first', ""),
                 "lastName": hs_conversation['primaryCustomer'].get('last', ""),
             },
@@ -66,7 +67,7 @@ def create_conversation(hs_conversation):
             "createdAt": hs_conversation['createdAt']
         }
         if 'assignee' in hs_conversation:
-            body['assignTo'] = USER_MAPPING[hs_conversation['assignee']['id']]
+            body['assignTo'] = USER_MAPPING.get(hs_conversation['assignee']['id'], 1)
         if hs_conversation['status'] == 'closed':
             body['closedAt'] = hs_conversation['closedAt']
         fs_tags = []
