@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-
+import click
+import csv
 import requests
-from configdb import URL, SECRET_KEY, HS_TOKEN
+from configdb import URL, SECRET_KEY, HS_TOKEN, EMAIL_FILENAME
 from create_conversation import create_conversation
 from tqdm import tqdm
+from migration_checks import customer_email_in_erp, newer_than_4y
 
 
 HS_HEADERS = {
