@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import requests
-from configdb import URL, SECRET_KEY, MAILBOX_DESTINATION, HS_TOKEN, USER_MAPPING
+from configdb import URL, SECRET_KEY, HS_TOKEN, USER_MAPPING
 
 HS_HEADERS = {
     'Authorization': f'Bearer {HS_TOKEN}',
@@ -54,7 +54,7 @@ def create_conversation(hs_conversation):
 
         body = {
             "type": hs_conversation['type'],
-            "mailboxId": MAILBOX_DESTINATION,
+            "mailboxId": fs_mailbox,
             "subject": hs_conversation['subject'],
             "customer": {
                 "email": hs_conversation['primaryCustomer'].get('email', '') or 'unidentified_visitor@somenergia.coop',

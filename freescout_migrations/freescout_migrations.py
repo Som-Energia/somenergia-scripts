@@ -27,12 +27,32 @@ def get_tqdm(url):
     return tqdm(total=page_info.get('totalElements', 0)), page_info.get('size', 1)
 
 
-if __name__ == '__main__':
-    mailbox = 187926  # Mirar https://api.helpscout.net/v2/mailboxes
-    start_date = '2010-01-01T00:00:00Z'
-    end_date = '2025-01-01T23:59:59Z'
+def read_csv_emails(filename):
+    with open(filename, mode='r') as file:
+        csvFile = csv.reader(file)
+        emails={line[0] for line in csvFile}
+    return emails
 
-    url = f'https://api.helpscout.net/v2/conversations?mailbox={mailbox}&embed=threads&query=(createdAt:[{start_date} TO {end_date}] AND tag:(NOT "nagios" AND NOT "fail2ban" AND NOT "backups"))&status=all'
+
+@click.command()
+@click.option('-s', '--start-date', required=True,
+              help='Format: 2022-02-01T23:59:59Z')
+@click.option('-e', '--end-date', required=True,
+              help='Format: 2022-02-01T23:59:59Z')
+@click.option('-f', '--from-mailbox', required=True, type=int,
+              help='HelpScout mailbox id, use https://api.helpscout.net/v2/mailboxes endpoint')
+@click.option('-t', '--to-mailbox', required=True, type=int,
+              help='FreeScout mailbox id, you can see it with browser in https://hs.somenergia.coop/mailbox/<mailbox_id> url')
+
+def main(**kwargs):
+    erp_emails = read_csv_emails(EMAIL_FILENAME)
+
+    hs_mailbox = kwargs.get('from_mailbox', False)
+    fs_mailbox = kwargs.get('to_mailbox', False)
+    start_date = kwargs.get('start_date', False)
+    end_date = kwargs.get('end_date', False)
+
+    url = f'https://api.helpscout.net/v2/conversations?mailbox={hs_mailbox}&embed=threads&query=(createdAt:[{start_date} TO {end_date}] AND tag:(NOT "nagios" AND NOT "fail2ban" AND NOT "backups"))&status=all'
 
     pbar, page_size = get_tqdm(url)
     next_url = url
@@ -43,10 +63,15 @@ if __name__ == '__main__':
             data = response.json()
 
             for item in data['_embedded']['conversations']:
-                create_conversation(hs_conversation=item)
+                if newer_than_4y(item.get("createdAt")) or customer_email_in_erp(item, erp_emails):
+                    create_conversation(hs_conversation=item, fs_mailbox=fs_mailbox)
             pbar.update(page_size)
             next_url = data['_links'].get('next', dict()).get('href')
         else:
             print(f'Error in request: {response.status_code}')
             print(response.text)
     pbar.close()
+
+
+if __name__ == '__main__':
+    main()
