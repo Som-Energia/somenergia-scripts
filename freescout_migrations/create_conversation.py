@@ -18,7 +18,7 @@ POST_CONVERSATION_URL = "{}{}".format(URL, 'conversations')
 ADD_TAGS_URL = "{}{}".format(URL, 'conversations/{}/tags')
 
 
-def create_conversation(hs_conversation):
+def create_conversation(hs_conversation, fs_mailbox):
     try:
         threads = []
         for th in hs_conversation['_embedded']['threads']:
