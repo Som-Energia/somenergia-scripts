@@ -30,7 +30,7 @@ def create_conversation(hs_conversation, fs_mailbox):
             if 'body' in th:
                 thread['text'] = th['body']
             if th['type'] == 'customer':
-                thread['cc'] = th['cc']
+                thread['cc'] = th['cc'] + th['to']
                 thread['bcc'] = th['bcc']
                 customer_email = th['customer'].get('email', '') or 'unidentified_visitor@somenergia.coop'
                 thread['customer'] = {'email': customer_email}
