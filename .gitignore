@@ -33,3 +33,6 @@ janitors/csv/
 
 # Benchmarks
 benchmarks/dbconfig.py
+
+## FS Migration
+freescout_migrations/emails.csv
