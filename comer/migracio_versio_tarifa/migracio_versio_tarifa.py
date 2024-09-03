@@ -99,7 +99,8 @@ def search_last_version_id(c, tarifa_id):
         ('pricelist_id', '=', tarifa_id),
         ('date_end', '=', False)
     ]
-    version_id = version_o.search(search_params)[0]
+    version_ids = version_o.search(search_params, context={'active_test': False})
+    version_id = sorted(version_ids)[-1]
 
     return version_id
 
