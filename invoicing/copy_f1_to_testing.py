@@ -24,6 +24,7 @@ def import_f1_to_testing(f1_ids, client_from, client_to):
             import re
             encoding = re.findall('encoding="(.*)"', xml_data)
             if encoding:
+                encoding = encoding[0].split('"')
                 datas = base64.b64encode(xml_data.decode(encoding[0]).encode('utf-8'))
             else:
                 raise e
