@@ -15,19 +15,11 @@ def import_f1_to_testing(f1_ids, client_from, client_to):
         xml_data = ''
         try:
             xml_data = f1_from_obj.get_xml_from_adjunt(f1_id)
-        except Exception as e:
-            f1 = f1_from_obj.browse(f1_id)
-            xml_data = base64.b64decode(f1.attachment_id.datas)
-        try:
             datas = base64.b64encode(xml_data.encode('utf-8'))
         except Exception as e:
-            import re
-            encoding = re.findall('encoding="(.*)"', xml_data)
-            if encoding:
-                encoding = encoding[0].split('"')
-                datas = base64.b64encode(xml_data.decode(encoding[0]).encode('utf-8'))
-            else:
-                raise e
+            f1 = f1_from_obj.browse(f1_id)
+            datas = f1.attachment_id.datas
+
         filename = f1_from_obj.read(f1_id, ['name'])['name']
         wiz_id = wiz_import_to_o.create({'filename': 'copy_'+filename, 'file': datas})
         wiz_import_to_o.action_importar_f1([wiz_id.id])
