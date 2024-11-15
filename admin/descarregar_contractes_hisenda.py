@@ -22,31 +22,8 @@ from tqdm import tqdm
 # CUPS;nombre;nif;direccion_subministro;territorio;importe_facturado; iva; periodo_inicio; periodo_fin
 # ES0000000000000000000; Nom client; 12345678A; Carrer numero; True; 1000; True; 2020-01-15; 2021-01-15
 
-'''
-    SELECT gcp.name AS cups, rp.name as nombre, rp.vat as nif, gcp.direccio AS direccion_subministro,
-        CASE rcs.code
-                WHEN '31' THEN 4
-                WHEN '01' THEN 1
-                WHEN '20' THEN 2
-                WHEN '48' THEN 3
-                ELSE 0
-        END territorio,
-        round(sum(ai.amount_total),2) as importe_facturado, 'si' as iva_incluido, min(gff.data_inici) AS periodo_inicio, max(gff.data_final) AS perido_fin
-    FROM
-        giscedata_polissa gp
-    INNER JOIN res_partner rp ON gp.titular = rp.id
-    INNER JOIN giscedata_cups_ps gcp ON gcp.id = gp.cups
-    INNER JOIN account_invoice ai ON ai.partner_id = rp.id
-    INNER JOIN giscedata_facturacio_factura gff ON gff.polissa_id = gp.id
-    INNER JOIN res_municipi rm ON rm.id = gcp.id_municipi
-    INNER JOIN res_country_state rcs ON rm.state = rcs.id
-    WHERE
-        ai.date_invoice >= '2017-01-01' and ai.date_invoice <= '2017-01-31'
-        and gff.invoice_id = ai.id
-    GROUP BY gcp.name, rp.name, rp.vat, gcp.direccio, iva_incluido, territorio;
-'''
 
-FOLDER = '18f1DXG8V5QmCBKivozHldvcob6opldN1'
+FOLDER = '1CQvIZCZ3Urqr01ZLKdtcUioh2pjMa-jZ'
 
 class MoveReport:
     def __init__(self, cursor):
@@ -56,14 +33,18 @@ class MoveReport:
     def move_by_lines(self, start_date, end_date):
         sql = '''
             SELECT gcp.name AS cups, rp.name as nombre, rp.vat as nif, gcp.direccio AS direccion_subministro,
-                CASE rcs.code
-                        WHEN '31' THEN 4
-                        WHEN '01' THEN 1
-                        WHEN '20' THEN 2
-                        WHEN '48' THEN 3
-                        ELSE 0
-                END territorio,
-                round(sum(ai.amount_total),2) as importe_facturado, 'si' as iva_incluido, min(gff.data_inici) AS periodo_inicio, max(gff.data_final) AS perido_fin
+                   CASE rcs.code
+                       WHEN '31' THEN 'Navarra'
+                       WHEN '01' THEN 'Alava'
+                       WHEN '20' THEN 'Guipuzkoa'
+                       WHEN '48' THEN 'Bizkaya'
+                       ELSE 'resto'
+                   END AS territorio,
+                   round(SUM(CASE
+                     WHEN ai.type = 'out_refund' THEN -ai.amount_total
+                     ELSE ai.amount_total
+                 END), 2) AS importe_facturado,
+                 'si' as iva_incluido, min(gff.data_inici) AS periodo_inicio, max(gff.data_final) AS perido_fin
             FROM
                 giscedata_polissa gp
             INNER JOIN res_partner rp ON gp.titular = rp.id
