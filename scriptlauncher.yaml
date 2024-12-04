@@ -360,8 +360,8 @@ invoicefixing:
           default: aplicar
     change_flux_solar_csv:
       script: python SOME_SRC/somenergia-scripts/invoicing/solar_flux_enabler_disabler.py --doit {doit} --file={csv_file} --state {state}
-      title: Permetre modificar (activar/desactivar) els flux solars de les polisses en bloc
-      description: Permetre modificar (activar/desactivar) els flux solars de les polisses en bloc
+      title: Permetre modificar (activar/desactivar) els flux solars de les polisses en bloc via csv
+      description: Permetre modificar (activar/desactivar) els flux solars de les polisses en bloc via csv
       parameters:
         doit:
           description: Vols fer els canvis? (escriu 'si' per aplicar-ho)

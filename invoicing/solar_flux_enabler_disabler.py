@@ -80,10 +80,6 @@ def search_polisses_by_csv(csv_file):
 
 
 def main(polissa_names, fitxer_csv, state, doit):
-
-    import pudb;pu.db
-
-
     if doit:
         success("Es FARAN CANVIS!")
     else:
@@ -110,13 +106,15 @@ def main(polissa_names, fitxer_csv, state, doit):
 
     step("")
     step("Polisses modificades {} polisses.", len(modifieds))
-    modifieds = pol_obj.read(modifieds, ['name'])
-    step(",".join([modified['name'] for modified in modifieds]))
+    if modifieds:
+        modifieds = pol_obj.read(modifieds, ['name'])
+        step(",".join([modified['name'] for modified in modifieds]))
 
     step("")
-    step("Polisses sense flux: {}", errors)
-    errors = pol_obj.read(errors, ['name'])
-    step(",".join([error['name'] for error in errors]))
+    step("Polisses sense flux: {}", len(errors))
+    if errors:
+        errors = pol_obj.read(errors, ['name'])
+        step(",".join([error['name'] for error in errors]))
 
     if doit:
         success("S'HAN FET CANVIS!")
