@@ -338,7 +338,47 @@ invoicefixing:
           description: id's de factures separats per comes
         components:
           description: components a ser mostrats a la factura
-
+    change_flux_solar:
+      script: python SOME_SRC/somenergia-scripts/invoicing/solar_flux_enabler_disabler.py --doit {doit} --polissa_names {polissa_names} --state {state}
+      title: Permetre modificar (activar/desactivar) els flux solars de les polisses en bloc
+      description: Permetre modificar (activar/desactivar) els flux solars de les polisses en bloc
+      parameters:
+        doit:
+          description: Vols fer els canvis? (escriu 'si' per aplicar-ho)
+        polissa_names:
+          description: Números de polissa separats per coma.
+        state:
+          description: Estat a posar el flux solar.
+          type: enum
+          options:
+            No aplicar descomptes: no_aplicar
+            Aplicar descomptes disponibles: aplicar
+            Aplicar descomptes a partir d'un import mínim: min_import
+            Aplicar descomptes els mesos de Novembre, Desembre, Gener, Febrer i Març: hivern
+            Aplicar tot l'import de la bateria: aplicar_tot
+            Remesar: remesar
+          default: aplicar
+    change_flux_solar_csv:
+      script: python SOME_SRC/somenergia-scripts/invoicing/solar_flux_enabler_disabler.py --doit {doit} --file={csv_file} --state {state}
+      title: Permetre modificar (activar/desactivar) els flux solars de les polisses en bloc
+      description: Permetre modificar (activar/desactivar) els flux solars de les polisses en bloc
+      parameters:
+        doit:
+          description: Vols fer els canvis? (escriu 'si' per aplicar-ho)
+        csv_file:
+          type: FILE
+          description: "CSV amb el nom de les pòlisses a la primera columna, sense capçalera (Obligatori)"
+        state:
+          description: Estat a posar el flux solar.
+          type: enum
+          options:
+            No aplicar descomptes: no_aplicar
+            Aplicar descomptes disponibles: aplicar
+            Aplicar descomptes a partir d'un import mínim: min_import
+            Aplicar descomptes els mesos de Novembre, Desembre, Gener, Febrer i Març: hivern
+            Aplicar tot l'import de la bateria: aplicar_tot
+            Remesar: remesar
+          default: aplicar
     check_invoice_f1_consume:
       title: Comprovador de consums de factures i les seus F1
       description: Script per comprovar el consum de factures i els seus f1's, si no s'indiquen factures agafarà les factures en esborrany.
