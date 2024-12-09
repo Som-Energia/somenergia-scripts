@@ -1,4 +1,3 @@
-
 SELECT
     i.number AS Factura,
     c.name as Cups,
@@ -53,28 +52,45 @@ SELECT
     ELSE COALESCE(f.total_lloguers, 0.0)
   END AS Importe_alquiler,
 
+
   CASE
-    WHEN i.type like '%refund' THEN -COALESCE(it_iese.base,0)
+    WHEN i.type IN ('out_refund', 'in_refund') THEN -COALESCE(no_energy_invoices_with_vat.other_lines, 0.0)
+    ELSE COALESCE(no_energy_invoices_with_vat.other_lines, 0.0)
+  END AS otras_linias_facturas_no_energia_con_iva,
+
+  CASE
+    WHEN i.type IN ('out_refund', 'in_refund') THEN -COALESCE(no_energy_invoices_no_vat.other_lines, 0.0)
+    ELSE COALESCE(no_energy_invoices_no_vat.other_lines, 0.0)
+  END AS otras_linias_facturas_no_energia_sin_iva,
+
+  CASE
+    WHEN i.type IN ('out_refund', 'in_refund') THEN -COALESCE(otros_cobros.cobros, 0.0)
+    ELSE COALESCE(otros_cobros.cobros,0.0)
+  END AS otros_cobros,
+
+  CASE
+    WHEN i.type like '%%refund' THEN -COALESCE(it_iese.base,0)
     ELSE COALESCE(it_iese.base,0.0)
   END AS Base_IESE,
 
   CASE
-    WHEN i.type like '%refund' THEN -COALESCE(it_iese.amount,0.0)
+    WHEN i.type like '%%refund' THEN -COALESCE(it_iese.amount,0.0)
     ELSE COALESCE(it_iese.amount,0.0)
   END AS Cuota_IESE,
 
   CASE
     WHEN i.type IN ('out_refund', 'in_refund') THEN COALESCE(-iv_21.base,NULL)
     ELSE COALESCE(iv_21.base,NULL)
-  END AS Base_IVA_21,
+  END AS Base_IVA,
 
   CASE
     WHEN i.type IN ('out_refund', 'in_refund') THEN COALESCE(-iv_21.amount,NULL)
     ELSE COALESCE(iv_21.amount,NULL)
-  END AS cuota_IVA_21,
-
+  END AS cuota_IVA,
+  it_21.name AS tipo_iva,
+    
   CASE
-    WHEN i.type like '%refund' THEN -i.amount_total
+    WHEN i.type like '%%refund' THEN -i.amount_total
     ELSE i.amount_total
   END AS Total_Factura
 
@@ -86,8 +102,8 @@ LEFT JOIN res_country_state state ON (state.id=mun.state)
 LEFT JOIN giscedata_polissa pol ON (f.polissa_id=pol.id)
 LEFT JOIN giscedata_polissa_tarifa t ON (t.id=f.tarifa_acces_id)
 
-LEFT JOIN account_invoice_tax it_21 ON (it_21.invoice_id=i.id AND it_21.name LIKE 'IVA 21%')
-LEFT JOIN account_invoice_tax it_iese ON (it_iese.invoice_id=i.id AND it_iese.name LIKE '%electricidad%')
+LEFT JOIN account_invoice_tax it_21 ON (it_21.invoice_id=i.id AND it_21.name LIKE 'IVA')
+LEFT JOIN account_invoice_tax it_iese ON (it_iese.invoice_id=i.id AND it_iese.name LIKE '%%electricidad%%')
 LEFT JOIN res_partner d ON (d.id=c.distribuidora_id)
 LEFT JOIN res_partner p ON (p.id=i.company_id)
 LEFT JOIN res_partner tit on (tit.id = i.partner_id)
@@ -114,7 +130,7 @@ LEFT JOIN (
   SELECT il.invoice_id AS inv_id, SUM(il.price_subtotal) AS base_costs, SUM(il.price_subtotal * it_21.amount) AS iva_costs
   FROM account_invoice_line il
   LEFT JOIN account_invoice_line_tax lt ON (lt.invoice_line_id = il.id)
-  LEFT JOIN account_tax it_21 ON (lt.tax_id=it_21.id AND it_21.name LIKE 'IVA 21%')
+  LEFT JOIN account_tax it_21 ON (lt.tax_id=it_21.id AND it_21.name LIKE 'IVA%%')
   LEFT JOIN giscedata_facturacio_factura_linia fl ON (fl.invoice_line_id = il.id)
   LEFT JOIN product_product pp ON (il.product_id = pp.id)
   LEFT JOIN product_template pt ON (pp.product_tmpl_id = pt.id)
@@ -129,7 +145,7 @@ LEFT JOIN account_fiscal_position fp ON (i.fiscal_position = fp.id)
 LEFT JOIN account_invoice_tax iv_21 ON
     (iv_21.invoice_id=i.id
     AND
-    (iv_21.name LIKE 'IVA 21%' OR iv_21.name LIKE '21% IVA%')
+    (iv_21.name LIKE 'IVA' OR iv_21.name LIKE 'IVA%%')
 )
 
 
@@ -155,6 +171,7 @@ LEFT JOIN(
     GROUP BY f.invoice_id, fli.tipus
 ) as generacio_custom on (generacio_custom.inv_id=i.id)
 
+
 LEFT JOIN
   (
     SELECT gffl.factura_id,gffl.tipus, sum(ail.price_subtotal) AS suma
@@ -164,12 +181,57 @@ LEFT JOIN
     GROUP BY gffl.factura_id,gffl.tipus
   ) AS excesos ON f.id = excesos.factura_id
 
+LEFT JOIN
+(
+  SELECT il.invoice_id AS inv_id, SUM(il.price_subtotal) AS other_costs
+  FROM account_invoice_line il
+  LEFT JOIN account_invoice_line_tax lt ON (lt.invoice_line_id = il.id)
+  LEFT JOIN account_tax it_21 ON (lt.tax_id=it_21.id)
+  LEFT JOIN giscedata_facturacio_factura_linia fl ON (fl.invoice_line_id = il.id)
+  WHERE it_21.id is not NULL
+    AND fl.tipus = 'altres'
+  GROUP BY il.invoice_id, it_21.amount
+) as other_lines on (other_lines.inv_id = i.id)
+
+left join
+(
+  SELECT il.invoice_id AS inv_id, SUM(il.price_subtotal) AS other_lines
+  FROM account_invoice_line il
+  LEFT JOIN account_invoice_line_tax lt ON (lt.invoice_line_id = il.id)
+  LEFT JOIN account_tax it_21 ON (lt.tax_id=it_21.id)
+  left join giscedata_facturacio_factura_linia fl on (fl.invoice_line_id = il.id)
+  WHERE it_21.id is not null
+    and fl.id is null
+  GROUP BY il.invoice_id, it_21.amount
+) as no_energy_invoices_with_vat on (no_energy_invoices_with_vat.inv_id = i.id)
+
+left join
+(
+  SELECT il.invoice_id AS inv_id, SUM(il.price_subtotal) AS other_lines
+  FROM account_invoice_line il
+  LEFT JOIN account_invoice_line_tax lt ON (lt.invoice_line_id = il.id)
+  LEFT JOIN account_tax it_21 ON (lt.tax_id=it_21.id)
+  left join giscedata_facturacio_factura_linia fl on (fl.invoice_line_id = il.id)
+  WHERE it_21.id is null
+    and fl.id is null
+  GROUP BY il.invoice_id, it_21.amount
+) as no_energy_invoices_no_vat on (no_energy_invoices_no_vat.inv_id = i.id)
+
+left join
+(
+  SELECT il.invoice_id AS inv_id, SUM(il.price_subtotal) AS cobros
+  FROM public.account_invoice_line il
+  LEFT JOIN public.giscedata_facturacio_factura_linia fl ON (fl.invoice_line_id = il.id)
+  WHERE fl.tipus = 'cobrament'
+  GROUP BY il.invoice_id
+) as otros_cobros on (otros_cobros.inv_id = i.id)
+
 WHERE
   i.state not in ('draft', 'proforma2', 'cancel')
   AND (i.fiscal_position IS NULL OR i.fiscal_position not in (19,21,25))
   AND i.type in ('out_invoice','out_refund')
-  AND i.date_invoice >= '2020-01-01'
-  AND i.date_invoice <= '2020-06-30'
+  AND i.date_invoice >=  %(start_date)s::date
+  AND i.date_invoice <=  %(end_date)s::date
   AND ( s.code in ('account.invoice.energia',
             'account.invoice.energia.ab',
             'account.invoice.energia.ab',
@@ -188,3 +250,5 @@ WHERE
     END != 0.0
 
   ORDER BY i.number asc, i.date_invoice
+  OFFSET %(start_line)s LIMIT %(MAX_MOVES_LINES)s
+
