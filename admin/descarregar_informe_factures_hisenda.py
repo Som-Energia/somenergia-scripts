@@ -52,7 +52,7 @@ class MoveReport:
         with open(sql) as f:
             query = f.read()
             print query
-            self.cursor.execute(sql, {'start_date': start_date, 'end_date': end_date,
+            self.cursor.execute(query, {'start_date': start_date, 'end_date': end_date,
                 'start_line': start_line, 'MAX_MOVES_LINES': MAX_MOVES_LINES})
 
         file_name = '/tmp/informe_hacienda_listado_facturas_iva_' + str(start_date[:4]) + '_' + str(start_line) + '.csv'
