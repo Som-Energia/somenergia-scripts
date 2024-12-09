@@ -9,14 +9,14 @@ import driveUtils
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import locale
-locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
+locale.setlocale(locale.LC_ALL, 'ca_ES.UTF-8')
 import argparse
 
 ## SYNTAX
 # python admin/descarregar_assentaments_comptables.py --start_date 2018-01-10 --end_date 2018-01-20
 
 MAX_MOVES_LINES = 700000 #Max linies assentament del programa dels interventors
-FOLDER = '18f1DXG8V5QmCBKivozHldvcob6opldN1'
+FOLDER = '1cUJwRc3x2eCnFIRgPO_eqiEMfO891BA3'
 
 class MoveReport:
     def __init__(self, cursor):

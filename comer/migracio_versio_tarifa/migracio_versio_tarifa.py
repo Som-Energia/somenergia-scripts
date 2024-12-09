@@ -123,6 +123,8 @@ def migracio(args):
         erppeek_desti = configdb.erppeek_stage
     elif args.erp_desti == 'pre':
         erppeek_desti = configdb.erppeek_pre
+    elif args.erp_desti == 'pro':
+        erppeek_desti = configdb.erppeek_pro
     else:
         print "No s'ha trobat servidor de destí"
         return

@@ -20,8 +20,11 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
-from googleapiclient.http import MediaFileUpload
+from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 import re
+import io
+import shutil
+
 
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/drive']
@@ -67,6 +70,25 @@ def upload(path, folder_id):
     file = service.files().create(body=file_metadata,
                                         media_body=media,
                                         fields='id').execute()
+
+def download(file_id, mimetype='application/pdf'):
+    credentials = getCredentials()
+    service = build('drive', 'v3', credentials=credentials)
+
+    request = service.files().export(fileId=file_id, mimeType=mimetype)
+
+    fh = io.BytesIO()
+    downloader = MediaIoBaseDownload(fh, request)
+    done = False
+    while done is False:
+        status, done = downloader.next_chunk()
+        print("Download %d%%" % int(status.progress() * 100))
+
+    # The file has been downloaded into RAM, now save it in a file
+    fh.seek(0)
+    with open('prova_oriol', 'wb') as f:
+        shutil.copyfileobj(fh, f, length=131072)
+
 
 #Just for testing purpose
 def main():
