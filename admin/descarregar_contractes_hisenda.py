@@ -32,31 +32,59 @@ class MoveReport:
 
     def move_by_lines(self, start_date, end_date):
         sql = '''
-            SELECT gcp.name AS cups, rp.name as nombre, rp.vat as nif, gcp.direccio AS direccion_subministro,
-                   CASE rcs.code
-                       WHEN '31' THEN 'Navarra'
-                       WHEN '01' THEN 'Alava'
-                       WHEN '20' THEN 'Guipuzkoa'
-                       WHEN '48' THEN 'Bizkaya'
-                       ELSE 'resto'
-                   END AS territorio,
-                   round(SUM(CASE
-                     WHEN ai.type = 'out_refund' THEN -ai.amount_total
-                     ELSE ai.amount_total
-                 END), 2) AS importe_facturado,
-                 'si' as iva_incluido, min(gff.data_inici) AS periodo_inicio, max(gff.data_final) AS perido_fin
-            FROM
-                giscedata_polissa gp
-            INNER JOIN res_partner rp ON gp.titular = rp.id
-            INNER JOIN giscedata_cups_ps gcp ON gcp.id = gp.cups
-            INNER JOIN account_invoice ai ON ai.partner_id = rp.id
-            INNER JOIN giscedata_facturacio_factura gff ON gff.polissa_id = gp.id
-            INNER JOIN res_municipi rm ON rm.id = gcp.id_municipi
-            INNER JOIN res_country_state rcs ON rm.state = rcs.id
-            WHERE
-                ai.date_invoice >= '{0}' and ai.date_invoice <= '{1}'
-                and gff.invoice_id = ai.id
-            GROUP BY gcp.name, rp.name, rp.vat, gcp.direccio, iva_incluido, territorio;
+            SELECT  gcp.name, pagador.name, pagador.vat as nif,
+                gcp.direccio AS direccion_subministro,
+            CASE rcs.code
+                WHEN '31' THEN 'Navarra'
+                WHEN '01' THEN 'Alava'
+                WHEN '20' THEN 'Guipuzkoa'
+                WHEN '48' THEN 'Bizkaya'
+                ELSE 'resto'impuesto
+            END AS territorio,
+            round(
+                (sum(
+                case
+                    WHEN tax.name = 'SIN IMPUESTO' THEN
+                    CASE
+                        when factura.type = 'out_refund' then
+                            tax.base_amount * -1
+                        else
+                            tax.base_amount
+                        end
+                    ELSE tax.base_amount
+                END
+                +
+                sum(
+                        CASE
+                        when factura.type = 'out_refund' then
+                            tax.tax_amount * -1
+                        else
+                            tax.tax_amount
+                        end
+                )), 2
+            ) as importe_facturado,
+            'si' as iva_incluido,
+            min(gff.data_inici) AS periodo_inicio,
+            max(gff.data_final) AS perido_fin
+
+            FROM account_invoice factura
+            INNER JOIN account_journal journal  ON journal.id = factura.journal_id
+            INNER JOIN account_invoice_tax tax on factura.id = tax.invoice_id
+            inner join giscedata_polissa gp on gp.pagador = factura.partner_id
+            inner JOIN giscedata_cups_ps gcp ON gcp.id = gp.cups
+            inner join res_partner pagador on pagador.id = gp.pagador
+            inner JOIN giscedata_facturacio_factura gff ON gff.invoice_id = factura.id
+            LEFT JOIN res_municipi rm ON rm.id = gcp.id_municipi
+            LEFT JOIN res_country_state rcs ON rm.state = rcs.id
+            where
+                gff.polissa_id  = gp.id and
+                factura.date_invoice  between '{0}'  and '{1}'
+                and journal.id in (1,5,6,7,8)
+                and journal.include_to_iva_book
+                and tax.name ilike 'IVA%%'
+                and factura.state in ('open','paid')
+            group by gcp.name, pagador.name,pagador.vat, gcp.direccio, rcs.code
+
             '''.format(start_date, end_date)
 
         self.cursor.execute(sql)
