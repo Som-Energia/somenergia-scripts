@@ -12,6 +12,7 @@ from dateutil.relativedelta import relativedelta
 #locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
 import argparse
 from tqdm import tqdm
+import os
 
 ## SYNTAX
 # python admin/descarregar_factures_hisenda.py --start_date 2017-01-10 --end_date 2017-01-20
@@ -63,7 +64,6 @@ class MoveReport:
     def build_report(self, records, filename):
         with codecs.open(filename,'wb','utf-8') as csvfile:
             writer = csv.writer(csvfile, delimiter=',', quotechar='"')
-            #writer.writerow(['num_factura','fecha_factura','nif_cliente','nombre_cliente','IESE','lineas_factura_con_iva','linia_factura_donatius','total_factura'])
             writer.writerow(['factura','cups','nombre_cliente','vat_nif','fecha_factura','fecha_inicio','fecha_final','provincia','importe_potencia_sin_descuento','importe_energia_sin_descuento','importe_generacio','importe_reactiva','importe_exceso_potencia','otros_sin_iva','otros_con_iva','importe_alquiler','otras_linias_facturas_no_energia_con_iva','otras_linias_facturas_no_energia_sin_iva','otros_cobros','base_iese','cuota_iese','base_iva','cuota_iva','tipo_iva','total_factura'])
             for record in tqdm(records):
                 writer.writerow(record)

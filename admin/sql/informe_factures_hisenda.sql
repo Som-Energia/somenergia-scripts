@@ -87,8 +87,12 @@ SELECT
     WHEN i.type IN ('out_refund', 'in_refund') THEN COALESCE(-iv_21.amount,NULL)
     ELSE COALESCE(iv_21.amount,NULL)
   END AS cuota_IVA,
-  it_21.name AS tipo_iva,
-    
+
+  CASE
+    WHEN ives.total_taxes > 1 THEN 'varios'
+    ELSE ives.max_tax_name
+  END AS tipo_iva,
+
   CASE
     WHEN i.type like '%%refund' THEN -i.amount_total
     ELSE i.amount_total
@@ -123,7 +127,7 @@ LEFT JOIN (
   LEFT JOIN giscedata_facturacio_factura_linia fl ON (fl.invoice_line_id = il.id)
   WHERE it_21.id IS NULL
     AND fl.tipus = 'altres'
-  GROUP BY il.invoice_id, it_21.amount
+  GROUP BY il.invoice_id
 ) no_iva_concepts ON (no_iva_concepts.inv_id = i.id)
 
 LEFT JOIN (
@@ -137,7 +141,7 @@ LEFT JOIN (
   WHERE it_21.id IS NOT NULL
     AND pt.name != 'Despeses devolució'
     AND fl.tipus = 'altres'
-  GROUP BY il.invoice_id, it_21.amount
+  GROUP BY il.invoice_id
 ) iva_concepts ON (iva_concepts.inv_id = i.id)
 
 LEFT JOIN account_fiscal_position fp ON (i.fiscal_position = fp.id)
@@ -190,7 +194,7 @@ LEFT JOIN
   LEFT JOIN giscedata_facturacio_factura_linia fl ON (fl.invoice_line_id = il.id)
   WHERE it_21.id is not NULL
     AND fl.tipus = 'altres'
-  GROUP BY il.invoice_id, it_21.amount
+  GROUP BY il.invoice_id
 ) as other_lines on (other_lines.inv_id = i.id)
 
 left join
@@ -202,7 +206,7 @@ left join
   left join giscedata_facturacio_factura_linia fl on (fl.invoice_line_id = il.id)
   WHERE it_21.id is not null
     and fl.id is null
-  GROUP BY il.invoice_id, it_21.amount
+  GROUP BY il.invoice_id
 ) as no_energy_invoices_with_vat on (no_energy_invoices_with_vat.inv_id = i.id)
 
 left join
@@ -214,7 +218,7 @@ left join
   left join giscedata_facturacio_factura_linia fl on (fl.invoice_line_id = il.id)
   WHERE it_21.id is null
     and fl.id is null
-  GROUP BY il.invoice_id, it_21.amount
+  GROUP BY il.invoice_id
 ) as no_energy_invoices_no_vat on (no_energy_invoices_no_vat.inv_id = i.id)
 
 left join
@@ -225,6 +229,36 @@ left join
   WHERE fl.tipus = 'cobrament'
   GROUP BY il.invoice_id
 ) as otros_cobros on (otros_cobros.inv_id = i.id)
+
+left join
+(
+       SELECT
+           taxes.inv_id AS inv_id,
+           COUNT(*) AS total_taxes,
+           MAX(taxes.nom) AS max_tax_name
+       FROM (
+           SELECT
+               i.id AS inv_id,
+               i.name,
+               impostos.total,
+               impostos.nom
+           FROM giscedata_facturacio_factura f
+           LEFT JOIN account_invoice i ON i.id = f.invoice_id
+           LEFT JOIN (
+               SELECT
+                   il.invoice_id AS inv_id,
+                   COUNT(*) AS total,
+                   MAX(it_21.name) AS nom
+               FROM public.account_invoice_line il
+               LEFT JOIN account_invoice_line_tax lt ON lt.invoice_line_id = il.id
+               LEFT JOIN account_tax it_21 ON lt.tax_id = it_21.id
+               WHERE it_21.name ILIKE '%%IVA%%'
+               GROUP BY il.invoice_id, it_21.name
+           ) AS impostos ON impostos.inv_id = i.id
+       ) AS taxes
+       GROUP BY taxes.inv_id
+) as ives on (ives.inv_id = i.id)
+
 
 WHERE
   i.state not in ('draft', 'proforma2', 'cancel')
