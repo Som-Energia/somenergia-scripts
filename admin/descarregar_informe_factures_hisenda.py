@@ -22,7 +22,7 @@ import os
 # num_factura; fecha_factura; nif_cliente; nombre_cliente; base_imponible; tipo_iva; total_factura
 # FE000000000; 2020-01-01; 12345678A; Cognom, Nom; 1000; 21; 1210;
 
-MAX_MOVES_LINES = 400000
+MAX_MOVES_LINES = 405000
 FOLDER = '1CQvIZCZ3Urqr01ZLKdtcUioh2pjMa-jZ'
 
 class MoveReport:
@@ -48,7 +48,7 @@ class MoveReport:
 
     def invoice_by_date(self, start_date, end_date, start_line, end_line):
         sql = os.path.join(os.path.dirname(
-              os.path.realpath(__file__)), 'sql', 'informe_factures_hisenda.sql')
+              os.path.realpath(__file__)), 'sql', 'informe_factures_hisenda_with_clauses.sql')
         with open(sql) as f:
             query = f.read()
             print query
