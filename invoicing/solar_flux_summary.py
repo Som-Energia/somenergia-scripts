@@ -56,25 +56,28 @@ def search_polisses_by_name(pol_names):
 def get_fact_type(rectificative_type):
     if rectificative_type == 'N':
         return 'Normal'
-    if rectificative_type == 'B':
+    if rectificative_type in ['B', 'A']:
         return 'Abonadora'
     if rectificative_type == 'R':
         return 'Rectificadora'
     return rectificative_type
 
 
-def get_comma(number):
-    return str(number).replace('.', ',')
+def get_comma(number, rectificative_type):
+    if rectificative_type in ['B', 'A']:
+        number = number * -1.0
+    text = '{:.2f}'.format(number)
+    return text.replace('.', ',')
 
 
 def report_header():
     return [
         'Polissa',
         'Id factura',
+        'Data Factura',
         'Numero factura',
         'Tipus',
         'Rectifica',
-        'Data Factura',
         'Periode inci',
         'Periode final',
         'Sols generats',
@@ -85,14 +88,14 @@ def report_process(data):
     return [
         data.fact.polissa_id.name,
         data.fact.id,
+        data.fact.date_invoice,
         data.fact.number,
         get_fact_type(data.fact.rectificative_type),
         data.fact.rectifying_id.number if data.fact.rectifying_id else '',
-        data.fact.date_invoice,
         data.fact.data_inici,
         data.fact.data_final,
-        get_comma(data.suns_generated),
-        get_comma(data.flux_solar_discount),
+        get_comma(data.suns_generated, data.fact.rectificative_type),
+        get_comma(data.flux_solar_discount, data.fact.rectificative_type),
     ]
 
 
@@ -144,7 +147,7 @@ def main(polissa_names, fitxer_csv):
         for line in fact.linia_ids:
             if line.tipus in ("altres", "cobrament") and line.product_id.code == "PBV":
                 flux_solar += line.price_subtotal
-        data["flux_solar_discount"] = flux_solar * -1.0
+        data["flux_solar_discount"] = flux_solar
 
         #copied from pdf generator
         ajustment = 0.0
