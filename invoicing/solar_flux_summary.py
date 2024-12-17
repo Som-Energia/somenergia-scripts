@@ -109,9 +109,10 @@ def report_process(data):
             '',
             '',
             '',
-            get_comma(data.desc.import, 'N'),
+            get_comma(data.impo, 'N'),
             '0,0'
         ]
+    return []
 
 
 def build_repport(report, filename):
@@ -181,7 +182,7 @@ def main(polissa_names, fitxer_csv):
 
     pol = pol_obj.browse(pol_id)
     bat = pol.bateria_ids[0]
-    desc_ids = desc_obj.search([('bateria_polissa_id', '=', b.id), ('name', 'like', '%puntual%')])
+    desc_ids = desc_obj.search([('bateria_polissa_id', '=', bat.id), ('name', 'like', '%puntual%')])
     for desc_id in tqdm(desc_ids):
         data = ns()
         report.append(data)
@@ -190,6 +191,7 @@ def main(polissa_names, fitxer_csv):
         data['pol'] = pol
         perm = desc.perm_read()
         data['date'] = perm['create_date'][:19]
+        data['impo'] = desc.read(['import'])['import']
 
     build_repport(report, fitxer_csv)
     success("Generated file: {}", fitxer_csv)
