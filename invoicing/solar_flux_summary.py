@@ -21,6 +21,7 @@ step("Connectat")
 # Objectes
 pol_obj = O.GiscedataPolissa
 fact_obj = O.GiscedataFacturacioFactura
+desc_obj = O.GiscedataBateriaVirtualPolissaDescompte
 ir_obj = O.IrModelData
 autoconsum_excedents_product_id = ir_obj.get_object_reference(
     "giscedata_facturacio_comer",
@@ -85,18 +86,32 @@ def report_header():
 
 
 def report_process(data):
-    return [
-        data.fact.polissa_id.name,
-        data.fact.id,
-        data.fact.date_invoice,
-        data.fact.number,
-        get_fact_type(data.fact.rectificative_type),
-        data.fact.rectifying_id.number if data.fact.rectifying_id else '',
-        data.fact.data_inici,
-        data.fact.data_final,
-        get_comma(data.suns_generated, data.fact.rectificative_type),
-        get_comma(data.flux_solar_discount, data.fact.rectificative_type),
-    ]
+    if 'fact' in data:
+        return [
+            data.fact.polissa_id.name,
+            data.fact.id,
+            data.fact.date_invoice,
+            data.fact.number,
+            get_fact_type(data.fact.rectificative_type),
+            data.fact.rectifying_id.number if data.fact.rectifying_id else '',
+            data.fact.data_inici,
+            data.fact.data_final,
+            get_comma(data.suns_generated, data.fact.rectificative_type),
+            get_comma(data.flux_solar_discount, data.fact.rectificative_type),
+        ]
+    if 'desc' in data:
+        return [
+            data.pol.name,
+            '',
+            data.date,
+            data.desc.name,
+            '',
+            '',
+            '',
+            '',
+            get_comma(data.desc.import, 'N'),
+            '0,0'
+        ]
 
 
 def build_repport(report, filename):
@@ -163,6 +178,18 @@ def main(polissa_names, fitxer_csv):
         surplus_kwh = surplus_kwh * -1.0
         surplus_e = surplus_e * -1.0
         data['suns_generated'] =  ajustment * 0.80
+
+    pol = pol_obj.browse(pol_id)
+    bat = pol.bateria_ids[0]
+    desc_ids = desc_obj.search([('bateria_polissa_id', '=', b.id), ('name', 'like', '%puntual%')])
+    for desc_id in tqdm(desc_ids):
+        data = ns()
+        report.append(data)
+        desc = desc_obj.browse(desc_id)
+        data['desc'] = desc
+        data['pol'] = pol
+        perm = desc.perm_read()
+        data['date'] = perm['create_date'][:19]
 
     build_repport(report, fitxer_csv)
     success("Generated file: {}", fitxer_csv)
