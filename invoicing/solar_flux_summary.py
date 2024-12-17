@@ -104,7 +104,7 @@ def report_process(data):
             data.pol.name,
             '',
             data.date,
-            data.desc.name,
+            '',
             '',
             '',
             '',
