@@ -130,7 +130,7 @@ def main(polissa_names, fitxer_csv):
         ('polissa_id', '=', pol_id),
         ('type', 'in', ['out_refund', 'out_invoice']),
         ('state', 'in', ['paid', 'open']),
-        ('data_inici', '>', '2021-01-01'),
+        ('data_inici', '>=', '2022-01-01'),
     ], order='data_inici DESC')
 
     step("trobades {} factures a tractar.", len(fact_ids))
