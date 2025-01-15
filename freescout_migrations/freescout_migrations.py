@@ -67,6 +67,8 @@ def main(**kwargs):
             for item in data['_embedded']['conversations']:
                 if newer_than_4y(item.get("createdAt")) or customer_email_in_erp(item, erp_emails):
                     create_conversation(hs_conversation=item, fs_mailbox=fs_mailbox)
+                else:
+                    print(f'{item.get("id", "")} not migrated')
             pbar.update(page_size)
             next_url = data['_links'].get('next', dict()).get('href')
         else:

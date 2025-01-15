@@ -52,10 +52,17 @@ def create_conversation(hs_conversation, fs_mailbox):
             if th['type'] != 'lineitem':
               threads.append(thread)
 
+        # Make comment for tracking HS conversation
+        threads.append({
+            "text": f"Ticket number al HS: {hs_conversation['number']} i  l'url de la conversació al HS: {hs_conversation['_links']['web']['href']}",
+            "type": "note",
+            "user": 1
+        })
+
         body = {
             "type": hs_conversation['type'],
             "mailboxId": fs_mailbox,
-            "subject": hs_conversation['subject'],
+            "subject": hs_conversation['subject'] if 'subject' in hs_conversation else '',
             "customer": {
                 "email": hs_conversation['primaryCustomer'].get('email', '') or 'unidentified_visitor@somenergia.coop',
                 "firstName": hs_conversation['primaryCustomer'].get('first', ""),

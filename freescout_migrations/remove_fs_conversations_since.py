@@ -37,7 +37,7 @@ def main(**kwargs):
     total_pages = response.json().get('page', {}).get('totalPages')
     pbar = tqdm(total=response.json().get('page', {}).get('totalElements'))
     page_size = response.json().get('page', {}).get('size')
-    for page in range(1, total_pages + 1):
+    for page in reversed(range(1, total_pages + 1)):
         url = f'https://freescout.somenergia.coop/api/conversations?mailboxId={mailbox_id}&createdSince={start_date}&page={page}'
         response = requests.get(url, headers=FS_HEADERS)
 

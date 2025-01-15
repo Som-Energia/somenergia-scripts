@@ -28,7 +28,7 @@ if __name__ == '__main__':
     response = requests.get(url, headers=HS_HEADERS)
 
     if response.status_code == 200:
-        create_conversation(hs_conversation=response.json())
+        create_conversation(hs_conversation=response.json(), fs_mailbox=11)
     else:
         print(f'Can\'t move conversation: {response.status_code}')
         print(response.text)
