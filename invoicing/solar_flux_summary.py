@@ -21,6 +21,7 @@ step("Connectat")
 # Objectes
 pol_obj = O.GiscedataPolissa
 fact_obj = O.GiscedataFacturacioFactura
+desc_obj = O.GiscedataBateriaVirtualPolissaDescompte
 ir_obj = O.IrModelData
 autoconsum_excedents_product_id = ir_obj.get_object_reference(
     "giscedata_facturacio_comer",
@@ -56,25 +57,28 @@ def search_polisses_by_name(pol_names):
 def get_fact_type(rectificative_type):
     if rectificative_type == 'N':
         return 'Normal'
-    if rectificative_type == 'B':
+    if rectificative_type in ['B', 'A']:
         return 'Abonadora'
     if rectificative_type == 'R':
         return 'Rectificadora'
     return rectificative_type
 
 
-def get_comma(number):
-    return str(number).replace('.', ',')
+def get_comma(number, rectificative_type):
+    if rectificative_type in ['B', 'A']:
+        number = number * -1.0
+    text = '{:.2f}'.format(number)
+    return text.replace('.', ',')
 
 
 def report_header():
     return [
         'Polissa',
         'Id factura',
+        'Data Factura',
         'Numero factura',
         'Tipus',
         'Rectifica',
-        'Data Factura',
         'Periode inci',
         'Periode final',
         'Sols generats',
@@ -82,18 +86,33 @@ def report_header():
 
 
 def report_process(data):
-    return [
-        data.fact.polissa_id.name,
-        data.fact.id,
-        data.fact.number,
-        get_fact_type(data.fact.rectificative_type),
-        data.fact.rectifying_id.number if data.fact.rectifying_id else '',
-        data.fact.date_invoice,
-        data.fact.data_inici,
-        data.fact.data_final,
-        get_comma(data.suns_generated),
-        get_comma(data.flux_solar_discount),
-    ]
+    if 'fact' in data:
+        return [
+            data.fact.polissa_id.name,
+            data.fact.id,
+            data.fact.date_invoice,
+            data.fact.number,
+            get_fact_type(data.fact.rectificative_type),
+            data.fact.rectifying_id.number if data.fact.rectifying_id else '',
+            data.fact.data_inici,
+            data.fact.data_final,
+            get_comma(data.suns_generated, data.fact.rectificative_type),
+            get_comma(data.flux_solar_discount, data.fact.rectificative_type),
+        ]
+    if 'desc' in data:
+        return [
+            data.pol.name,
+            '',
+            data.date,
+            '',
+            '',
+            '',
+            '',
+            '',
+            get_comma(data.impo, 'N'),
+            '0,0'
+        ]
+    return []
 
 
 def build_repport(report, filename):
@@ -127,7 +146,7 @@ def main(polissa_names, fitxer_csv):
         ('polissa_id', '=', pol_id),
         ('type', 'in', ['out_refund', 'out_invoice']),
         ('state', 'in', ['paid', 'open']),
-        ('data_inici', '>', '2021-01-01'),
+        ('data_inici', '>=', '2022-01-01'),
     ], order='data_inici DESC')
 
     step("trobades {} factures a tractar.", len(fact_ids))
@@ -144,7 +163,7 @@ def main(polissa_names, fitxer_csv):
         for line in fact.linia_ids:
             if line.tipus in ("altres", "cobrament") and line.product_id.code == "PBV":
                 flux_solar += line.price_subtotal
-        data["flux_solar_discount"] = flux_solar * -1.0
+        data["flux_solar_discount"] = flux_solar
 
         #copied from pdf generator
         ajustment = 0.0
@@ -160,6 +179,19 @@ def main(polissa_names, fitxer_csv):
         surplus_kwh = surplus_kwh * -1.0
         surplus_e = surplus_e * -1.0
         data['suns_generated'] =  ajustment * 0.80
+
+    pol = pol_obj.browse(pol_id)
+    bat = pol.bateria_ids[0]
+    desc_ids = desc_obj.search([('bateria_polissa_id', '=', bat.id), ('name', 'like', '%puntual%')])
+    for desc_id in tqdm(desc_ids):
+        data = ns()
+        report.append(data)
+        desc = desc_obj.browse(desc_id)
+        data['desc'] = desc
+        data['pol'] = pol
+        perm = desc.perm_read()
+        data['date'] = perm['create_date'][:19]
+        data['impo'] = desc.read(['import'])['import']
 
     build_repport(report, fitxer_csv)
     success("Generated file: {}", fitxer_csv)
