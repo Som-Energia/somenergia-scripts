@@ -9,7 +9,7 @@ import driveUtils
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import locale
-locale.setlocale(locale.LC_ALL, 'ca_ES.UTF-8')
+locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 import argparse
 from tqdm import tqdm
 
@@ -39,7 +39,7 @@ class MoveReport:
                 WHEN '01' THEN 'Alava'
                 WHEN '20' THEN 'Guipuzkoa'
                 WHEN '48' THEN 'Bizkaya'
-                ELSE 'resto'impuesto
+                ELSE 'resto impuesto'
             END AS territorio,
             round(
                 (sum(
@@ -52,7 +52,7 @@ class MoveReport:
                             tax.base_amount
                         end
                     ELSE tax.base_amount
-                END
+                END)
                 +
                 sum(
                         CASE
