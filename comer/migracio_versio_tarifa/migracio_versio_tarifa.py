@@ -49,7 +49,7 @@ def serialitzar_item(cpre, cprod, item_id):
     params = [
         'base', 'base_price', 'base_pricelist_id', 'categ_id',
         'min_quantity', 'name', 'price_discount', 'price_max_margin',
-        'price_min_margin', 'price_round', 'price_subcharge',
+        'price_min_margin', 'price_round', 'price_surcharge',
         'price_version_id', 'product_category_id', 'product_id',
         'product_tmpl_id', 'sequence', 'tram', 'tram_quantity'
     ]
@@ -115,7 +115,6 @@ def set_version_last_date(c, version_id, date):
 
 def migracio(args):
     ssl_unverified_context()
-    import pudb; pu.db
 
     if args.erp_desti == 'testing':
         erppeek_desti = configdb.erppeek_test
