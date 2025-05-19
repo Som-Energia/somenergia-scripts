@@ -88,7 +88,7 @@ def get_cups_names(erpclient):
 
 def main(doit=False):
 
-    mongo_client = pymongo.MongoClient(**configdb.mongodb)
+    mongo_client = pymongo.MongoClient(configdb.mongodb)
     mongo_db = mongo_client.somenergia
     erpclient = Client(**configdb.erppeek)
     cups_names = get_cups_names(erpclient)
