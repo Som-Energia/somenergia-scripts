@@ -172,6 +172,16 @@ def compare_f1s(f1r_id, f1n_id):
     f1n = f1_obj.browse(f1n_id)
     step("Comparant f1 {} vs {}", f1r.name , f1n.name)
 
+    if len(f1r.liniafactura_id) == 0:
+        msg = "Factura de la F1 que rectifica no existeix"
+        warn(msg)
+        return False, msg
+
+    if len(f1n.liniafactura_id) == 0:
+        msg = "Factura de la F1 que es rectificada no existeix"
+        warn(msg)
+        return False, msg
+
     fr = f1r.liniafactura_id[0]
     fn = f1n.liniafactura_id[0]
 
