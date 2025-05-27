@@ -445,6 +445,55 @@ invoicefixing:
           extension: csv
           filename: factures_f1s.csv
 
+    check_invoice_useless_f1_type_r_from_csv:
+      title: Comprovador de F1 tipus R que no refacturen res des de CSV
+      description: Script per comprovar F1's de tipus R i detectar els que no refacturen res A.K.A. endesa la torna a liar parda
+      script: python SOME_SRC/somenergia-scripts/invoicing/detect_non_reinvoicing_f1_R.py --file={csv_file} --from={date_from} --to={date_to} --modify={modify_f1} {output}
+      parameters:
+        csv_file:
+          type: FILE
+          description: "CSV amb els CUPS a la primera columna, sense capçalera"
+        date_from:
+          type: date
+          description: "Data d'inici per cercar F1's"
+        date_to:
+          type: date
+          description: "Data de fi per cercar F1's (fins avui si no s'especifica)"
+        modify_f1:
+          description: "modificar F1's"
+          type: enum
+          options:
+            Fer canvis: do
+            No fer canvis: dont
+          default: dont
+        output:
+          type: FILEDOWN
+          extension: csv
+          filename: f1tipusR_que_no_fan_res.csv
+
+    check_invoice_useless_f1_type_r:
+      title: Comprovador de F1 tipus R que no refacturen res
+      description: Script per comprovar F1's de tipus R i detectar els que no refacturen res A.K.A. endesa la torna a liar parda
+      script: python SOME_SRC/somenergia-scripts/invoicing/detect_non_reinvoicing_f1_R.py --from={date_from} --to={date_to} --modify={modify_f1} {output}
+      parameters:
+        date_from:
+          type: date
+          description: "Data d'inici per cercar F1's"
+        date_to:
+          type: date
+          description: "Data de fi per cercar F1's (fins avui si no s'especifica)"
+        modify_f1:
+          description: "modificar F1's"
+          type: enum
+          options:
+            Fer canvis: do
+            No fer canvis: dont
+          default: dont
+        output:
+          type: FILEDOWN
+          extension: csv
+          filename: f1tipusR_que_no_fan_res.csv
+
     check_invoice_specific_validation:
       title: Comprovador de validacions de factures
       description: Script per comprovar el resultat de passar validacions de factura en esborrany a qualsevol factura.
