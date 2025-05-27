@@ -107,10 +107,10 @@ def search_F1R_from_cups(cups_id, date_from, date_to):
     params = [
         ('type_factura', '=', 'R'),
         ('cups_id', '=', cups_id),
-        ('fecha_factura_desde', '>=', date_from)
+        ('data_carrega', '>=', date_from)
     ]
     if date_to:
-        params.append(('fecha_factura_hasta', '<=', date_to))
+        params.append(('data_carrega', '<=', date_to))
     return f1_obj.search(params,order='id ASC')
 
 
@@ -185,7 +185,7 @@ def compare_f1s(f1r_id, f1n_id):
         line_n = search_equal_line(line_r, fn.linia_ids, to_find)
         if not line_n:
             msg = "Trobada una linia diferent {},{},{},{}".format(
-                    line_r.name, line_r.type, line_r.quantity, line_r.price_unit_multi)
+                    line_r.name, line_r.tipus, line_r.quantity, line_r.price_unit_multi)
             warn(msg)
             return False, msg
         to_find.remove(line_n.id)
@@ -211,7 +211,7 @@ def compare_f1s(f1r_id, f1n_id):
         warn(msg)
         return False, msg
 
-    msg = "f1's similars, no refactura res!"
+    msg = "Script: No refacturar, diferència 0"
     success(msg)
     return True, msg
 
@@ -222,7 +222,17 @@ def is_non_reinvoicing_f1r(f1r_id):
 
 
 def report_header():
-    return ['CUPS', 'F1 R', 'F1 refacturat', 'Data desde', 'Data fins a', 'Missatge']
+    return [
+        'CUPS',
+        'F1 R',
+        'Nùmero factura origen F1 R',
+        'Data carrega'
+        'F1 rectificat',
+        'Codi factura rectificada',
+        'Data desde',
+        'Data fins a',
+        'Missatge'
+    ]
 
 
 def report_process(data):
@@ -231,13 +241,16 @@ def report_process(data):
     msg = data[2]
 
     cups_data = cups_obj.read(cups_id, ['name'])
-    f1r_data = f1_obj.read(f1r_id, ['name', 'fecha_factura_desde', 'fecha_factura_hasta'])
+    f1r_data = f1_obj.read(f1r_id, ['name', 'invoice_number_text', 'data_carrega', 'fecha_factura_desde', 'fecha_factura_hasta'])
     f1n_id = search_rectified_invoice(f1r_id)
-    f1n_data = f1_obj.read(f1n_id, ['name'])
+    f1n_data = f1_obj.read(f1n_id, ['name', 'invoice_number_text'])
     return [
         cups_data['name'],
         f1r_data['name'],
+        f1r_data['invoice_number_text'],
+        f1r_data['data_carrega'],
         f1n_data['name'],
+        f1n_data['invoice_number_text'],
         f1r_data['fecha_factura_desde'],
         f1r_data['fecha_factura_hasta'],
         msg,
