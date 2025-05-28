@@ -455,10 +455,35 @@ invoicefixing:
           description: "CSV amb els CUPS a la primera columna, sense capçalera"
         date_from:
           type: date
-          description: "Data d'inici per cercar F1's"
+          description: "Indica des de quina data de càrrega de l'F1 vols fer la comprovació"
         date_to:
           type: date
-          description: "Data de fi per cercar F1's (fins avui si no s'especifica)"
+          description: "Indica fins a quina data de càrrega de l'F1 vols fer la comprovació (fins avui si no s'especifica)"
+        modify_f1:
+          description: "modificar F1's"
+          type: enum
+          options:
+            Fer canvis: do
+            No fer canvis: dont
+          default: dont
+        output:
+          type: FILEDOWN
+          extension: csv
+          filename: f1tipusR_que_no_fan_res.csv
+
+    check_invoice_useless_f1_type_r_cups:
+      title: Comprovador de F1 tipus R que no refacturen res des de cups
+      description: Script per comprovar F1's de tipus R i detectar els que no refacturen res A.K.A. endesa la torna a liar parda
+      script: python SOME_SRC/somenergia-scripts/invoicing/detect_non_reinvoicing_f1_R.py --cups={cups} --from={date_from} --to={date_to} --modify={modify_f1} {output}
+      parameters:
+        cups:
+          desctiption: "Cups o cups separats per comes a inspeccionar"
+        date_from:
+          type: date
+          description: "Indica des de quina data de càrrega de l'F1 vols fer la comprovació"
+        date_to:
+          type: date
+          description: "Indica fins a quina data de càrrega de l'F1 vols fer la comprovació (fins avui si no s'especifica)"
         modify_f1:
           description: "modificar F1's"
           type: enum
@@ -472,16 +497,16 @@ invoicefixing:
           filename: f1tipusR_que_no_fan_res.csv
 
     check_invoice_useless_f1_type_r:
-      title: Comprovador de F1 tipus R que no refacturen res
+      title: Comprovador de F1 tipus R que no refacturen res des de endesa
       description: Script per comprovar F1's de tipus R i detectar els que no refacturen res A.K.A. endesa la torna a liar parda
       script: python SOME_SRC/somenergia-scripts/invoicing/detect_non_reinvoicing_f1_R.py --from={date_from} --to={date_to} --modify={modify_f1} {output}
       parameters:
         date_from:
           type: date
-          description: "Data d'inici per cercar F1's"
+          description: "Indica des de quina data de càrrega de l'F1 vols fer la comprovació"
         date_to:
           type: date
-          description: "Data de fi per cercar F1's (fins avui si no s'especifica)"
+          description: "Indica fins a quina data de càrrega de l'F1 vols fer la comprovació (fins avui si no s'especifica)"
         modify_f1:
           description: "modificar F1's"
           type: enum

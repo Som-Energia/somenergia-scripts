@@ -34,6 +34,12 @@ def parse_arguments():
     )
 
     parser.add_argument(
+        '--cups',
+        dest='cupss',
+        help="cups o cups's separats per comes a inspeccionar"
+    )
+
+    parser.add_argument(
         '--from',
         dest='date_from',
         help="data d'inici per cercar f1 tipus R que no refacturen res"
@@ -90,6 +96,32 @@ def extract_cups_from_csv(csv_file):
                 step("CUPS amb codi {} existeix, ID: {}", cups_name, cups_ids[0])
 
             ret.extend(cups_ids)
+
+    return ret
+
+
+def extract_cups_from_text(cupss):
+    ret = []
+
+    cups_names = cupss.split(',')
+    for cups_text in cups_names:
+        cups_name = cups_text.strip()
+        if not cups_name:
+            continue
+
+        step("Cerquem el CUPS...", cups_name)
+        cups_ids = cups_obj.search([('name', 'like', "{}%".format(cups_name))],
+                                    context={'active_test': False})
+
+        if len(cups_ids) == 0:
+            warn("Cap CUPS trobat amb aquest codi {}", cups_name)
+            continue
+        elif len(cups_ids) > 1:
+            warn("Multiples CUPS trobats per {}!! IDS: {}", cups_name, cups_ids)
+        else:
+            step("CUPS amb codi {} existeix, ID: {}", cups_name, cups_ids[0])
+
+        ret.extend(cups_ids)
 
     return ret
 
@@ -186,7 +218,7 @@ def compare_f1s(f1r_id, f1n_id):
     fn = f1n.liniafactura_id[0]
 
     if len(fr.linia_ids) != len(fn.linia_ids):
-        msg = "Diferent número de linies {} vs {}".format(len(fr.linia_ids), len(fr.linia_ids)) 
+        msg = "Diferent número de linies {} vs {}".format(len(fr.linia_ids), len(fn.linia_ids))
         warn(msg)
         return False, msg
 
@@ -278,8 +310,27 @@ def build_report(non_reinvoicing, reinvoicing, csv_output):
     with open(csv_output, 'w') as f:
         f.write(doc)
 
+def do_changes(non_reinvoicing, doit):
+    return 0, 0
+    modified = 0
+    already = 0
 
-def main(csv_cups, date_from, date_to, doit, csv_ouput):
+    for item in tqdm(non_reinvoicing):
+        f1_id = item[1]
+        msg = item[2]
+
+        user_observations = f1_obj.read(f1_id, ['user_observations'])['user_observations']
+        if msg in user_observations:
+            already += 1
+        else:
+            user_observations = u'{}\n{}'.format(msg, user_observations)
+            if doit:
+                f1_obj.write(f1_id, {'user_observations': user_observations})
+            modified += 1
+
+    return modified, already
+
+def main(csv_cups, cupss, date_from, date_to, doit, csv_ouput):
     if doit:
         success("Es FARAN CANVIS!")
     else:
@@ -290,6 +341,8 @@ def main(csv_cups, date_from, date_to, doit, csv_ouput):
 
     if csv_cups:
         cups_ids = extract_cups_from_csv(csv_cups)
+    elif cupss:
+        cups_ids = extract_cups_from_text(cupss)
     else:
         cups_ids = get_endesa_cups_list()
 
@@ -311,7 +364,8 @@ def main(csv_cups, date_from, date_to, doit, csv_ouput):
     build_report(non_reivoicing, reivoicing, csv_ouput)
 
     if doit:
-        success("S'HAN FET CANVIS!")
+        mod, non = do_changes(non_reivoicing, doit)
+        success("S'HAN FET CANVIS! {} f1 amb comentari nous, {} f1's ja el tenien",mod, non)
     else:
         success("NO s'han fet canvis!")
 
@@ -322,6 +376,7 @@ if __name__ == '__main__':
     try:
         main(
             args.csv_file,
+            args.cupss,
             args.date_from,
             args.date_to,
             args.doit == 'do',
