@@ -183,8 +183,6 @@ def search_equal_line(r_line, n_lines, valid_n_lines_ids):
             continue
         if n_line.quantity != quant:
             continue
-        if n_line.price_unit_multi != price:
-            continue
         if n_line.tipus != type:
             continue
         if get_name(n_line.name) != name:
@@ -195,6 +193,10 @@ def search_equal_line(r_line, n_lines, valid_n_lines_ids):
                     continue
             else:
                 continue
+        if type not in ['energia', 'subtotal_xml_ene', 'potencia', 'subtotal_xml_pow']:
+            if n_line.price_unit_multi != price:
+                continue
+
         return n_line
     return None
 
