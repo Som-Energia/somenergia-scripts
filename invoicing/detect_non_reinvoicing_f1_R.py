@@ -278,7 +278,7 @@ def report_header():
         'CUPS',
         'F1 R',
         'Nùmero factura origen F1 R',
-        'Data carrega'
+        'Data carrega',
         'F1 rectificat',
         'Codi factura rectificada',
         'Data desde',
