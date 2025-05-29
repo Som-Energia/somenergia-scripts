@@ -321,21 +321,24 @@ def build_report(non_reinvoicing, reinvoicing, csv_output):
         f.write(doc)
 
 def do_changes(non_reinvoicing, doit):
-    return 0, 0
     modified = 0
     already = 0
 
+    msg = u"Script: No refacturar, diferència 0"
     for item in tqdm(non_reinvoicing):
         f1_id = item[1]
-        msg = item[2]
 
         user_observations = f1_obj.read(f1_id, ['user_observations'])['user_observations']
-        if msg in user_observations:
+        if user_observations and msg in user_observations:
             already += 1
         else:
-            user_observations = u'{}\n{}'.format(msg, user_observations)
+            if user_observations:
+                new_text = u'{}\n{}'.format(msg, user_observations)
+            else:
+                new_text = msg
+
             if doit:
-                f1_obj.write(f1_id, {'user_observations': user_observations})
+                f1_obj.write(f1_id, {'user_observations': new_text})
             modified += 1
 
     return modified, already
