@@ -477,7 +477,7 @@ invoicefixing:
       script: python SOME_SRC/somenergia-scripts/invoicing/detect_non_reinvoicing_f1_R.py --cups={cups} --from={date_from} --to={date_to} --modify={modify_f1} {output}
       parameters:
         cups:
-          desctiption: "Cups o cups separats per comes a inspeccionar"
+          description: "Cups o cups separats per comes a inspeccionar"
         date_from:
           type: date
           description: "Indica des de quina data de càrrega de l'F1 vols fer la comprovació"

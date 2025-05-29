@@ -201,6 +201,13 @@ def search_equal_line(r_line, n_lines, valid_n_lines_ids):
     return None
 
 
+def has_no_energy_power_lines(lines):
+    for line in lines:
+        if line.tipus in ['energia', 'subtotal_xml_ene', 'potencia', 'subtotal_xml_pow']:
+            return False
+    return True
+
+
 def compare_f1s(f1r_id, f1n_id):
     f1r = f1_obj.browse(f1r_id)
     f1n = f1_obj.browse(f1n_id)
@@ -240,10 +247,11 @@ def compare_f1s(f1r_id, f1n_id):
         warn(msg)
         return False, msg
 
-    if fr.amount_total != fn.amount_total:
-        msg = "Diferent Total factura {} vs {}".format(fr.amount_total, fn.amount_total)
-        warn(msg)
-        return False, msg
+    if has_no_energy_power_lines(fr.linia_ids):
+        if fr.amount_total != fn.amount_total:
+            msg = "Diferent Total factura {} vs {}".format(fr.amount_total, fn.amount_total)
+            warn(msg)
+            return False, msg
 
     if fr.data_inici != fn.data_inici:
         msg = "Diferent data inici factura {} vs {}".format(fr.data_inici, fn.data_inici)
