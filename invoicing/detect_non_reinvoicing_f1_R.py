@@ -10,6 +10,7 @@ import csv
 from consolemsg import error, step, success, warn
 from yamlns import namespace as ns
 from tqdm import tqdm
+from datetime import date
 
 
 step("Connectant a l'erp")
@@ -324,7 +325,7 @@ def do_changes(non_reinvoicing, doit):
     modified = 0
     already = 0
 
-    msg = u"Script: No refacturar, diferència 0"
+    msg = u"{} Script: No refacturar, diferència 0".format(date.today().strftime("%Y/%m/%d"))
     for item in tqdm(non_reinvoicing):
         f1_id = item[1]
 
