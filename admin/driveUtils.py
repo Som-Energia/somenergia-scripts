@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Copyright 2018 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -53,23 +55,29 @@ def getCredentials():
             pickle.dump(creds, token)
     return creds
 
-def upload(path, folder_id):
+def upload(path, folder_id, mimetype='text/csv'):
     credentials = getCredentials()
     #http = credentials.authorize(httplib2.Http())
     service = build('drive', 'v3', credentials=credentials)
 
     file_name = re.split("/", path)
+
+    if len(file_name) == 1:
+        name = file_name[0]
+    else:
+        name = file_name[2]
     
     file_metadata = {
-        'name': file_name[2],
+        'name': name,
         'parents': [folder_id]
     }
     media = MediaFileUpload(path,
-                            mimetype='text/csv',
+                            mimetype=mimetype,
                             resumable=True)
     file = service.files().create(body=file_metadata,
                                         media_body=media,
                                         fields='id').execute()
+    print("Upload 100% {}".format(name))
 
 def download(file_id, mimetype='application/pdf'):
     credentials = getCredentials()
@@ -82,13 +90,76 @@ def download(file_id, mimetype='application/pdf'):
     done = False
     while done is False:
         status, done = downloader.next_chunk()
-        print("Download %d%%" % int(status.progress() * 100))
+        print("Download {}% {}".format(int(status.progress() * 100), file_id))
 
     # The file has been downloaded into RAM, now save it in a file
     fh.seek(0)
     with open('prova_oriol', 'wb') as f:
         shutil.copyfileobj(fh, f, length=131072)
 
+def list_files_in_folder(folder_id):
+    """Retorna una llista de diccionaris amb els ids i noms dels fitxers d'una carpeta"""
+    credentials = getCredentials()
+    service = build('drive', 'v3', credentials=credentials)
+    
+    # Construim la query per buscar fitxers dins la carpeta
+    query = "'%s' in parents" % folder_id
+    
+    try:
+        # Obtenim la llista de fitxers
+        results = service.files().list(
+            q=query,
+            spaces='drive',
+            fields="nextPageToken, files(id, name, mimeType)"
+        ).execute()
+        
+        items = results.get('files', [])
+        return items
+    
+    except Exception as e:
+        print("Error llistant fitxers: {}".format(e))
+        return []
+
+def download_from_folder(folder_id, filename, output_path=None, binary=True, mimetype='text/csv'):
+    """Baixa un fitxer especific d'una carpeta del Drive"""
+    files = list_files_in_folder(folder_id)
+    # Busquem el fitxer pel nom
+    for file_info in files:
+        if file_info['name'] == filename:
+            if output_path is None:
+                output_path = filename
+                
+            try:
+                credentials = getCredentials()
+                service = build('drive', 'v3', credentials=credentials)
+
+                # Si és un fitxer binari, fem servir get_media, sinó (GoogleDocs) fem export
+                if binary:
+                    request = service.files().get_media(fileId=file_info['id'])
+                else:
+                    request = service.files().export(fileId=file_info['id'], mimeType=mimetype)
+
+                fh = io.BytesIO()
+                downloader = MediaIoBaseDownload(fh, request)
+                
+                done = False
+                while done is False:
+                    status, done = downloader.next_chunk()
+                    print("Download {}% {}".format(int(status.progress() * 100), filename))
+                
+                # Guardem el fitxer
+                fh.seek(0)
+                with open(output_path, 'wb') as f:
+                    shutil.copyfileobj(fh, f, length=131072)
+                    
+                return True
+                
+            except Exception as e:
+                print("Error baixant el fitxer {}: {}".format(filename, str(e)))
+                return False
+    
+    print("No s'ha trobat el fitxer {} a la carpeta".format(filename))
+    return False
 
 #Just for testing purpose
 def main():
