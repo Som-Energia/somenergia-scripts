@@ -1113,10 +1113,10 @@ accounting:
           type: FILE
           description: CSV del Drive de formulari d'inscripció
 
-    assentamentsInterventors:
+    segellarNomines:
       script: python SOME_SRC/somenergia-scripts/admin/segellar_pdfs_amb_dades.py
-      title: Afegeix info a la llista de PDFs pujats al Drive
-      description: Agafa la llista de registres al fitxer "dades_per_segell" i les nòmines a la carpeta "nomines_entrada" i posa la info en un nou PDF a la carpeta "nomines_sortida". https://drive.google.com/drive/folders/1mPL0wOnqGfEMHRSCCnFQJbJ9Wcfxmo8a
+      title: Afegir dades Singulars a nòmines i les puja al Drive
+      description: Agafa la llista de registres al fitxer "dades_per_segell" i les nòmines a la carpeta "nomines_entrada" i posa la info en un nou PDF a la carpeta "nomines_sortida". Link a la carpeta d'on agafa les dades: https://drive.google.com/drive/folders/1mPL0wOnqGfEMHRSCCnFQJbJ9Wcfxmo8a
 
 validation:
   description: Validació de codis
