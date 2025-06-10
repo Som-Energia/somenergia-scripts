@@ -5,3 +5,5 @@ google-auth-httplib2==0.2.0
 google-auth-oauthlib==0.4.1
 googleapis-common-protos==1.52.0
 httplib2==0.17.4
+PyPDF2==1.28.6
+reportlab==3.0
