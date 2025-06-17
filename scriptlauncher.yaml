@@ -465,7 +465,7 @@ invoicefixing:
           options:
             Fer canvis: do
             No fer canvis: dont
-          default: dont
+          default: do
         output:
           type: FILEDOWN
           extension: csv
@@ -490,7 +490,7 @@ invoicefixing:
           options:
             Fer canvis: do
             No fer canvis: dont
-          default: dont
+          default: do
         output:
           type: FILEDOWN
           extension: csv
@@ -513,7 +513,7 @@ invoicefixing:
           options:
             Fer canvis: do
             No fer canvis: dont
-          default: dont
+          default: do
         output:
           type: FILEDOWN
           extension: csv
