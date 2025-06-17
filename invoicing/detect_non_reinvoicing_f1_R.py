@@ -325,7 +325,8 @@ def do_changes(non_reinvoicing, doit):
     modified = 0
     already = 0
 
-    msg = u"{} Script: No refacturar, diferència 0".format(date.today().strftime("%Y/%m/%d"))
+    msg = u"Script: No refacturar, diferència 0"
+    wmsg = u"{} {}".format(date.today().strftime("%Y/%m/%d"), msg)
     for item in tqdm(non_reinvoicing):
         f1_id = item[1]
 
@@ -334,9 +335,9 @@ def do_changes(non_reinvoicing, doit):
             already += 1
         else:
             if user_observations:
-                new_text = u'{}\n{}'.format(msg, user_observations)
+                new_text = u'{}\n{}'.format(wmsg, user_observations)
             else:
-                new_text = msg
+                new_text = wmsg
 
             if doit:
                 f1_obj.write(f1_id, {'user_observations': new_text})
