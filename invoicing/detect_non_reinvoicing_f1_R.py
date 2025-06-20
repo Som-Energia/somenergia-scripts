@@ -12,6 +12,8 @@ from yamlns import namespace as ns
 from tqdm import tqdm
 from datetime import date
 
+# python detect_non_reinvoicing_f1_R.py --cups ES1234567890F --from=2024-01-01 --to=2024-01-31 --modify=do out.csv
+
 
 step("Connectant a l'erp")
 O = Client(**configdb.erppeek)
@@ -271,8 +273,13 @@ def compare_f1s(f1r_id, f1n_id):
 
 def is_non_reinvoicing_f1r(f1r_id):
     f1n_id = search_rectified_invoice(f1r_id)
-    return compare_f1s(f1r_id, f1n_id)
-
+    if f1n_id:
+        return compare_f1s(f1r_id, f1n_id)
+    else:
+        f1r = f1_obj.browse(f1r_id)
+        msg = "No es troba la factura rectificada per {} !! RECTIFICADORA FANTASMA!!".format(f1r.name)
+        warn(msg)
+        return False, msg
 
 def report_header():
     return [
