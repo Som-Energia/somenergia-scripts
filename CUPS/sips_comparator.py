@@ -15,18 +15,21 @@ ATR_EXCLUDE_STATES = ['cancel']
 
 def create_file(c, from_date, file_output, only_stoped_contracts):
     atr_ids = []
+    tmp_atr_ids = []
+    atr_other_ids = []
     if only_stoped_contracts:
-        atr_ids = c.GiscedataSwitching.search([
+        tmp_atr_ids = c.GiscedataSwitching.search([
             ('create_date', '>=', from_date),
             ('proces_id.name', 'in', ATR_CASES),
             ('step_id.name', 'in', ATR_STEPS),
             ('state', 'in', ATR_EXCLUDE_STATES)
         ])
-        for atr_id in atr_ids:
+        for atr_id in tmp_atr_ids:
             pol_id = c.GiscedataSwitching.read(atr_id, ['polissa_ref_id'])['polissa_ref_id'][0]
             other_atr_ids = c.GiscedataSwitching.search([('polissa_ref_id','=', pol_id), ('state', 'in', ['open', 'done'])])
             if other_atr_ids:
-                atr_ids.remove(atr_id)
+                atr_other_ids.append(atr_id)
+        atr_ids = list(set(tmp_atr_ids) - set(atr_other_ids))
     else:
         atr_ids = c.GiscedataSwitching.search([
             ('create_date', '>=', from_date),
