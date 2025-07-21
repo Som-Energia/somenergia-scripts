@@ -114,6 +114,22 @@ def list_files_in_folder(folder_id):
         ).execute()
         
         items = results.get('files', [])
+        token = results.get('nextPageToken', None)
+
+        while token != None:
+            credentials = getCredentials()
+            service = build('drive', 'v3', credentials=credentials)
+            results = service.files().list(
+                q=query,
+                spaces='drive',
+                pageToken=token,
+                fields="nextPageToken, files(id, name, mimeType)"
+            ).execute()
+
+            more_items = results.get('files', [])
+            items.extend(more_items)
+            token = results.get('nextPageToken', None)
+
         return items
     
     except Exception as e:
