@@ -1192,6 +1192,16 @@ accounting:
         file:
           type: FILE
           description: CSV del Drive de formulari d'inscripció
+    create_gurb_cups_from_csv:
+      script: SOME_SRC/somenergia-scripts/accounting/create_gurb_cups.py {file} {gurb_code}
+      title: Afegir GURB CUPS des de CSV
+      description: Script per afegir GURB CUPS a un GURB a partir d'un SOME_SRC/somenergia-scripts/Curves/download_cch.py
+      parameters:
+        file:
+          type: FILE
+          description: CSV del Drive de formulari d'inscripció
+        gurb_code:
+          description: Codi GURB on s'afegiran els GURB CUPS
 
     segellarNomines:
       script: python SOME_SRC/somenergia-scripts/admin/segellar_pdfs_amb_dades.py
