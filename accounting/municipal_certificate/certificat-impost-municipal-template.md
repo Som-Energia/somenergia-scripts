@@ -34,7 +34,7 @@ table tr td {{
 <p class="logo"><img src="../logo-somenergia-nobg.svg"></p>
 
 D. CARLES ALBERT BARBARÀ PUIG en qualitat d’apoderat de la cooperativa SOM
-ENERGIA SCCL amb domicili C/ Pic de Peguera 11 de Girona,
+ENERGIA SCCL amb domicili C/ Riu Güell 68 de Girona,
 
 CERTIFICA:
 
