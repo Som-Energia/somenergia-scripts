@@ -50,10 +50,10 @@ def create_file(c, from_date, file_output, only_stoped_contracts):
     polisses_with_resp = dict( [polissa['cups_polissa_id'][0],polissa['user_id'][1]] for polissa in polisses if polissa['cups_polissa_id'] and polissa['user_id'] )
 
     with open(file_output, 'w') as csvfile:
-        fields = ['contrato', 'cups', 'data_alta', 'adr_cups', 'adr_sips', 'poblacio_sips', 'titular', 'titular_email', 'responsable', 'idioma']
+        fields = ['contrato', 'cups', 'data_firma_contracte', 'data_alta', 'adr_cups', 'adr_sips', 'poblacio_sips', 'titular', 'titular_email', 'responsable', 'idioma']
         csvwriter = csv.writer(csvfile, quoting=csv.QUOTE_NONNUMERIC ,quotechar ='\"', delimiter=';')
         csvwriter.writerow(fields)
-        p_fields = ['name', 'data_alta', 'cups', 'titular']
+        p_fields = ['name', 'data_alta', 'cups', 'titular', 'data_firma_contracte']
 
         for p_data in tqdm.tqdm(c.GiscedataPolissa.read(list(polisses_ids), p_fields)):
             contract_name = p_data['name']
@@ -75,7 +75,7 @@ def create_file(c, from_date, file_output, only_stoped_contracts):
                 [('name', 'in', [cups_name, cups_name[:20]])]
             )
             data = [
-                contract_name, cups_name, p_data['data_alta'],
+                contract_name, cups_name, p_data['data_firma_contracte'], p_data['data_alta'],
                 c_data['direccio'].encode('utf-8')
             ]
             if sips_ids:
