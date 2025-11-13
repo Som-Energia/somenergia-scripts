@@ -106,7 +106,7 @@ def search_last_version_id(c, tarifa_id):
 
 def create_version_tariff(c, data):
     version_o = c.model('product.pricelist.version')
-    version_o.create(data)
+    return version_o.create(data)
 
 def set_version_last_date(c, version_id, date):
     version_o = c.model('product.pricelist.version')
@@ -145,8 +145,8 @@ def migracio(args):
     set_version_last_date(cpre, version_pre_id, data['date_start'])
 
     if data:
-        create_version_tariff(cpre, data)
-        print "Migració de tarifa completada amb èxit!"
+        new_pre_tariff = create_version_tariff(cpre, data)
+        print "Migració de tarifa completada amb èxit! id {}".format(new_pre_tariff.id)
 
 if __name__ == "__main__":
     args = parse_arguments()
