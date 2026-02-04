@@ -165,7 +165,10 @@ def get_contract(contract_id):
 
 def get_energy(bill_id):
     energy_lines_id = energy_line_obj.search([('factura_id','=',bill_id)])
-    energy_lines = energy_line_obj.read(energy_lines_id, ['name','consum','tipus'])
+    if energy_lines_id:
+        energy_lines = energy_line_obj.read(energy_lines_id, ['name','consum','tipus'])
+    else:
+        energy_lines = []
     energy = {'activa':{}, 'reactiva':{}}
     for line in energy_lines:
         period = get_period(line['name'])
