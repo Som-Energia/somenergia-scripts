@@ -281,7 +281,7 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
-    if not only_one([args.i_names, args.i_ids, args.p_names, args.p_ids]):
+    if not only_one([args.i_names, args.i_ids, args.p_names, args.p_ids, args.f1_ids, args.origen_names]):
         parser.print_help()
         sys.exit()
 
