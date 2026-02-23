@@ -181,22 +181,22 @@ invoicefixing:
       description: Copia adjunts de F1 o fitxers CURVE de factures indexades de Productiu a Testing
       parameters:
         invoice_names:
-          description: numeros de la factura FE separats per comes
+          description: Números de la factura FE separats per comes
           default: ''
         invoice_ids:
           description: IDs de les factures FE separats per comes
           default: ''
         polissa_names:
-          description: números de polisses separats per comes
+          description: Números de polisses separats per comes (refresca totes les factures FE associades a aquestes polisses)
           default: ''
         polissa_ids:
-          description: IDs de les polisses separats per comes
+          description: IDs de les polisses separats per comes (refresca totes les factures FE associades a aquestes polisses)
+          default: ''
+        origen_names:
+          description: Números de factures origen d'F1 separats per comes
           default: ''
         f1_ids:
           description: IDs de les F1 separats per comes
-          default: ''
-        origen_names:
-          description: Números de factures origen separats per comes
           default: ''
         doit:
           description: Vols fer els canvis? (escriu 'si' per aplicar-ho)
