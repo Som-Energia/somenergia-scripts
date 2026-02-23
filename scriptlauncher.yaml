@@ -204,10 +204,10 @@ invoicefixing:
           description: A quin servidor vols copiarles (terp02, perp01...)
           type: enum
           options:
-            Testing (terp02): terp02
-            Preproducció (perp01): perp01
-            Staging (serp01): serp01
-          default: terp02
+            Testing (terp02): test
+            Preproducció (perp01): pre
+            Staging (serp01): stage
+          default: test
 
     download_cch:
       script: /home/somenergia/.pyenv/versions/3.8.5/bin/python SOME_SRC/somenergia-scripts/Curves/download_cch.py --from_date {from_date} --to_date {to_date} --contracts {contracts} --curve_types {curve_types} --output {output} --merged {merged} --total {total}

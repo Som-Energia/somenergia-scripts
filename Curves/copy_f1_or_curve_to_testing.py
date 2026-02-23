@@ -115,7 +115,7 @@ def download_attached_f1_file_from_prod(f1_id):
     att_ids = att_obj_prod.search([
         ('res_model','=','giscedata.facturacio.importacio.linia'),
         ('res_id','=',f1_id),
-        ('name','like','%.csv')
+        ('name','ilike','%.xml')
     ])
 
     if not att_ids:
@@ -190,9 +190,9 @@ def main(invoice_names, invoice_ids, polissa_names, polissa_ids, f1tx_ids, orige
     success("S'han trobat {} factures", len(fact_ids))
 
     f1_ids = []
-    if f1_ids:
+    if f1tx_ids:
         f1_ids.extend(search_f1_by_ids(c, f1tx_ids))
-    if f1_ids:
+    if origen_names:
         f1_ids.extend(search_f1_by_numero_factura_origen(c, origen_names))
 
     success("S'han trobat {} F1s", len(f1_ids))
@@ -292,9 +292,9 @@ if __name__=='__main__':
             args.p_names,
             args.p_ids,
             args.f1_ids,
-            args.origen_ids,
+            args.origen_names,
             args.server,
-            args.doit == 'do'
+            args.doit == 'si'
         )
     except Exception as e:
         traceback.print_exc(file=sys.stdout)
