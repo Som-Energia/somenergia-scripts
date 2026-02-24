@@ -175,6 +175,39 @@ invoicefixing:
             Staging (serp01): serp01
           default: terp01
 
+    CopyF1OrCurve_toTesting:
+      script: python SOME_SRC/somenergia-scripts/Curves/copy_f1_or_curve_to_testing.py --doit {doit} --polissa_names {polissa_names} --polissa_ids {polissa_ids} --invoice_names {invoice_names} --invoice_ids {invoice_ids} --f1_ids {f1_ids} --origen_names {origen_names} --server {server}
+      title: Copia adjunts de F1 o fitxers CURVE de factures indexades de Productiu a Testing
+      description: Copia adjunts de F1 o fitxers CURVE de factures indexades de Productiu a Testing
+      parameters:
+        invoice_names:
+          description: Números de la factura FE separats per comes
+          default: ''
+        invoice_ids:
+          description: IDs de les factures FE separats per comes
+          default: ''
+        polissa_names:
+          description: Números de polisses separats per comes (refresca totes les factures FE associades a aquestes polisses)
+          default: ''
+        polissa_ids:
+          description: IDs de les polisses separats per comes (refresca totes les factures FE associades a aquestes polisses)
+          default: ''
+        origen_names:
+          description: Números de factures origen d'F1 separats per comes
+          default: ''
+        f1_ids:
+          description: IDs de les F1 separats per comes
+          default: ''
+        doit:
+          description: Vols fer els canvis? (escriu 'si' per aplicar-ho)
+        server:
+          description: A quin servidor vols copiarles (terp02, perp01...)
+          type: enum
+          options:
+            Testing (terp02): test
+            Preproducció (perp01): pre
+            Staging (serp01): stage
+          default: test
 
     download_cch:
       script: /home/somenergia/.pyenv/versions/3.8.5/bin/python SOME_SRC/somenergia-scripts/Curves/download_cch.py --from_date {from_date} --to_date {to_date} --contracts {contracts} --curve_types {curve_types} --output {output} --merged {merged} --total {total}
