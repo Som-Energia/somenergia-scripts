@@ -62,16 +62,15 @@ def download_curve_file_from_prod(fact_id):
 
     if not att_ids:
         warn("No s'ha trobat cap fitxer de corba per la factura a PROD {}", fact_id)
-        return False
-    if len(att_ids) > 1:
-        warn("S'han trobat més d'un fitxer de corba per la factura a PROD {}", fact_id)    
-        return False
+        return []
 
-    att_data = att_obj_prod.read(att_ids[0], ['datas', 'name'])
-    with open('curve_file.csv', 'wb') as f:
-        f.write(att_data['datas'].decode('base64'))
-    step("S'ha descarregat el fitxer de corba de PROD per la factura {}: {}", fact_id, att_data['name'])
-    return att_data['name']
+    result = []
+    for att_id in att_ids:
+        att_data = att_obj_prod.read(att_id, ['datas', 'name'])
+        step("S'ha descarregat el fitxer de corba de PROD per la factura {}: {}", fact_id, att_data['name'])
+        result.append((att_data['name'], att_data['datas']))
+    return result
+
 
 
 def delete_curve_file_from_test_server(c, server, fact_id, file_name):
@@ -93,9 +92,9 @@ def delete_curve_file_from_test_server(c, server, fact_id, file_name):
     return True
 
 
-def attach_curve_prod_file_to_test_server(c, server, fact_id, file_name):
-    with open('curve_file.csv', 'rb') as f:
-        data = f.read().encode('base64')
+def attach_curve_prod_file_to_test_server(c, server, fact_id, downloaded_file):
+    file_name = downloaded_file[0]
+    data = downloaded_file[1]
 
     c.IrAttachment.create({
         'name': file_name,
@@ -199,10 +198,11 @@ def main(invoice_names, invoice_ids, polissa_names, polissa_ids, f1tx_ids, orige
 
     for fact_id in tqdm(fact_ids):
         if fact_id:
-            file_name = download_curve_file_from_prod(fact_id)
-            if doit and file_name:
-                if delete_curve_file_from_test_server(c, server, fact_id, file_name):
-                    attach_curve_prod_file_to_test_server(c, server, fact_id, file_name)
+            d_files = download_curve_file_from_prod(fact_id)
+            if doit:
+                for d_f in d_files:
+                    if delete_curve_file_from_test_server(c, server, fact_id, d_f[0]):
+                        attach_curve_prod_file_to_test_server(c, server, fact_id, d_f)
 
     for f1_id in tqdm(f1_ids):
         if f1_id:
