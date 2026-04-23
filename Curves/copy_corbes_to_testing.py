@@ -12,6 +12,7 @@ from curve_utils import (
     cups_filter,
 )
 
+
 def get_mongo_data(mongo_db, mongo_collection, cups):
     query = {
         '$or': [
@@ -41,7 +42,31 @@ def set_mongo_data(mongo_db, mongo_collection, mongo_data):
     return True
 
 
-def main(cups, server):
+def get_genkwh_rights(mongo_db_src):
+    """Copy all member rights from generationkwh (no filter needed)"""
+    collection = 'memberrightusage'
+    documents = mongo_db_src[collection].find()
+    return documents
+
+
+def set_genkwh_rights(mongo_db_dst, mongo_data):
+    """Insert member rights to destination"""
+    collection = 'memberrightusage'
+    try:
+        result = mongo_db_dst[collection].insert(
+            mongo_data, continue_on_error=True,
+        )
+    except pymongo.errors.DuplicateKeyError as e:
+        warn("  Alguns registres ja existien.")
+        warn("  {}",e)
+        return True
+    except Exception as e:
+        error("Error no controlat: " + str(e))
+        return False
+    return True
+
+
+def main(cups, server, copy_genkwh_rights=False):
     mongo_db_src = pymongo.MongoClient(mongo_profile('erp01')).somenergia
     mongo_db_dst = pymongo.MongoClient(mongo_profile(server)).somenergia
 
@@ -73,8 +98,21 @@ def main(cups, server):
             )
         success("  Done")
 
-    success("Les corbes disponibles s'han pujat a " + server)
+    if copy_genkwh_rights:
+        step("Traspassant drets de generationkwh...")
+        genkwh_data = get_genkwh_rights(mongo_db_src)
+        n_genkwh = genkwh_data.count()
 
+        step("  Drets obtinguts: {}", n_genkwh)
+
+        if n_genkwh > 0:
+            result = set_genkwh_rights(mongo_db_dst, genkwh_data)
+        success("  Done")
+
+    if cups or copy_genkwh_rights:
+        success("Les corbes disponibles s'han pujat a " + server)
+    else:
+        warn("No s'ha seleccionat res a copiar")
 
 
 def parseargs():
@@ -98,15 +136,19 @@ def parseargs():
             if x != 'erp01'
         ]
     )
+    parser.add_argument('-g', '--genkwh',
+        action='store_true',
+        help="Copiar tambe els drets de generationkwh (memberrightusage)",
+    )
     return parser.parse_args()
 
 if __name__ == '__main__':
     args=parseargs()
-    if not args.cups and not args.csv_file:
-        fail("Introdueix un cups o fitxer amb els cups")
+    if not args.cups and not args.csv_file and not args.genkwh:
+        fail("Introdueix un cups, fitxer amb cups, o -g per copiar drets de generationkwh")
     if not args.server:
         fail("Introdueix un servidor a on copiar les corbes")
 
     cups = join_cli_and_csv(cli=args.cups, csv_file=args.csv_file, filter=cups_filter)
 
-    main(cups, args.server)
+    main(cups, args.server, args.genkwh)
