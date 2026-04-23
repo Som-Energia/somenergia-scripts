@@ -155,9 +155,9 @@ invoicefixing:
           type: date
 
     CopyCurveToTesting:
-      script: python SOME_SRC/somenergia-scripts/Curves/copy_corbes_to_testing.py -c {cups} -s {server} -f {csv_file}
+      script: python SOME_SRC/somenergia-scripts/Curves/copy_corbes_to_testing.py -c {cups} -s {server} -f {csv_file} -g {genkwh}
       title: CCh - Copia corbes horaries de Productiu a Testing
-      description: Copia totes les corbes disponibles (f5d, p5d, f1 i p1) del Mongo de productiu al Mongo de testing
+      description: Copia totes les corbes disponibles (f5d, p5d, f1 i p1) del Mongo de productiu al Mongo de testing. Amb -g copia tambe els drets de generationkwh.
       parameters:
         cups:
           description: Codis CUPS, separats per comes
@@ -174,6 +174,13 @@ invoicefixing:
             Preproducció (perp01): perp01
             Staging (serp01): serp01
           default: terp01
+        genkwh:
+          description: Copiar drets de generationkwh (memberrightusage)?
+          type: enum
+          options:
+            No: 'false'
+            Si: 'true'
+          default: 'false'
 
     CopyF1OrCurve_toTesting:
       script: python SOME_SRC/somenergia-scripts/Curves/copy_f1_or_curve_to_testing.py --doit {doit} --polissa_names {polissa_names} --polissa_ids {polissa_ids} --invoice_names {invoice_names} --invoice_ids {invoice_ids} --f1_ids {f1_ids} --origen_names {origen_names} --server {server}
