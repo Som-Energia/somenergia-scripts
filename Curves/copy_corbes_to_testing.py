@@ -23,7 +23,7 @@ def get_erp_client():
 def get_member_ids_from_cups(cups_list, erp_client):
     """
     Given a list of CUPS, get the member_ids (somenergia.soci) associated
-    through the titular (res.partner) of each contract (giscedata.polissa)
+    through generationkwh.assignment table (not titular!)
     """
     member_ids = set()
 
@@ -36,25 +36,23 @@ def get_member_ids_from_cups(cups_list, erp_client):
             warn("  No s'ha trobat contracte per CUPS: {}", cups)
             continue
 
-        # Get the titular (partner) of the contract
-        contract = erp_client.GiscedataPolissa.browse(contracts[0])
-        if not contract.titular:
-            warn("  El contracte {} no té titular", cups)
-            continue
+        contract_id = contracts[0]
 
-        partner_id = contract.titular.id
-
-        # Find member (somenergia.soci) by partner_id
-        members = erp_client.SomenergiaSoci.search([
-            ('partner_id', '=', partner_id)
+        # Find assignments for this contract (member -> contract relationship)
+        assignments = erp_client.GenerationkwhAssignment.search([
+            ('contract_id', '=', contract_id)
         ])
-        if not members:
-            warn("  No s'ha trobat soci per partner {} del CUPS {}", partner_id, cups)
+
+        if not assignments:
+            warn("  No hi ha assignments per al contracte {}", cups)
             continue
 
-        member_id = erp_client.SomenergiaSoci.browse(members[0]).name
-        member_ids.add(member_id)
-        step("  CUPS {} -> member {}", cups, member_id)
+        for assignment in erp_client.GenerationkwhAssignment.browse(assignments):
+            member = assignment.member_id
+            if member:
+                member_id = member.name
+                member_ids.add(member_id)
+                step("  CUPS {} -> member {} (priority {})", cups, member_id, assignment.priority)
 
     return list(member_ids)
 
