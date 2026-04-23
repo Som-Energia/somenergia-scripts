@@ -42,10 +42,16 @@ def set_mongo_data(mongo_db, mongo_collection, mongo_data):
     return True
 
 
-def get_genkwh_rights(mongo_db_src):
-    """Copy all member rights from generationkwh (no filter needed)"""
+def get_genkwh_rights(mongo_db_src, members=None):
+    """Copy member rights from generationkwh, filtered by member_ids if provided"""
     collection = 'memberrightusage'
-    documents = mongo_db_src[collection].find()
+    if members:
+        # Filter by member_ids
+        query = {'name': {'$in': members}}
+        documents = mongo_db_src[collection].find(query)
+    else:
+        # No filter - copy all (only used when no CUPS provided)
+        documents = mongo_db_src[collection].find()
     return documents
 
 
@@ -66,7 +72,7 @@ def set_genkwh_rights(mongo_db_dst, mongo_data):
     return True
 
 
-def main(cups, server, copy_genkwh_rights=False):
+def main(cups, server, members=None):
     mongo_db_src = pymongo.MongoClient(mongo_profile('erp01')).somenergia
     mongo_db_dst = pymongo.MongoClient(mongo_profile(server)).somenergia
 
@@ -98,9 +104,10 @@ def main(cups, server, copy_genkwh_rights=False):
             )
         success("  Done")
 
-    if copy_genkwh_rights:
-        step("Traspassant drets de generationkwh...")
-        genkwh_data = get_genkwh_rights(mongo_db_src)
+    # Only copy genkwh rights if CUPS are provided (to get associated members)
+    if cups:
+        step("Traspassant drets de generationkwh dels members dels CUPS...")
+        genkwh_data = get_genkwh_rights(mongo_db_src, members)
         n_genkwh = genkwh_data.count()
 
         step("  Drets obtinguts: {}", n_genkwh)
@@ -108,11 +115,9 @@ def main(cups, server, copy_genkwh_rights=False):
         if n_genkwh > 0:
             result = set_genkwh_rights(mongo_db_dst, genkwh_data)
         success("  Done")
-
-    if cups or copy_genkwh_rights:
-        success("Les corbes disponibles s'han pujat a " + server)
+        success("S'han copiat les corbes i drets de generationkwh dels CUPS a " + server)
     else:
-        warn("No s'ha seleccionat res a copiar")
+        success("S'han copiat les corbes a " + server)
 
 
 def parseargs():
@@ -136,19 +141,15 @@ def parseargs():
             if x != 'erp01'
         ]
     )
-    parser.add_argument('-g', '--genkwh',
-        action='store_true',
-        help="Copiar tambe els drets de generationkwh (memberrightusage)",
-    )
     return parser.parse_args()
 
 if __name__ == '__main__':
     args=parseargs()
-    if not args.cups and not args.csv_file and not args.genkwh:
-        fail("Introdueix un cups, fitxer amb cups, o -g per copiar drets de generationkwh")
+    if not args.cups and not args.csv_file:
+        fail("Introdueix un cups o fitxer amb cups")
     if not args.server:
         fail("Introdueix un servidor a on copiar les corbes")
 
     cups = join_cli_and_csv(cli=args.cups, csv_file=args.csv_file, filter=cups_filter)
 
-    main(cups, args.server, args.genkwh)
+    main(cups, args.server)
