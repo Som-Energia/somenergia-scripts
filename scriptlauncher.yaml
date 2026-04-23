@@ -156,8 +156,8 @@ invoicefixing:
 
     CopyCurveToTesting:
       script: python SOME_SRC/somenergia-scripts/Curves/copy_corbes_to_testing.py -c {cups} -s {server} -f {csv_file}
-      title: CCh - Copia corbes horaries de Productiu a Testing
-      description: Copia totes les corbes disponibles (f5d, p5d, f1 i p1) del Mongo de productiu al Mongo de testing
+      title: CCh - Copia corbes horaries i drets de generationkwh de Productiu a Testing
+      description: Copia corbes (f5d, p5d, f1 i p1) i drets de generationkwh del Mongo de productiu al de testing. Els drets es copia自动áticament pels members dels CUPS especificats.
       parameters:
         cups:
           description: Codis CUPS, separats per comes
