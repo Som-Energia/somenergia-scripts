@@ -5,12 +5,58 @@ standard_library.install_aliases()
 
 from consolemsg import step, error, warn, fail, success, out
 import pymongo
+import configdb
+from erppeek import Client
 from curve_utils import (
     mongo_profile,
     mongo_profiles,
     join_cli_and_csv,
     cups_filter,
 )
+
+
+def get_erp_client():
+    """Connect to ERP"""
+    return Client(**configdb.erppeek)
+
+
+def get_member_ids_from_cups(cups_list, erp_client):
+    """
+    Given a list of CUPS, get the member_ids (somenergia.soci) associated
+    through the titular (res.partner) of each contract (giscedata.polissa)
+    """
+    member_ids = set()
+
+    for cups in cups_list:
+        # Find contract by CUPS
+        contracts = erp_client.GiscedataPolissa.search([
+            ('cups.name', '=', cups)
+        ])
+        if not contracts:
+            warn("  No s'ha trobat contracte per CUPS: {}", cups)
+            continue
+
+        # Get the titular (partner) of the contract
+        contract = erp_client.GiscedataPolissa.browse(contracts[0])
+        if not contract.titular:
+            warn("  El contracte {} no té titular", cups)
+            continue
+
+        partner_id = contract.titular.id
+
+        # Find member (somenergia.soci) by partner_id
+        members = erp_client.SomenergiaSoci.search([
+            ('partner_id', '=', partner_id)
+        ])
+        if not members:
+            warn("  No s'ha trobat soci per partner {} del CUPS {}", partner_id, cups)
+            continue
+
+        member_id = erp_client.SomenergiaSoci.browse(members[0]).name
+        member_ids.add(member_id)
+        step("  CUPS {} -> member {}", cups, member_id)
+
+    return list(member_ids)
 
 
 def get_mongo_data(mongo_db, mongo_collection, cups):
@@ -72,7 +118,7 @@ def set_genkwh_rights(mongo_db_dst, mongo_data):
     return True
 
 
-def main(cups, server, members=None):
+def main(cups, server):
     mongo_db_src = pymongo.MongoClient(mongo_profile('erp01')).somenergia
     mongo_db_dst = pymongo.MongoClient(mongo_profile(server)).somenergia
 
@@ -104,18 +150,25 @@ def main(cups, server, members=None):
             )
         success("  Done")
 
-    # Only copy genkwh rights if CUPS are provided (to get associated members)
+    # Get members from CUPS via ERP
     if cups:
-        step("Traspassant drets de generationkwh dels members dels CUPS...")
-        genkwh_data = get_genkwh_rights(mongo_db_src, members)
-        n_genkwh = genkwh_data.count()
+        step("Obtenint members dels CUPS...")
+        erp_client = get_erp_client()
+        members = get_member_ids_from_cups(cups, erp_client)
 
-        step("  Drets obtinguts: {}", n_genkwh)
+        if members:
+            step("Traspassant drets de generationkwh dels members {}...".format(members))
+            genkwh_data = get_genkwh_rights(mongo_db_src, members)
+            n_genkwh = genkwh_data.count()
 
-        if n_genkwh > 0:
-            result = set_genkwh_rights(mongo_db_dst, genkwh_data)
-        success("  Done")
-        success("S'han copiat les corbes i drets de generationkwh dels CUPS a " + server)
+            step("  Drets obtinguts: {}", n_genkwh)
+
+            if n_genkwh > 0:
+                result = set_genkwh_rights(mongo_db_dst, genkwh_data)
+            success("  Done")
+            success("S'han copiat les corbes i drets de generationkwh dels CUPS a " + server)
+        else:
+            warn("No s'han trobat members per als CUPS especificats")
     else:
         success("S'han copiat les corbes a " + server)
 
