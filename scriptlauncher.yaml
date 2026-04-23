@@ -167,13 +167,13 @@ invoicefixing:
           default: /dev/null
           description: CSV amb els cups a la primera columna, sense capçalera.
         server:
-          description: A quin servidor vols copiarles (terp01, perp01...)
+          description: A quin servidor vols copiarles (terp02, perp01...)
           type: enum
           options:
-            Testing (terp01): terp01
+            Testing (terp02): terp02
             Preproducció (perp01): perp01
             Staging (serp01): serp01
-          default: terp01
+          default: terp02
 
     CopyF1OrCurve_toTesting:
       script: python SOME_SRC/somenergia-scripts/Curves/copy_f1_or_curve_to_testing.py --doit {doit} --polissa_names {polissa_names} --polissa_ids {polissa_ids} --invoice_names {invoice_names} --invoice_ids {invoice_ids} --f1_ids {f1_ids} --origen_names {origen_names} --server {server}
@@ -204,7 +204,7 @@ invoicefixing:
           description: A quin servidor vols copiarles (terp02, perp01...)
           type: enum
           options:
-            Testing (terp02): test
+            Testing (terp02): terp02
             Preproducció (perp01): pre
             Staging (serp01): stage
           default: test
@@ -760,13 +760,13 @@ invoicefixing:
           description: Des de quina cal actualitzar l'adjunt de testing, dels F1ns que ja existien
           type: date
         server:
-          description: A quin servidor vols copiar-los (terp01, perp01...)
+          description: A quin servidor vols copiar-los (terp02, perp01...)
           type: enum
           options:
-            Testing (terp01): terp01
+            Testing (terp02): terp02
             Preproducció (perp01): perp01
             Staging (serp01): serp01
-          default: terp01
+          default: terp02
         output:
           type: FILEDOWN
           filename: resultat.csv
@@ -1347,12 +1347,12 @@ oficinavirtual:
           default: /dev/null
           description: CSV amb els números de contracte a la primera columna, sense capçalera.
         server:
-          description: A quin servidor vols copiarles (terp01, perp01...)
+          description: A quin servidor vols copiarles (terp02, perp01...)
           type: enum
           options:
-            Testing (terp01): terp01
+            Testing (terp02): terp02
             Preproducció (perp01): perp01
             Staging (serp01): serp01
-          default: terp01
+          default: terp02
 
 # vim: et ts=2 sw=2
