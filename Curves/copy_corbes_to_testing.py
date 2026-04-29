@@ -182,19 +182,12 @@ def main(cups, server):
             if n_genkwh > 0:
                 result = set_genkwh_rights(mongo_db_dst, genkwh_data)
 
-            step("Comprovant si rightspershare està buida al destí...")
-            rightspershare_count = mongo_db_dst['rightspershare'].count()
-            if rightspershare_count == 0:
-                step("  rightspershare buida! Copiant tota la col·lecció...")
-                rightspershare_data = get_rightspershare(mongo_db_src)
-                n_rightspershare = rightspershare_data.count()
-                step("  rightspershare obtinguda: {}", n_rightspershare)
-                if n_rightspershare > 0:
-                    set_genkwh_rights(mongo_db_dst, rightspershare_data, collection='rightspershare')
-                success("  Done")
-            else:
-                step("  rightspershare ja té {} registres, no es copia", rightspershare_count)
 
+            rightspershare_data = get_rightspershare(mongo_db_src)
+            n_rightspershare = rightspershare_data.count()
+            step("Rightspershare de l'últim any obtinguda: {}", n_rightspershare)
+            if n_rightspershare > 0:
+                set_genkwh_rights(mongo_db_dst, rightspershare_data, collection='rightspershare')
             success("  Done")
             success("S'han copiat les corbes i drets de generationkwh dels CUPS a " + server)
         else:
