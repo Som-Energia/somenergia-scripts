@@ -98,9 +98,19 @@ def get_genkwh_rights(mongo_db_src, members=None):
     return documents
 
 
-def set_genkwh_rights(mongo_db_dst, mongo_data):
+def get_rightspershare(mongo_db_src, members=None):
+    """Copy rightspershare, filtered by member_ids if provided"""
+    collection = 'rightspershare'
+    if members:
+        query = {'name': {'$in': members}}
+        documents = mongo_db_src[collection].find(query)
+    else:
+        documents = mongo_db_src[collection].find()
+    return documents
+
+
+def set_genkwh_rights(mongo_db_dst, mongo_data, collection='memberrightusage'):
     """Insert member rights to destination"""
-    collection = 'memberrightusage'
     try:
         result = mongo_db_dst[collection].insert(
             mongo_data, continue_on_error=True,
@@ -162,6 +172,20 @@ def main(cups, server):
 
             if n_genkwh > 0:
                 result = set_genkwh_rights(mongo_db_dst, genkwh_data)
+
+            step("Comprovant si rightspershare està buida al destí...")
+            rightspershare_count = mongo_db_dst['rightspershare'].count()
+            if rightspershare_count == 0:
+                step("  rightspershare buida! Copiant tota la col·lecció...")
+                rightspershare_data = get_rightspershare(mongo_db_src)
+                n_rightspershare = rightspershare_data.count()
+                step("  rightspershare obtinguda: {}", n_rightspershare)
+                if n_rightspershare > 0:
+                    set_genkwh_rights(mongo_db_dst, rightspershare_data, collection='rightspershare')
+                success("  Done")
+            else:
+                step("  rightspershare ja té {} registres, no es copia", rightspershare_count)
+
             success("  Done")
             success("S'han copiat les corbes i drets de generationkwh dels CUPS a " + server)
         else:
