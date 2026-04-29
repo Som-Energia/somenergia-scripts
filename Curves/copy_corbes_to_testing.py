@@ -29,9 +29,8 @@ def get_member_ids_from_cups(cups_list, erp_client):
 
     for cups in cups_list:
         # Find contract by CUPS
-        contracts = erp_client.GiscedataPolissa.search([
-            ('cups.name', '=', cups)
-        ])
+        polissa_search = [('cups', 'ilike', cups[:20])]
+        contracts = erp_client.GiscedataPolissa.search(polissa_search)
         if not contracts:
             warn("  No s'ha trobat contracte per CUPS: {}", cups)
             continue
