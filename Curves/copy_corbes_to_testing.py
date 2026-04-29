@@ -6,6 +6,7 @@ standard_library.install_aliases()
 from consolemsg import step, error, warn, fail, success, out
 import pymongo
 import configdb
+from datetime import datetime, timedelta
 from erppeek import Client
 from curve_utils import (
     mongo_profile,
@@ -98,11 +99,19 @@ def get_genkwh_rights(mongo_db_src, members=None):
     return documents
 
 
-def get_rightspershare(mongo_db_src, members=None):
-    """Copy rightspershare, filtered by member_ids if provided"""
+def get_rightspershare(mongo_db_src, members=None, last_year_only=True):
+    """Copy rightspershare, filtered by member_ids if provided and/or last year"""
     collection = 'rightspershare'
+    query = {}
+
     if members:
-        query = {'name': {'$in': members}}
+        query['name'] = {'$in': members}
+
+    if last_year_only:
+        one_year_ago = datetime.utcnow() - timedelta(days=365)
+        query['datetime'] = {'$gte': one_year_ago}
+
+    if query:
         documents = mongo_db_src[collection].find(query)
     else:
         documents = mongo_db_src[collection].find()
