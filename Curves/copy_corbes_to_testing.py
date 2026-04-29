@@ -6,6 +6,7 @@ standard_library.install_aliases()
 from consolemsg import step, error, warn, fail, success, out
 import pymongo
 import configdb
+from datetime import datetime, timedelta
 from erppeek import Client
 from curve_utils import (
     mongo_profile,
@@ -29,9 +30,8 @@ def get_member_ids_from_cups(cups_list, erp_client):
 
     for cups in cups_list:
         # Find contract by CUPS
-        contracts = erp_client.GiscedataPolissa.search([
-            ('cups.name', '=', cups)
-        ])
+        polissa_search = [('cups', 'ilike', cups[:20])]
+        contracts = erp_client.GiscedataPolissa.search(polissa_search)
         if not contracts:
             warn("  No s'ha trobat contracte per CUPS: {}", cups)
             continue
@@ -99,9 +99,27 @@ def get_genkwh_rights(mongo_db_src, members=None):
     return documents
 
 
-def set_genkwh_rights(mongo_db_dst, mongo_data):
+def get_rightspershare(mongo_db_src, members=None, last_year_only=True):
+    """Copy rightspershare, filtered by member_ids if provided and/or last year"""
+    collection = 'rightspershare'
+    query = {}
+
+    if members:
+        query['name'] = {'$in': members}
+
+    if last_year_only:
+        one_year_ago = datetime.utcnow() - timedelta(days=365)
+        query['datetime'] = {'$gte': one_year_ago}
+
+    if query:
+        documents = mongo_db_src[collection].find(query)
+    else:
+        documents = mongo_db_src[collection].find()
+    return documents
+
+
+def set_genkwh_rights(mongo_db_dst, mongo_data, collection='memberrightusage'):
     """Insert member rights to destination"""
-    collection = 'memberrightusage'
     try:
         result = mongo_db_dst[collection].insert(
             mongo_data, continue_on_error=True,
@@ -163,6 +181,13 @@ def main(cups, server):
 
             if n_genkwh > 0:
                 result = set_genkwh_rights(mongo_db_dst, genkwh_data)
+
+
+            rightspershare_data = get_rightspershare(mongo_db_src)
+            n_rightspershare = rightspershare_data.count()
+            step("Rightspershare de l'últim any obtinguda: {}", n_rightspershare)
+            if n_rightspershare > 0:
+                set_genkwh_rights(mongo_db_dst, rightspershare_data, collection='rightspershare')
             success("  Done")
             success("S'han copiat les corbes i drets de generationkwh dels CUPS a " + server)
         else:
