@@ -374,7 +374,7 @@ invoicefixing:
     reinvoice_batch:
       title: Refacturador en bloc, seqüencial
       description: Script per refacturar en bloc un numero seguit de factures, s'utilitza l'ordre donat de factures, sequentialment (lent).
-      script: python SOME_SRC/somenergia-scripts/invoicing/refacturator2.py --invoice_name={invoice_name} --file={file} --invoice_ids={invoice_ids} {output}
+      script: python SOME_SRC/somenergia-scripts/invoicing/refacturator2.py --invoice_name={invoice_name} --file={file} --doit {doit} --invoice_ids={invoice_ids} {output}
       parameters:
         invoice_name:
           description: numero de la factura FE....
