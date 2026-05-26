@@ -56,7 +56,7 @@ def mongo_profiles():
     """
     return dict(
         erp01='prod',
-        terp01='test',
+        terp02='test',
         perp01='pre',
         serp01='stage',
     )
