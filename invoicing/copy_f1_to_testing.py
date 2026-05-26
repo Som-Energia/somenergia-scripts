@@ -94,7 +94,7 @@ def get_f1_import_replace_att(info_from, info_to, date_from):
 
 def copy_f1_to_testing(csv_file, date_from, polissa_name, server):
     client_prod = Client(**configdb.erppeek)
-    if server == 'terp01':
+    if server == 'terp02':
         client_test = Client(**configdb.erppeek_test)
     elif server == 'perp01':
         client_test = Client(**configdb.erppeek_pre)
