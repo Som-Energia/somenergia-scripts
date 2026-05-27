@@ -55,8 +55,12 @@ def search_invoices_from_csv(c, csv_file):
 
 def refactura(c, fact_id):
     ctx = {"active_ids": [fact_id], "active_id": fact_id}
-    wiz = c.WizardRanas.create({}, context=ctx)
-    fres_resultat = c.WizardRanas.action_rectificar(wiz.id, context=ctx)
+    try:
+        wiz = c.WizardRanas.create({}, context=ctx)
+        fres_resultat = c.WizardRanas.action_rectificar(wiz.id, context=ctx)
+    except Exception as e:
+        error("Error refacturant factura ID: {} --> {}", fact_id, str(e))
+        fres_resultat = []
     return fres_resultat
 
 
