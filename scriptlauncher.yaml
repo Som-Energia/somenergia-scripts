@@ -374,12 +374,23 @@ invoicefixing:
     reinvoice_batch:
       title: Refacturador en bloc, seqüencial
       description: Script per refacturar en bloc un numero seguit de factures, s'utilitza l'ordre donat de factures, sequentialment (lent).
-      script: python SOME_SRC/somenergia-scripts/invoicing/refacturator2.py --invoice_name={invoice_name} --file={file} --doit {doit} --invoice_ids={invoice_ids} {output}
+      script: python SOME_SRC/somenergia-scripts/invoicing/refacturator2.py --invoice_name={invoice_name} --doit {doit} --invoice_ids={invoice_ids} {output}
       parameters:
         invoice_name:
           description: numero de la factura FE....
         invoice_ids:
           description: id's de factures separats per comes
+        doit:
+          description: Vols fer els canvis? (escriu 'si' per aplicar-ho)
+        output:
+          type: FILEDOWN
+          extension: csv
+          filename: resultat_refacturacio.csv
+    reinvoice_batch_csv:
+      title: Refacturador en bloc, seqüencial CSV
+      description: Script per refacturar en bloc un numero seguit de factures, s'utilitza l'ordre donat de factures, sequentialment (lent).
+      script: python SOME_SRC/somenergia-scripts/invoicing/refacturator2.py --file={file} --doit {doit} {output}
+      parameters:
         file:
           type: FILE
           description: CSV amb numeros de factura a la primera columna, sense capçalera
@@ -388,7 +399,7 @@ invoicefixing:
         output:
           type: FILEDOWN
           extension: csv
-          filename: resultat_refacturacio.csv
+          filename: resultat_refacturacio_per_csv.csv
     change_flux_solar:
       script: python SOME_SRC/somenergia-scripts/invoicing/solar_flux_enabler_disabler.py --doit {doit} --polissa_names {polissa_names} --state {state}
       title: Permetre modificar (activar/desactivar) els flux solars de les polisses en bloc
