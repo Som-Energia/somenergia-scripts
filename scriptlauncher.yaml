@@ -555,7 +555,7 @@ invoicefixing:
     check_invoice_specific_validation:
       title: Comprovador de validacions de factures
       description: Script per comprovar el resultat de passar validacions de factura en esborrany a qualsevol factura.
-      script: python SOME_SRC/somenergia-scripts/invoicing/invoicefixing/recheck_validation_over_any_invoice.py --invoice_names={invoice_names} --invoice_ids={invoice_ids} --polissa_names={polissa_names} --from={date_from} --to={date_to} --type={invoice_type} --validation={validation_name} --stored={stored_searchs} {output}
+      script: python SOME_SRC/somenergia-scripts/invoicing/invoicefixing/recheck_validation_over_any_invoice.py --invoice_names={invoice_names} --invoice_ids={invoice_ids} --polissa_names={polissa_names} --from={date_from} --to={date_to} --type={invoice_type} --lot_facturacio={lot_fact} --validation={validation_name} --stored={stored_searchs} {output}
       parameters:
         invoice_names:
           description: numeros de la factura FE separats per comes (si camp en blanc per defecte revisarà factures en esborrany)
@@ -563,6 +563,8 @@ invoicefixing:
           description: id's de factures separats per comes (si camp en blanc per defecte revisarà factures en esborrany)
         polissa_names:
           description: números de polisses separats per comes (si camp en blanc per defecte revisarà factures en esborrany)
+        lot_fact:
+          description: factures del lot de facturació a revisar
         date_from:
           type: date
           description: "Data d'inici per cercar factures (Obligatori)"

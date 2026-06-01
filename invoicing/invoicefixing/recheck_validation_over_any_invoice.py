@@ -18,6 +18,7 @@ fact_obj = Obj.GiscedataFacturacioFactura
 f1_obj = Obj.GiscedataFacturacioImportacioLinia
 val_obj = Obj.GiscedataFacturacioValidationWarningTemplate
 v_obj = Obj.GiscedataFacturacioValidationValidator
+lot_obj = Obj.GiscedataFacturacioLot
 
 
 def date_from_str(day):
@@ -101,6 +102,12 @@ def parse_arguments():
         '--stored',
         dest='stored',
         help="creques pre-guardades",
+    )
+
+    parser.add_argument(
+        '--lot_facturacio',
+        dest='lot_fact',
+        help="Nom del lot de facturació per cercar les factures a validar",
     )
 
     parser.add_argument(
@@ -311,6 +318,22 @@ def search_draft_invoices():
     return fact_ids
 
 
+def search_invoices_by_lot_facturacio(lot_fact):
+    lot_ids = lot_obj.search([('name', '=', lot_fact)])
+    if len(lot_ids) == 0:
+        warn("Cap lot de facturació trobada amb aquest nom!! {}", lot_fact)
+        return []
+
+    step("Lots de facturacio trobats: {}", len(lot_ids))
+    fact_ids = fact_obj.search([
+        ('lot_facturacio', 'in', lot_ids),
+        ('type', 'in', ['out_refund', 'out_invoice']),
+        ], order='polissa_id ASC, data_inici ASC')
+
+    step("Factures trobades als lots: {}", len(fact_ids))
+    return fact_ids
+
+
 # ------------------------
 # invoice process funcions
 # ------------------------
@@ -423,6 +446,8 @@ if __name__ == '__main__':
         fact_ids.extend(search_invoices_by_polissa_names(args.p_names, args.date_from, args.date_to, args.inv_type))
     elif args.stored and args.stored != 'none':
         fact_ids.extend(search_invoices_stored(args.stored, args.date_from, args.date_to, args.inv_type))
+    elif args.lot_fact:
+        fact_ids.extend(search_invoices_by_lot_facturacio(args.lot_fact))
     else:
         fact_ids.extend(search_draft_invoices())
     step("Factures trobades: {}", len(fact_ids))
