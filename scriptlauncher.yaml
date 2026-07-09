@@ -1386,19 +1386,4 @@ oficinavirtual:
             Staging (serp01): serp01
           default: terp02
 
-Solidar:
-
-  description: Envia un email amb els logs de Solidar
-  scripts:
-
-    send_email_logs:
-      script: python SOME_SRC/somenergia-scripts/Solidar/send_solidar_logs.py --email {email}
-      title: Enviar email amb logs de Solidar
-      description: >
-        Obte els logs de Solidar i els envia per email
-      parameters:
-        email:
-          description: Direcció de correu on rebre la informació. Si n'hi ha més d'una, separar-les per comes (,)
-          default: frontend@somenergia.coop
-
 # vim: et ts=2 sw=2
