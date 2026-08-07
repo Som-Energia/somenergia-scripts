@@ -90,13 +90,13 @@ class ImportData:
                 'firstname': employee_data['nom'].decode('utf8'),
                 'lastname': employee_data['cognoms'].decode('utf8'),
                 'login': employee_data['email'],
-                'groups_id': groups_id,
+                #'groups_id': groups_id,
                 'password': 'odoo',
                 'lang': 'ca_ES',
-                'tz': 'Europe/Andorra',
-                'sel_groups_1_9_10': 1,
+                #'tz': 'Europe/Madrid',
+                #'sel_groups_1_9_10': 1,
                 #Testing: 'action_id': 191, #Attendance fixar
-                'action_id': 557, #Attendance fixar
+                'action_id': 306, #Attendance fixar
                 'partner_id': partner_id
             }
             try:
@@ -110,9 +110,9 @@ class ImportData:
             except Exception as e:
                 msg = "I couldn\'t create a new user {}, reason {}"
                 warn(msg, user_data, e)
-            finally:
-                for group in groups_id:
-                    O.ResGroups.write(group, {'users': [(4, user_id)]})
+            # finally:
+                # for group in groups_id:
+                #     O.ResGroups.write(group, {'users': [(4, user_id)]})
 
             # CREATE EMPLOYEE
             # Get department id
@@ -123,17 +123,17 @@ class ImportData:
             # Get jornada
             jornada_id = 1
             if employee_data['jornada'] == '40':
-                jornada_id = O.IrModelData.get_object_reference('somenergia','resource_calendar_som_40h_partida')[1]
+                jornada_id = O.IrModelData.get_object_reference('somenergia_custom','resource_calendar_som_40h_partida')[1]
             elif employee_data['jornada'] == '35':
-                jornada_id = O.IrModelData.get_object_reference('somenergia','resource_calendar_som_35h')[1]
+                jornada_id = O.IrModelData.get_object_reference('somenergia_custom','resource_calendar_som_35h')[1]
             elif employee_data['jornada'] == '32':
-                jornada_id = O.IrModelData.get_object_reference('somenergia','resource_calendar_som_32h_dll_div')[1]
+                jornada_id = O.IrModelData.get_object_reference('somenergia_custom','resource_calendar_som_32h_dll_div')[1]
             elif employee_data['jornada'] == '30':
-                jornada_id = O.IrModelData.get_object_reference('somenergia','resource_calendar_som_30h')[1]
+                jornada_id = O.IrModelData.get_object_reference('somenergia_custom','resource_calendar_som_30h')[1]
             elif employee_data['jornada'] == '20':
-                jornada_id = O.IrModelData.get_object_reference('somenergia','resource_calendar_som_20h')[1]
+                jornada_id = O.IrModelData.get_object_reference('somenergia_custom','resource_calendar_som_20h')[1]
             elif employee_data['jornada'] == '10':
-                jornada_id = O.IrModelData.get_object_reference('somenergia','resource_calendar_som_10h')[1]
+                jornada_id = O.IrModelData.get_object_reference('somenergia_custom','resource_calendar_som_10h')[1]
 
             name = employee_data['cognoms'].decode('utf8') + ", " + employee_data['nom'].decode('utf8')
             empleat_data = {
@@ -145,7 +145,7 @@ class ImportData:
                 'user_id': user_id,
                 'resource_calendar_id': jornada_id,
                 #'birthday':  datetime.strftime(datetime.strptime(employee_data['data_neixement'], "%d/%m/%Y"), "%Y-%m-%d"),
-                'theoretical_hours_start_date': '2021-05-01',
+                'theoretical_hours_start_date': '2024-01-01',
             }
             try:
                 if O.HrEmployee.search([('work_email','=',employee_data['email'])]):
