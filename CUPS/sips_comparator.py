@@ -12,6 +12,7 @@ import configdb
 ATR_CASES = ['C2','C1']
 ATR_STEPS = ['01']
 ATR_EXCLUDE_STATES = ['cancel']
+ATR_DRAFT_STATES = ['draft']
 
 def create_file(c, from_date, file_output, only_stoped_contracts):
     atr_ids = []
@@ -35,7 +36,7 @@ def create_file(c, from_date, file_output, only_stoped_contracts):
             ('create_date', '>=', from_date),
             ('proces_id.name', 'in', ATR_CASES),
             ('step_id.name', 'in', ATR_STEPS),
-            ('state', 'not in', ATR_EXCLUDE_STATES)
+            ('state', 'in', ATR_DRAFT_STATES)
         ])
 
     print "{} contracts found from date {}".format(len(atr_ids), from_date)
