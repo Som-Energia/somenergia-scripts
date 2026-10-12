@@ -37,8 +37,7 @@ def get_not_members_email_list():
     category_id = get_member_category_id()
 
     not_members = Soci.search([
-        ('category_id', 'not in', [category_id]),
-        ('ref', 'like', 'S%')
+        ('category_id', 'not in', [category_id])
     ])
     not_members_partner_ids = [
         soci['partner_id'][0] for soci in Soci.read(not_members, ['partner_id'])
@@ -48,7 +47,7 @@ def get_not_members_email_list():
     )
 
     emails_list = [
-        address.get('email', 'not found')
+        address.get('email', 'not found') or 'empty'
         for address in ResPartnerAddress.read(address_list, ['email'])
     ]
 
