@@ -67,12 +67,16 @@ def create_file(c, from_date, file_output, only_stoped_contracts):
 
             c_data = c.GiscedataCupsPs.read(cups_id, ['name', 'direccio'])
             t_data = c.ResPartner.read(titular_id, ['name', 'lang', 'vat'])
-            pa_ids = c.ResPartnerAddress.search([('partner_id', '=', titular_id)])
             email = ''
-            for pa_data in c.ResPartnerAddress.read([direccio_id] + pa_ids, ['email']):
-                if pa_data['email']:
-                    email = pa_data['email']
-                    break
+            pa_data = c.ResPartnerAddress.read(direccio_id, ['email'])
+            if pa_data and pa_data['email']:
+                email = pa_data['email']
+            else:
+                pa_ids = c.ResPartnerAddress.search([('partner_id', '=', titular_id)])
+                for pa_data in c.ResPartnerAddress.read(pa_ids, ['email']):
+                    if pa_data['email']:
+                        email = pa_data['email']
+                        break
             sips_ids = c.GiscedataSipsPs.search(
                 [('name', 'in', [cups_name, cups_name[:20]])]
             )
