@@ -294,9 +294,21 @@ invoicefixing:
           type: date
 
     killalreadyexist:
-      script: python SOME_SRC/somenergia-scripts/Importacions_F1_Q1/Fact_impF1_eliminar_Ja_existeix.py
-      title: Eliminar importacions de F1 repetides o invàlides
-      description: Elimina les importacions de F1 amb el text d'error "Ja existeix una factura...", "XML erroni", "XML no correspon al tipus F1" i "Document invàlid"
+      script: python SOME_SRC/somenergia-scripts/Importacions_F1_Q1/Fact_impF1_eliminar_Ja_existeix.py --limit {limit} --error-code {error_code}
+      title: Previsualitzar candidats de neteja d'F1
+      description: Mostra en mode simulació els candidats de neteja d'F1 i permet filtrar la previsualització pels errors estructurats 1006 i 2001. No s'elimina cap importació.
+      parameters:
+        limit:
+          description: Nombre màxim de candidats F1 a validar en aquesta simulació.
+          default: 25
+        error_code:
+          description: Codi d'error dels candidats que es volen previsualitzar.
+          type: enum
+          options:
+            Tots dos: all
+            Error 1006: '1006'
+            Error 2001: '2001'
+          default: all
 
     reqadq:
         script: python SOME_SRC/somenergia-scripts/Peticions/peticio_lectures.py {nmsgs}
