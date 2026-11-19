@@ -54,7 +54,7 @@ def create_file(c, from_date, file_output, only_stoped_contracts):
         fields = ['contrato', 'cups', 'data_firma_contracte', 'data_alta', 'adr_cups', 'adr_sips', 'poblacio_sips', 'titular', 'titular_email', 'responsable', 'idioma']
         csvwriter = csv.writer(csvfile, quoting=csv.QUOTE_NONNUMERIC ,quotechar ='\"', delimiter=';')
         csvwriter.writerow(fields)
-        p_fields = ['name', 'data_alta', 'cups', 'titular', 'data_firma_contracte']
+        p_fields = ['name', 'data_alta', 'cups', 'titular', 'data_firma_contracte', 'direccio_notificacio']
 
         for p_data in tqdm.tqdm(c.GiscedataPolissa.read(list(polisses_ids), p_fields)):
             contract_name = p_data['name']
@@ -63,12 +63,13 @@ def create_file(c, from_date, file_output, only_stoped_contracts):
             titular_id = p_data['titular'][0]
             titular_name = p_data['titular'][1]
             cups_name = p_data['cups'][1]
+            direccio_id = p_data['direccio_notificacio'][0]
 
             c_data = c.GiscedataCupsPs.read(cups_id, ['name', 'direccio'])
             t_data = c.ResPartner.read(titular_id, ['name', 'lang', 'vat'])
             pa_ids = c.ResPartnerAddress.search([('partner_id', '=', titular_id)])
             email = ''
-            for pa_data in c.ResPartnerAddress.read(pa_ids, ['email']):
+            for pa_data in c.ResPartnerAddress.read([direccio_id] + pa_ids, ['email']):
                 if pa_data['email']:
                     email = pa_data['email']
                     break
